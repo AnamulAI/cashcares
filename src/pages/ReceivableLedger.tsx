@@ -306,7 +306,7 @@ export default function ReceivableLedger() {
             <DialogDescription>Record a collection for {book.person_name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
-            {collectModal && collectModal.id !== "bulk" && (
+            {collectModal && collectModal.amount != null && (
               <p className="text-xs text-muted-foreground">{t("module.remaining")}: {fmt(Number(collectModal.amount) - Number(collectModal.collected_amount))}</p>
             )}
             <div><Label className="text-xs">{t("module.collectionAmount")} *</Label><Input type="number" min="0" value={collectAmt} onChange={e => setCollectAmt(e.target.value)} className="mt-1 h-9 text-sm" /></div>
