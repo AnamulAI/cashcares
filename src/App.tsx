@@ -15,7 +15,11 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
-import ComingSoon from "./pages/ComingSoon";
+import Receivables from "./pages/Receivables";
+import Payables from "./pages/Payables";
+import DebtLoans from "./pages/DebtLoans";
+import Assets from "./pages/Assets";
+import Investments from "./pages/Investments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
