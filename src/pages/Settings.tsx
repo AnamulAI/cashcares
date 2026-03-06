@@ -225,7 +225,7 @@ export default function Settings() {
         {/* Security */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> {t("settings.security")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-feature-settings" /> {t("settings.security")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.securityDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
