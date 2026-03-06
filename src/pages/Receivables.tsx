@@ -5,10 +5,12 @@ import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -21,6 +23,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO, isAfter, startOfMonth, endOfMonth } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
