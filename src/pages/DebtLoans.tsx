@@ -96,7 +96,7 @@ export default function DebtLoans() {
     return (
       <div className="space-y-6">
         <PageHeader title={t("debtLoans.title")} subtitle={t("debtLoans.subtitle")} />
-        <PremiumLocked icon={<Scale className="h-7 w-7 text-negative" />} moduleName={t("debtLoans.title")} description={t("premium.upgradeDesc.debtLoans")} />
+        <PremiumLocked icon={<Scale className="h-7 w-7 text-feature-debt" />} moduleName={t("debtLoans.title")} description={t("premium.upgradeDesc.debtLoans")} />
       </div>
     );
   }
