@@ -195,7 +195,7 @@ export default function Settings() {
         {/* Appearance */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> {t("settings.appearance")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4 text-feature-categories" /> {t("settings.appearance")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.appearanceDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
