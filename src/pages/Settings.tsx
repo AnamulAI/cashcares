@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon } from "lucide-react";
-import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
+import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -15,13 +16,48 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function Settings() {
-  const { currency, setCurrency, settings, updateSettings } = useAppContext();
+  const { currency, setCurrency, settings, updateSettings, setDatePreset } = useAppContext();
+  const { t } = useTranslation();
   const { data: transactions = [] } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
 
   const toggleNotif = (key: keyof typeof settings.notifications) => {
     updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
+    toast.success(t("action.save") + " ✓");
+  };
+
+  const handleCurrencyChange = (code: string) => {
+    const c = CURRENCIES.find(x => x.code === code);
+    if (c) {
+      setCurrency(c);
+      toast.success(t("action.save") + " ✓");
+    }
+  };
+
+  const handleLanguageChange = (v: string) => {
+    updateSettings({ language: v });
+    toast.success(v === "bn" ? "ভাষা পরিবর্তন হয়েছে" : "Language updated");
+  };
+
+  const handleDateFormatChange = (v: string) => {
+    updateSettings({ dateFormat: v });
+    toast.success(t("action.save") + " ✓");
+  };
+
+  const handleTimezoneChange = (v: string) => {
+    updateSettings({ timezone: v });
+    toast.success(t("action.save") + " ✓");
+  };
+
+  const handleDefaultRangeChange = (v: string) => {
+    updateSettings({ defaultDashboardRange: v as DatePreset });
+    toast.success(t("action.save") + " ✓");
+  };
+
+  const handleThemeChange = (v: "light" | "dark" | "system") => {
+    updateSettings({ theme: v });
+    toast.success(t("action.save") + " ✓");
   };
 
   const exportAllData = () => {
@@ -43,22 +79,22 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" subtitle="Manage preferences, security, and application behavior" />
+      <PageHeader title={t("settings.title")} subtitle={t("settings.subtitle")} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* General Preferences */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> General Preferences</CardTitle>
-            <CardDescription className="text-xs">Locale and regional settings</CardDescription>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> {t("settings.generalPreferences")}</CardTitle>
+            <CardDescription className="text-xs">{t("settings.localeSettings")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Currency</Label>
-                <p className="text-[11px] text-muted-foreground">Display currency across the app</p>
+                <Label className="text-xs font-medium">{t("settings.currency")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.currencyDesc")}</p>
               </div>
-              <Select value={currency.code} onValueChange={v => { const c = CURRENCIES.find(x => x.code === v); if (c) setCurrency(c); }}>
+              <Select value={currency.code} onValueChange={handleCurrencyChange}>
                 <SelectTrigger className="w-[100px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}
@@ -68,10 +104,10 @@ export default function Settings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Language</Label>
-                <p className="text-[11px] text-muted-foreground">Interface language</p>
+                <Label className="text-xs font-medium">{t("settings.language")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.languageDesc")}</p>
               </div>
-              <Select value={settings.language} onValueChange={v => updateSettings({ language: v })}>
+              <Select value={settings.language} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
@@ -82,10 +118,10 @@ export default function Settings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Date Format</Label>
-                <p className="text-[11px] text-muted-foreground">How dates appear across the app</p>
+                <Label className="text-xs font-medium">{t("settings.dateFormat")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.dateFormatDesc")}</p>
               </div>
-              <Select value={settings.dateFormat} onValueChange={v => updateSettings({ dateFormat: v })}>
+              <Select value={settings.dateFormat} onValueChange={handleDateFormatChange}>
                 <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
@@ -97,15 +133,31 @@ export default function Settings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Timezone</Label>
-                <p className="text-[11px] text-muted-foreground">Used for date/time calculations</p>
+                <Label className="text-xs font-medium">{t("settings.timezone")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.timezoneDesc")}</p>
               </div>
-              <Select value={settings.timezone} onValueChange={v => updateSettings({ timezone: v })}>
+              <Select value={settings.timezone} onValueChange={handleTimezoneChange}>
                 <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dhaka">Asia/Dhaka (GMT+6)</SelectItem>
                   <SelectItem value="utc">UTC</SelectItem>
                   <SelectItem value="est">US/Eastern</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-medium">Default Dashboard Range</Label>
+                <p className="text-[11px] text-muted-foreground">Initial date range when loading dashboard</p>
+              </div>
+              <Select value={settings.defaultDashboardRange || "this_month"} onValueChange={handleDefaultRangeChange}>
+                <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="this_month">{t("datePreset.thisMonth")}</SelectItem>
+                  <SelectItem value="last_month">{t("datePreset.lastMonth")}</SelectItem>
+                  <SelectItem value="last_3_months">{t("datePreset.last3Months")}</SelectItem>
+                  <SelectItem value="this_year">{t("datePreset.thisYear")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -115,16 +167,16 @@ export default function Settings() {
         {/* Notifications */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Bell className="h-4 w-4 text-primary" /> Notifications</CardTitle>
-            <CardDescription className="text-xs">Control what alerts you receive</CardDescription>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Bell className="h-4 w-4 text-primary" /> {t("settings.notifications")}</CardTitle>
+            <CardDescription className="text-xs">{t("settings.notificationsDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {([
-              { key: "email" as const, label: "Email Notifications", desc: "Receive weekly summaries via email" },
-              { key: "budgetThreshold" as const, label: "Budget Threshold Alerts", desc: "Notify when spending nears limits" },
-              { key: "receivableReminder" as const, label: "Receivable Reminders", desc: "Alerts for outstanding receivables" },
-              { key: "payableReminder" as const, label: "Payable Reminders", desc: "Alerts for upcoming payables" },
-              { key: "loanDue" as const, label: "Loan Due Reminders", desc: "Notifications for loan repayments" },
+              { key: "email" as const, label: t("settings.emailNotifications"), desc: t("settings.emailDesc") },
+              { key: "budgetThreshold" as const, label: t("settings.budgetThresholdAlerts"), desc: t("settings.budgetThresholdDesc") },
+              { key: "receivableReminder" as const, label: t("settings.receivableReminders"), desc: t("settings.receivableDesc") },
+              { key: "payableReminder" as const, label: t("settings.payableReminders"), desc: t("settings.payableDesc") },
+              { key: "loanDue" as const, label: t("settings.loanDueReminders"), desc: t("settings.loanDueDesc") },
             ]).map((item, i) => (
               <div key={item.key}>
                 <div className="flex items-center justify-between">
@@ -143,26 +195,26 @@ export default function Settings() {
         {/* Appearance */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> Appearance</CardTitle>
-            <CardDescription className="text-xs">Customize the look and feel</CardDescription>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> {t("settings.appearance")}</CardTitle>
+            <CardDescription className="text-xs">{t("settings.appearanceDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-xs font-medium mb-2 block">Theme</Label>
+              <Label className="text-xs font-medium mb-2 block">{t("settings.theme")}</Label>
               <div className="flex gap-2">
                 {([
-                  { value: "light" as const, icon: Sun, label: "Light" },
-                  { value: "dark" as const, icon: Moon, label: "Dark" },
-                  { value: "system" as const, icon: Monitor, label: "System" },
-                ]).map(t => (
+                  { value: "light" as const, icon: Sun, label: t("settings.light") },
+                  { value: "dark" as const, icon: Moon, label: t("settings.dark") },
+                  { value: "system" as const, icon: Monitor, label: t("settings.system") },
+                ]).map(thm => (
                   <Button
-                    key={t.value}
-                    variant={settings.theme === t.value ? "default" : "outline"}
+                    key={thm.value}
+                    variant={settings.theme === thm.value ? "default" : "outline"}
                     size="sm"
                     className="gap-1.5 text-xs flex-1"
-                    onClick={() => updateSettings({ theme: t.value })}
+                    onClick={() => handleThemeChange(thm.value)}
                   >
-                    <t.icon className="h-3.5 w-3.5" /> {t.label}
+                    <thm.icon className="h-3.5 w-3.5" /> {thm.label}
                   </Button>
                 ))}
               </div>
@@ -173,32 +225,32 @@ export default function Settings() {
         {/* Security */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> Security</CardTitle>
-            <CardDescription className="text-xs">Account protection settings</CardDescription>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> {t("settings.security")}</CardTitle>
+            <CardDescription className="text-xs">{t("settings.securityDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Change Password</Label>
-                <p className="text-[11px] text-muted-foreground">Update your account password</p>
+                <Label className="text-xs font-medium">{t("settings.changePassword")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.changePasswordDesc")}</p>
               </div>
-              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => toast.info("Password change requires authentication to be set up first.")}>Change</Button>
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => toast.info("Password change requires authentication to be set up first.")}>{t("settings.change")}</Button>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Two-Factor Authentication</Label>
-                <p className="text-[11px] text-muted-foreground">Add an extra layer of security</p>
+                <Label className="text-xs font-medium">{t("settings.twoFactor")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.twoFactorDesc")}</p>
               </div>
-              <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
+              <Badge variant="secondary" className="text-[10px]">{t("settings.comingSoon")}</Badge>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-medium">Session Activity</Label>
-                <p className="text-[11px] text-muted-foreground">View active login sessions</p>
+                <Label className="text-xs font-medium">{t("settings.sessionActivity")}</Label>
+                <p className="text-[11px] text-muted-foreground">{t("settings.sessionDesc")}</p>
               </div>
-              <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
+              <Badge variant="secondary" className="text-[10px]">{t("settings.comingSoon")}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -206,25 +258,25 @@ export default function Settings() {
         {/* Data & Export */}
         <Card className="finance-card-static lg:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> Data & Export</CardTitle>
-            <CardDescription className="text-xs">Manage your financial data</CardDescription>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> {t("settings.dataExport")}</CardTitle>
+            <CardDescription className="text-xs">{t("settings.dataExportDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" onClick={exportAllData}>
                 <Download className="h-5 w-5 text-primary" />
-                <span className="font-medium">Export All Data</span>
-                <span className="text-[10px] text-muted-foreground">Download your data as JSON</span>
+                <span className="font-medium">{t("settings.exportAllData")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("settings.exportAllDataDesc")}</span>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" disabled>
                 <Upload className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium">Import Data</span>
-                <span className="text-[10px] text-muted-foreground">Coming Soon</span>
+                <span className="font-medium">{t("settings.importData")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("settings.comingSoon")}</span>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" disabled>
                 <RefreshCw className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium">Backup & Restore</span>
-                <span className="text-[10px] text-muted-foreground">Coming Soon</span>
+                <span className="font-medium">{t("settings.backupRestore")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("settings.comingSoon")}</span>
               </Button>
             </div>
           </CardContent>

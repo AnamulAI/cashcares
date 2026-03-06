@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, X, Crown, Zap, Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppContext, type PlanType } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { toast } from "sonner";
 
 const features = [
@@ -44,16 +45,17 @@ function FeatureCell({ value }: { value: boolean | string }) {
   return <span className="text-xs text-muted-foreground">{value}</span>;
 }
 
-const planLabels: Record<PlanType, string> = {
-  free: "Free Plan",
-  monthly: "Monthly Premium",
-  yearly: "Yearly Premium",
-  lifetime: "Lifetime Premium",
-};
-
 export default function Subscription() {
-  const { plan, setPlan, isPremium } = useAppContext();
+  const { plan, setPlan, isPremium, currency } = useAppContext();
+  const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const planLabels: Record<PlanType, string> = {
+    free: t("subscription.freePlan"),
+    monthly: t("subscription.monthlyPremium"),
+    yearly: t("subscription.yearlyPremium"),
+    lifetime: t("subscription.lifetimePremium"),
+  };
 
   const handleSelectPlan = (planId: PlanType) => {
     setPlan(planId);
@@ -62,9 +64,8 @@ export default function Subscription() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Subscription" subtitle="Unlock advanced finance tools and premium productivity" />
+      <PageHeader title={t("subscription.title")} subtitle={t("subscription.subtitle")} />
 
-      {/* Current plan card */}
       <Card className="finance-card-static border-primary/20">
         <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-6">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
@@ -73,26 +74,25 @@ export default function Subscription() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold font-display">{planLabels[plan]}</h3>
-              <Badge variant={isPremium ? "default" : "secondary"} className="text-[10px]">{isPremium ? "Premium" : "Active"}</Badge>
+              <Badge variant={isPremium ? "default" : "secondary"} className="text-[10px]">{isPremium ? t("subscription.premium") : t("status.active")}</Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {isPremium ? "Full access to all premium features" : "Basic financial tracking with limited features"}
             </p>
           </div>
           {!isPremium && (
-            <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleSelectPlan("yearly")}><Zap className="h-4 w-4" /> Upgrade to Premium</Button>
+            <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleSelectPlan("yearly")}><Zap className="h-4 w-4" /> {t("subscription.upgradeToPremium")}</Button>
           )}
           {isPremium && (
-            <Button size="sm" variant="outline" className="shrink-0" onClick={() => { setPlan("free"); toast.info("Downgraded to Free plan"); }}>Downgrade</Button>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={() => { setPlan("free"); toast.info("Downgraded to Free plan"); }}>{t("action.downgrade")}</Button>
           )}
         </CardContent>
       </Card>
 
-      {/* Pricing cards */}
       <div>
         <div className="text-center mb-5">
-          <h2 className="text-lg font-bold font-display tracking-tight">Choose Your Plan</h2>
-          <p className="text-sm text-muted-foreground mt-1">Simple pricing, no hidden fees</p>
+          <h2 className="text-lg font-bold font-display tracking-tight">{t("subscription.choosePlan")}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{t("subscription.simplePricing")}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
           {plans.map(p => {
@@ -108,13 +108,13 @@ export default function Subscription() {
               >
                 {p.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground text-[10px] px-3 gap-1"><Star className="h-3 w-3" /> Recommended</Badge>
+                    <Badge className="bg-primary text-primary-foreground text-[10px] px-3 gap-1"><Star className="h-3 w-3" /> {t("subscription.recommended")}</Badge>
                   </div>
                 )}
                 <CardContent className="pt-6 text-center space-y-4">
                   <h3 className="text-sm font-semibold">{p.name}</h3>
                   <div>
-                    <span className="text-3xl font-bold font-display">৳{p.price.toLocaleString()}</span>
+                    <span className="text-3xl font-bold font-display">{currency.symbol}{p.price.toLocaleString()}</span>
                     <span className="text-sm text-muted-foreground">{p.period}</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">{p.billed}</p>
@@ -125,7 +125,7 @@ export default function Subscription() {
                     disabled={isCurrentPlan}
                     onClick={() => handleSelectPlan(p.id)}
                   >
-                    {isCurrentPlan ? "Current Plan" : p.popular ? "Get Started" : "Select Plan"}
+                    {isCurrentPlan ? t("subscription.currentPlanBadge") : p.popular ? t("subscription.getStarted") : t("subscription.selectPlan")}
                   </Button>
                   <ul className="text-left space-y-1.5 pt-2">
                     {["All premium features", "Unlimited budgets", "Advanced reports", "Priority support"].map((f, i) => (
@@ -141,19 +141,18 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Feature comparison */}
       <Card className="finance-card-static">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">Feature Comparison</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t("subscription.featureComparison")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 text-xs font-medium text-muted-foreground w-1/2">Feature</th>
-                  <th className="text-center py-2 text-xs font-medium text-muted-foreground w-1/4">Free</th>
-                  <th className="text-center py-2 text-xs font-medium w-1/4"><span className="text-primary font-semibold">Premium</span></th>
+                  <th className="text-left py-2 text-xs font-medium text-muted-foreground w-1/2">{t("subscription.feature")}</th>
+                  <th className="text-center py-2 text-xs font-medium text-muted-foreground w-1/4">{t("subscription.free")}</th>
+                  <th className="text-center py-2 text-xs font-medium w-1/4"><span className="text-primary font-semibold">{t("subscription.premium")}</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -170,10 +169,9 @@ export default function Subscription() {
         </CardContent>
       </Card>
 
-      {/* FAQ */}
       <Card className="finance-card-static">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" /> Billing FAQ</CardTitle>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" /> {t("subscription.billingFaq")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           {faqs.map((faq, i) => (
@@ -191,13 +189,12 @@ export default function Subscription() {
         </CardContent>
       </Card>
 
-      {/* Billing history */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Billing History</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("subscription.billingHistory")}</p>
           <p className="text-[11px] text-muted-foreground">{isPremium ? `Active ${planLabels[plan]} subscription` : "No transactions yet"}</p>
         </div>
-        <Button variant="ghost" size="sm" className="text-xs" disabled>View History</Button>
+        <Button variant="ghost" size="sm" className="text-xs" disabled>{t("subscription.viewHistory")}</Button>
       </div>
     </div>
   );
