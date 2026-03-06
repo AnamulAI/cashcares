@@ -89,6 +89,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 {group.items.map((item) => {
                   const isActive = location.pathname === item.url;
+                  const locked = !item.active || isModuleLocked(item.url);
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
