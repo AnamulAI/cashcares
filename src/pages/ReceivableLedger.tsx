@@ -247,6 +247,7 @@ export default function ReceivableLedger() {
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {e.status !== "collected" && <DropdownMenuItem onClick={() => { setCollectModal(e); setCollectAmt(""); setCollectAcct(e.linked_account_id || ""); }}><DollarSign className="h-3.5 w-3.5 mr-2" /> Record Collection</DropdownMenuItem>}
+                          <DropdownMenuItem onClick={() => setDetailEntry(e)}><Eye className="h-3.5 w-3.5 mr-2" /> View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5 mr-2" /> Duplicate</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEntryModal(e)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                           <DropdownMenuSeparator />
