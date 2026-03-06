@@ -80,7 +80,7 @@ export default function Assets() {
     return (
       <div className="space-y-6">
         <PageHeader title={t("assets.title")} subtitle={t("assets.subtitle")} />
-        <PremiumLocked icon={<Building2 className="h-7 w-7 text-muted-foreground" />} moduleName={t("assets.title")} description={t("premium.upgradeDesc.assets")} />
+        <PremiumLocked icon={<Building2 className="h-7 w-7 text-feature-assets" />} moduleName={t("assets.title")} description={t("premium.upgradeDesc.assets")} />
       </div>
     );
   }
