@@ -3,25 +3,30 @@ import { Plus, Building2, TrendingUp, TrendingDown, Hash, Search, RotateCcw, Tra
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAssets, useCreateAsset, useUpdateAsset, useDeleteAsset, AssetInsert } from "@/hooks/use-assets";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAppContext } from "@/contexts/AppContext";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
+import { parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
 const ASSET_TYPES = ["cash_reserve", "property", "land", "vehicle", "equipment", "business_asset", "digital_asset", "other"];
 const statusColors: Record<string, string> = { active: "bg-positive/10 text-positive", sold: "bg-warning/10 text-warning", archived: "bg-muted text-muted-foreground" };
 
 export default function Assets() {
-  const { currency, isPremium } = useAppContext();
+  const { currency, isPremium, settings } = useAppContext();
+  const { t } = useTranslation();
   const { data: items = [], isLoading } = useAssets();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateAsset();
@@ -36,7 +41,8 @@ export default function Assets() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [form, setForm] = useState({ asset_name: "", asset_type: "other", purchase_value: "", current_value: "", acquisition_date: "", linked_account_id: "", note: "", status: "active" });
-  const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+  const fmt = (n: number) => formatAmount(n, currency);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
   const now = new Date();
   const mStart = startOfMonth(now);
   const mEnd = endOfMonth(now);
@@ -73,44 +79,41 @@ export default function Assets() {
   if (!isPremium) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Assets" subtitle="Track owned assets and net worth contributors" />
-        <Card className="finance-card-static"><CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted mb-4"><Building2 className="h-7 w-7 text-muted-foreground" /></div>
-          <h3 className="text-base font-semibold">Premium Module</h3>
-          <p className="mt-1 text-sm text-muted-foreground max-w-sm">Upgrade to Premium to track assets.</p>
-          <Button className="mt-4" onClick={() => window.location.href = "/subscription"}>Upgrade Now</Button>
-        </CardContent></Card>
+        <PageHeader title={t("assets.title")} subtitle={t("assets.subtitle")} />
+        <PremiumLocked icon={<Building2 className="h-7 w-7 text-muted-foreground" />} moduleName={t("assets.title")} description={t("premium.upgradeDesc.assets")} />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Assets" subtitle="Track owned assets and net worth contributors" actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Asset</Button>} />
+      <PageHeader title={t("assets.title")} subtitle={t("assets.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addAsset")}</Button>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<Building2 className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label="Total Asset Value" value={fmt(totalValue)} />
-        <FinanceCard icon={<Hash className="h-5 w-5 text-muted-foreground" />} iconBg="bg-muted" label="Asset Count" value={String(activeItems.length)} />
-        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label="Highest Value" value={fmt(highestValue)} />
-        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label="Updated This Month" value={String(updatedThisMonth)} />
+        <FinanceCard icon={<Building2 className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("module.totalAssetValue")} value={fmt(totalValue)} />
+        <FinanceCard icon={<Hash className="h-5 w-5 text-muted-foreground" />} iconBg="bg-muted" label={t("module.assetCount")} value={String(activeItems.length)} />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.highestValue")} value={fmt(highestValue)} />
+        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("module.updatedThisMonth")} value={String(updatedThisMonth)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[180px] max-w-xs"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" /></div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}><SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Types</SelectItem>{ASSET_TYPES.map(t => <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>)}</SelectContent></Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="sold">Sold</SelectItem><SelectItem value="archived">Archived</SelectItem></SelectContent></Select>
-        {(search || typeFilter !== "all" || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setTypeFilter("all"); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> Reset</Button>}
+        <div className="relative flex-1 min-w-[180px] max-w-xs"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder={t("action.search") + "..."} value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" /></div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}><SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("module.allTypes")}</SelectItem>{ASSET_TYPES.map(at => <SelectItem key={at} value={at}>{at.replace(/_/g, " ")}</SelectItem>)}</SelectContent></Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("module.allStatus")}</SelectItem><SelectItem value="active">{t("status.active")}</SelectItem><SelectItem value="sold">{t("status.sold")}</SelectItem><SelectItem value="archived">{t("status.archived")}</SelectItem></SelectContent></Select>
+        {(search || typeFilter !== "all" || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setTypeFilter("all"); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>}
       </div>
 
-      {isLoading ? <Card className="finance-card-static"><CardContent className="py-12 text-center text-sm text-muted-foreground">Loading...</CardContent></Card>
-      : filtered.length === 0 ? <EmptyState icon="Building2" title="No assets" description="Add your first asset to start tracking." action={<Button size="sm" onClick={() => openModal()}><Plus className="h-4 w-4 mr-1" /> Add Asset</Button>} />
-      : (
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">{[1,2,3].map(i => <Skeleton key={i} className="h-44 rounded-xl" />)}</div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Building2 className="h-7 w-7 text-muted-foreground" />} title={t("module.noAssets")} description={t("module.noAssetsDesc")} action={<Button size="sm" onClick={() => openModal()}><Plus className="h-4 w-4 mr-1" /> {t("action.addAsset")}</Button>} />
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map(a => {
             const appreciation = Number(a.current_value) - Number(a.purchase_value);
             const pct = Number(a.purchase_value) > 0 ? ((appreciation / Number(a.purchase_value)) * 100).toFixed(1) : "0";
             return (
-              <Card key={a.id} className="finance-card-static">
+              <Card key={a.id} className="finance-card group">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -120,15 +123,15 @@ export default function Assets() {
                     <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[a.status] || ""}`}>{a.status}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><p className="text-muted-foreground">Purchase</p><p className="font-semibold">{fmt(Number(a.purchase_value))}</p></div>
-                    <div><p className="text-muted-foreground">Current</p><p className="font-semibold">{fmt(Number(a.current_value))}</p></div>
+                    <div><p className="text-muted-foreground">{t("module.purchase")}</p><p className="font-semibold">{fmt(Number(a.purchase_value))}</p></div>
+                    <div><p className="text-muted-foreground">{t("module.current")}</p><p className="font-semibold">{fmt(Number(a.current_value))}</p></div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className={appreciation >= 0 ? "text-positive" : "text-negative"}>{appreciation >= 0 ? "+" : ""}{pct}% {appreciation >= 0 ? "↑" : "↓"}</span>
-                    {a.acquisition_date && <span className="text-muted-foreground">{format(parseISO(a.acquisition_date), "dd MMM yyyy")}</span>}
+                    {a.acquisition_date && <span className="text-muted-foreground">{fmtDate(a.acquisition_date)}</span>}
                   </div>
                   <div className="flex items-center gap-1 pt-1 border-t border-border/50">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={() => openModal(a)}><Pencil className="h-3 w-3 mr-1" /> Edit</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={() => openModal(a)}><Pencil className="h-3 w-3 mr-1" /> {t("action.edit")}</Button>
                     <Button variant="ghost" size="sm" className="h-7 text-xs text-negative" onClick={() => setDeleteId(a.id)}><Trash2 className="h-3 w-3" /></Button>
                   </div>
                 </CardContent>
@@ -138,27 +141,27 @@ export default function Assets() {
         </div>
       )}
 
-      <Dialog open={modal} onOpenChange={setModal}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>{editing ? "Edit Asset" : "Add Asset"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label className="text-xs">Asset Name *</Label><Input value={form.asset_name} onChange={e => setForm(f => ({ ...f, asset_name: e.target.value }))} className="mt-1" /></div>
+      <Dialog open={modal} onOpenChange={setModal}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>{editing ? t("module.editAsset") : t("module.addAsset")}</DialogTitle></DialogHeader>
+        <div className="space-y-3 py-1">
+          <div><Label className="text-xs">{t("module.assetName")} *</Label><Input value={form.asset_name} onChange={e => setForm(f => ({ ...f, asset_name: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-xs">Asset Type</Label><Select value={form.asset_type} onValueChange={v => setForm(f => ({ ...f, asset_type: v }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{ASSET_TYPES.map(t => <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label className="text-xs">Status</Label><Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="sold">Sold</SelectItem><SelectItem value="archived">Archived</SelectItem></SelectContent></Select></div>
+            <div><Label className="text-xs">{t("module.assetType")}</Label><Select value={form.asset_type} onValueChange={v => setForm(f => ({ ...f, asset_type: v }))}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger><SelectContent>{ASSET_TYPES.map(at => <SelectItem key={at} value={at}>{at.replace(/_/g, " ")}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-xs">{t("table.status")}</Label><Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">{t("status.active")}</SelectItem><SelectItem value="sold">{t("status.sold")}</SelectItem><SelectItem value="archived">{t("status.archived")}</SelectItem></SelectContent></Select></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-xs">Purchase Value *</Label><Input type="number" value={form.purchase_value} onChange={e => setForm(f => ({ ...f, purchase_value: e.target.value }))} className="mt-1" /></div>
-            <div><Label className="text-xs">Current Value</Label><Input type="number" value={form.current_value} onChange={e => setForm(f => ({ ...f, current_value: e.target.value }))} className="mt-1" /></div>
+            <div><Label className="text-xs">{t("module.purchaseValue")} *</Label><Input type="number" min="0" value={form.purchase_value} onChange={e => setForm(f => ({ ...f, purchase_value: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            <div><Label className="text-xs">{t("module.currentValue")}</Label><Input type="number" min="0" value={form.current_value} onChange={e => setForm(f => ({ ...f, current_value: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-xs">Acquisition Date</Label><Input type="date" value={form.acquisition_date} onChange={e => setForm(f => ({ ...f, acquisition_date: e.target.value }))} className="mt-1" /></div>
-            <div><Label className="text-xs">Linked Account</Label><Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}><SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger><SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-xs">{t("module.acquisitionDate")}</Label><Input type="date" value={form.acquisition_date} onChange={e => setForm(f => ({ ...f, acquisition_date: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            <div><Label className="text-xs">{t("module.linkedAccount")}</Label><Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}><SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger><SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></div>
           </div>
-          <div><Label className="text-xs">Note</Label><Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1" rows={2} /></div>
+          <div><Label className="text-xs">{t("table.note")}</Label><Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1 text-sm" rows={2} /></div>
         </div>
-        <DialogFooter><Button variant="outline" onClick={() => setModal(false)}>Cancel</Button><Button onClick={handleSave} disabled={!form.asset_name || !form.purchase_value || createMut.isPending || updateMut.isPending}>{createMut.isPending || updateMut.isPending ? "Saving..." : "Save"}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" size="sm" onClick={() => setModal(false)}>{t("action.cancel")}</Button><Button size="sm" onClick={handleSave} disabled={!form.asset_name || !form.purchase_value || createMut.isPending || updateMut.isPending}>{createMut.isPending || updateMut.isPending ? t("common.saving") : t("action.save")}</Button></DialogFooter>
       </DialogContent></Dialog>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Asset?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <ConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} title={t("confirm.deleteAsset")} description={t("confirm.deleteDesc")} onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }} />
     </div>
   );
 }
