@@ -173,10 +173,10 @@ export default function Budgets() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <FinanceCard icon={<Target className="h-5 w-5 text-primary" />} label={t("budgets.totalBudget")} value={fmt(totalBudget)} iconBg="bg-primary/10" />
-        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label={t("budgets.totalSpent")} value={fmt(totalSpent)} iconBg="bg-negative/10" />
+        <FinanceCard icon={<Target className="h-5 w-5 text-feature-budget" />} label={t("budgets.totalBudget")} value={fmt(totalBudget)} iconBg="bg-feature-budget/10" />
+        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} label={t("budgets.totalSpent")} value={fmt(totalSpent)} iconBg="bg-feature-expense/10" />
         <FinanceCard icon={<ShieldCheck className="h-5 w-5 text-positive" />} label={t("budgets.remaining")} value={fmt(remaining)} iconBg="bg-positive/10" />
-        <FinanceCard icon={<PieChart className="h-5 w-5 text-primary" />} label={t("budgets.activeBudgets")} value={String(budgets.filter(b => b.is_active).length)} iconBg="bg-accent" />
+        <FinanceCard icon={<PieChart className="h-5 w-5 text-feature-budget" />} label={t("budgets.activeBudgets")} value={String(budgets.filter(b => b.is_active).length)} iconBg="bg-feature-budget/10" />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-warning" />} label={t("budgets.overLimit")} value={String(overLimit)} iconBg="bg-warning/10" />
       </div>
 
