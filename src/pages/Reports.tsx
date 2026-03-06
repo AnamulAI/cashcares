@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, DollarSign, TrendingUp, TrendingDown, PiggyBank, Gauge, BarChart3, FileText, Building2, Scale, HandCoins, CreditCard, Layers } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
@@ -9,30 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAppContext } from "@/contexts/AppContext";
+import { useTransactions } from "@/hooks/use-transactions";
+import { useAccounts } from "@/hooks/use-accounts";
+import { useCategories } from "@/hooks/use-categories";
+import { useBudgets } from "@/hooks/use-budgets";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
-
-const incomeExpenseData = [
-  { month: "Jan", income: 85000, expense: 52000 },
-  { month: "Feb", income: 78000, expense: 48000 },
-  { month: "Mar", income: 92000, expense: 61000 },
-  { month: "Apr", income: 85000, expense: 55000 },
-  { month: "May", income: 88000, expense: 49000 },
-  { month: "Jun", income: 95000, expense: 58000 },
-];
-
-const expenseBreakdown = [
-  { name: "Food & Dining", value: 15200, color: "hsl(25, 95%, 53%)" },
-  { name: "Transport", value: 8500, color: "hsl(217, 91%, 60%)" },
-  { name: "Utilities", value: 5200, color: "hsl(45, 93%, 47%)" },
-  { name: "Entertainment", value: 4100, color: "hsl(280, 67%, 55%)" },
-  { name: "Shopping", value: 9800, color: "hsl(340, 82%, 52%)" },
-  { name: "Others", value: 6200, color: "hsl(200, 18%, 46%)" },
-];
-
-const netMovement = [
-  { month: "Jan", net: 33000 }, { month: "Feb", net: 30000 }, { month: "Mar", net: 31000 },
-  { month: "Apr", net: 30000 }, { month: "May", net: 39000 }, { month: "Jun", net: 37000 },
-];
+import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { toast } from "sonner";
 
 function PlaceholderTab({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
   return (
@@ -50,9 +33,99 @@ function PlaceholderTab({ icon: Icon, title, description }: { icon: React.Elemen
 }
 
 export default function Reports() {
-  const { currency } = useAppContext();
+  const { currency, dateRange } = useAppContext();
+  const { data: transactionsRaw = [] } = useTransactions();
+  const { data: accounts = [] } = useAccounts();
+  const { data: categoriesRaw = [] } = useCategories();
+  const { data: budgetsRaw = [] } = useBudgets();
   const [tab, setTab] = useState("overview");
+  const [accountFilter, setAccountFilter] = useState("all");
+  const [categoryFilterVal, setCategoryFilterVal] = useState("all");
   const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+
+  // Filter transactions by date range and filters
+  const filteredTxns = useMemo(() => {
+    return (transactionsRaw as any[]).filter((t: any) => {
+      const d = parseISO(t.date);
+      if (!isWithinInterval(d, { start: dateRange.from, end: dateRange.to })) return false;
+      if (accountFilter !== "all" && t.account_id !== accountFilter) return false;
+      if (categoryFilterVal !== "all" && t.category_id !== categoryFilterVal) return false;
+      return true;
+    });
+  }, [transactionsRaw, dateRange, accountFilter, categoryFilterVal]);
+
+  const totalIncome = filteredTxns.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
+  const totalExpense = filteredTxns.filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+  const savings = totalIncome - totalExpense;
+  const netWorth = accounts.reduce((s, a) => s + Number(a.balance), 0);
+
+  // Budget utilization
+  const budgetUtil = useMemo(() => {
+    if (!budgetsRaw.length) return 0;
+    const now = new Date();
+    const mStart = startOfMonth(now);
+    const mEnd = endOfMonth(now);
+    const totalAlloc = budgetsRaw.reduce((s, b) => s + Number((b as any).allocated_amount), 0);
+    if (totalAlloc === 0) return 0;
+    const totalSpent = (transactionsRaw as any[])
+      .filter(t => t.type === "expense" && t.status === "completed" && isWithinInterval(parseISO(t.date), { start: mStart, end: mEnd }))
+      .filter(t => budgetsRaw.some(b => b.category_id === t.category_id))
+      .reduce((s, t) => s + Number(t.amount), 0);
+    return Math.round((totalSpent / totalAlloc) * 100);
+  }, [budgetsRaw, transactionsRaw]);
+
+  // Monthly income vs expense chart data
+  const monthlyData = useMemo(() => {
+    const months: Record<string, { month: string; income: number; expense: number }> = {};
+    filteredTxns.forEach(t => {
+      const key = format(parseISO(t.date), "MMM");
+      if (!months[key]) months[key] = { month: key, income: 0, expense: 0 };
+      if (t.type === "income") months[key].income += Number(t.amount);
+      if (t.type === "expense") months[key].expense += Number(t.amount);
+    });
+    return Object.values(months);
+  }, [filteredTxns]);
+
+  const netMovement = monthlyData.map(m => ({ month: m.month, net: m.income - m.expense }));
+
+  // Expense breakdown by category
+  const expenseBreakdown = useMemo(() => {
+    const map: Record<string, { name: string; value: number; color: string }> = {};
+    filteredTxns.filter(t => t.type === "expense").forEach((t: any) => {
+      const catName = t.category?.name || "Other";
+      const cat = categoriesRaw.find(c => c.id === t.category_id);
+      if (!map[catName]) map[catName] = { name: catName, value: 0, color: cat?.color || "#6366f1" };
+      map[catName].value += Number(t.amount);
+    });
+    return Object.values(map).sort((a, b) => b.value - a.value);
+  }, [filteredTxns, categoriesRaw]);
+
+  // Top income sources
+  const incomeSources = useMemo(() => {
+    const map: Record<string, { name: string; value: number }> = {};
+    filteredTxns.filter(t => t.type === "income").forEach((t: any) => {
+      const catName = t.category?.name || "Other";
+      if (!map[catName]) map[catName] = { name: catName, value: 0 };
+      map[catName].value += Number(t.amount);
+    });
+    return Object.values(map).sort((a, b) => b.value - a.value).slice(0, 4);
+  }, [filteredTxns]);
+
+  const exportCSV = () => {
+    const headers = ["Date", "Type", "Category", "Account", "Amount", "Note", "Status"];
+    const rows = filteredTxns.map((t: any) => [
+      t.date, t.type, t.category?.name || "", t.account?.name || "", t.amount, t.note || "", t.status,
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cashcare-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Report exported as CSV");
+  };
 
   return (
     <div className="space-y-6">
@@ -65,9 +138,9 @@ export default function Reports() {
               <Button size="sm" variant="outline" className="gap-1.5 h-9"><Download className="h-4 w-4" /> Export Report</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem><FileText className="h-4 w-4 mr-2" /> Export as PDF</DropdownMenuItem>
-              <DropdownMenuItem><Layers className="h-4 w-4 mr-2" /> Export as CSV</DropdownMenuItem>
-              <DropdownMenuItem><BarChart3 className="h-4 w-4 mr-2" /> Monthly Summary</DropdownMenuItem>
+              <DropdownMenuItem disabled><FileText className="h-4 w-4 mr-2" /> Export as PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCSV}><Layers className="h-4 w-4 mr-2" /> Export as CSV</DropdownMenuItem>
+              <DropdownMenuItem disabled><BarChart3 className="h-4 w-4 mr-2" /> Monthly Summary</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         }
@@ -75,36 +148,27 @@ export default function Reports() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label="Net Worth" value={fmt(524000)} iconBg="bg-primary/10" />
-        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} label="Total Income" value={fmt(523000)} iconBg="bg-positive/10" />
-        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label="Total Expense" value={fmt(323000)} iconBg="bg-negative/10" />
-        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-primary" />} label="Savings" value={fmt(200000)} iconBg="bg-accent" />
-        <FinanceCard icon={<Gauge className="h-5 w-5 text-warning" />} label="Budget Util." value="72%" iconBg="bg-warning/10" />
+        <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label="Net Worth" value={fmt(netWorth)} iconBg="bg-primary/10" />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} label="Total Income" value={fmt(totalIncome)} iconBg="bg-positive/10" />
+        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label="Total Expense" value={fmt(totalExpense)} iconBg="bg-negative/10" />
+        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-primary" />} label="Savings" value={fmt(savings)} iconBg="bg-accent" />
+        <FinanceCard icon={<Gauge className="h-5 w-5 text-warning" />} label="Budget Util." value={`${budgetUtil}%`} iconBg="bg-warning/10" />
       </div>
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2">
-        <Select defaultValue="this_month">
-          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="this_month">This Month</SelectItem>
-            <SelectItem value="last_month">Last Month</SelectItem>
-            <SelectItem value="last_3">Last 3 Months</SelectItem>
-            <SelectItem value="this_year">This Year</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+        <Select value={accountFilter} onValueChange={setAccountFilter}>
+          <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Accounts</SelectItem>
-            <SelectItem value="cash">Cash</SelectItem>
-            <SelectItem value="bank">Bank</SelectItem>
+            {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+        <Select value={categoryFilterVal} onValueChange={setCategoryFilterVal}>
+          <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
+            {categoriesRaw.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -118,54 +182,64 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-4">
-          {/* Income vs Expense */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <Card className="finance-card-static lg:col-span-3">
               <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Income vs Expense</CardTitle></CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={incomeExpenseData} barGap={4}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                    <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="income" fill="hsl(var(--positive))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="expense" fill="hsl(var(--negative))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {monthlyData.length === 0 ? (
+                  <div className="flex items-center justify-center h-[280px] text-sm text-muted-foreground">No transaction data for this period</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={monthlyData} barGap={4}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="income" fill="hsl(var(--positive))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expense" fill="hsl(var(--negative))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
             <Card className="finance-card-static lg:col-span-2">
               <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Net Movement</CardTitle></CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={netMovement}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                    <Line type="monotone" dataKey="net" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                {netMovement.length === 0 ? (
+                  <div className="flex items-center justify-center h-[280px] text-sm text-muted-foreground">No data</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={netMovement}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="net" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Expense breakdown & distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card className="finance-card-static">
               <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Expense Breakdown</CardTitle></CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3}>
-                      {expenseBreakdown.map((e, i) => <Cell key={i} fill={e.color} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                    <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {expenseBreakdown.length === 0 ? (
+                  <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">No expenses in this period</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3}>
+                        {expenseBreakdown.map((e, i) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
             <Card className="finance-card-static">
@@ -173,6 +247,7 @@ export default function Reports() {
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-2">Top Spending</p>
+                  {expenseBreakdown.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
                   {expenseBreakdown.slice(0, 4).map((e, i) => (
                     <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
                       <span className="text-xs">{e.name}</span>
@@ -182,7 +257,8 @@ export default function Reports() {
                 </div>
                 <div className="pt-2">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Top Income Sources</p>
-                  {[{ name: "Salary", value: 85000 }, { name: "Freelance", value: 12000 }, { name: "Dividends", value: 3500 }].map((e, i) => (
+                  {incomeSources.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
+                  {incomeSources.map((e, i) => (
                     <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
                       <span className="text-xs">{e.name}</span>
                       <span className="text-xs font-semibold text-positive">{fmt(e.value)}</span>

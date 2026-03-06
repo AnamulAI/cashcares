@@ -103,6 +103,56 @@ function loadNotifications(): AppNotification[] {
   return DEFAULT_NOTIFICATIONS;
 }
 
+// --- Premium / Plan ---
+export type PlanType = "free" | "monthly" | "yearly" | "lifetime";
+
+function loadPlan(): PlanType {
+  try {
+    const saved = localStorage.getItem("cc_plan") as PlanType | null;
+    if (saved && ["free", "monthly", "yearly", "lifetime"].includes(saved)) return saved;
+  } catch {}
+  return "free";
+}
+
+export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments"] as const;
+
+// --- Settings ---
+export interface AppSettings {
+  language: string;
+  dateFormat: string;
+  timezone: string;
+  theme: "light" | "dark" | "system";
+  notifications: {
+    email: boolean;
+    budgetThreshold: boolean;
+    receivableReminder: boolean;
+    payableReminder: boolean;
+    loanDue: boolean;
+  };
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  language: "en",
+  dateFormat: "dmy",
+  timezone: "dhaka",
+  theme: "light",
+  notifications: {
+    email: true,
+    budgetThreshold: true,
+    receivableReminder: false,
+    payableReminder: true,
+    loanDue: false,
+  },
+};
+
+function loadSettings(): AppSettings {
+  try {
+    const saved = localStorage.getItem("cc_settings");
+    if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+  } catch {}
+  return DEFAULT_SETTINGS;
+}
+
 // --- Context ---
 interface AppContextValue {
   currency: CurrencyOption;
@@ -116,19 +166,25 @@ interface AppContextValue {
   unreadCount: number;
   markRead: (id: string) => void;
   markAllRead: () => void;
+  plan: PlanType;
+  setPlan: (p: PlanType) => void;
+  isPremium: boolean;
+  isModuleLocked: (path: string) => boolean;
+  settings: AppSettings;
+  updateSettings: (s: Partial<AppSettings>) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  // Currency — persisted
+  // Currency
   const [currency, setCurrencyState] = useState<CurrencyOption>(loadCurrency);
   const setCurrency = useCallback((c: CurrencyOption) => {
     setCurrencyState(c);
     localStorage.setItem("cc_currency", JSON.stringify(c));
   }, []);
 
-  // Date range — persisted
+  // Date range
   const initialPreset = loadDatePreset();
   const [datePreset, setDatePresetState] = useState<DatePreset>(initialPreset);
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -154,7 +210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("cc_custom_range", JSON.stringify({ from: r.from.toISOString(), to: r.to.toISOString() }));
   }, []);
 
-  // Notifications — persisted
+  // Notifications
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
   useEffect(() => {
     localStorage.setItem("cc_notifications", JSON.stringify(notifications));
@@ -170,12 +226,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // Plan
+  const [plan, setPlanState] = useState<PlanType>(loadPlan);
+  const setPlan = useCallback((p: PlanType) => {
+    setPlanState(p);
+    localStorage.setItem("cc_plan", p);
+  }, []);
+  const isPremium = plan !== "free";
+  const isModuleLocked = useCallback((path: string) => {
+    if (isPremium) return false;
+    return PREMIUM_MODULES.some(m => path.includes(m));
+  }, [isPremium]);
+
+  // Settings
+  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const updateSettings = useCallback((partial: Partial<AppSettings>) => {
+    setSettings(prev => {
+      const next = { ...prev, ...partial };
+      localStorage.setItem("cc_settings", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // Apply theme
+  useEffect(() => {
+    const root = document.documentElement;
+    const resolvedTheme = settings.theme === "system"
+      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : settings.theme;
+    root.classList.toggle("dark", resolvedTheme === "dark");
+  }, [settings.theme]);
+
+  // Sync currency from settings page
+  // (currency is already its own state, settings currency selector uses setCurrency directly)
+
   return (
     <AppContext.Provider value={{
       currency, setCurrency,
       datePreset, dateRange, setDatePreset, setCustomRange,
       datePresetLabel: presetLabel[datePreset],
       notifications, unreadCount, markRead, markAllRead,
+      plan, setPlan, isPremium, isModuleLocked,
+      settings, updateSettings,
     }}>
       {children}
     </AppContext.Provider>
