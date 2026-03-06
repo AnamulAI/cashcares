@@ -10,6 +10,11 @@ import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Accounts from "./pages/Accounts";
 import Categories from "./pages/Categories";
+import Budgets from "./pages/Budgets";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import Subscription from "./pages/Subscription";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
@@ -29,15 +34,16 @@ const App = () => (
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/categories" element={<Categories />} />
-            <Route path="/budgets" element={<ComingSoon />} />
-            <Route path="/reports" element={<ComingSoon />} />
+            <Route path="/budgets" element={<Budgets />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/subscription" element={<Subscription />} />
             <Route path="/assets" element={<ComingSoon />} />
             <Route path="/investments" element={<ComingSoon />} />
             <Route path="/receivables" element={<ComingSoon />} />
             <Route path="/payables" element={<ComingSoon />} />
             <Route path="/debt-loans" element={<ComingSoon />} />
-            <Route path="/settings" element={<ComingSoon />} />
-            <Route path="/subscription" element={<ComingSoon />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

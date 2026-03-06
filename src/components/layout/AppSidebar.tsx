@@ -25,7 +25,7 @@ const navGroups = [
       { title: "Transactions", url: "/transactions", icon: ArrowLeftRight, active: true },
       { title: "Accounts", url: "/accounts", icon: Landmark, active: true },
       { title: "Categories", url: "/categories", icon: Tag, active: true },
-      { title: "Budgets", url: "/budgets", icon: PieChart, active: false },
+      { title: "Budgets", url: "/budgets", icon: PieChart, active: true },
     ],
   },
   {
@@ -46,14 +46,14 @@ const navGroups = [
   {
     label: "Insights",
     items: [
-      { title: "Reports", url: "/reports", icon: BarChart3, active: false },
+      { title: "Reports", url: "/reports", icon: BarChart3, active: true },
     ],
   },
 ];
 
 const systemItems = [
-  { title: "Settings", url: "/settings", icon: Settings, active: false },
-  { title: "Subscription", url: "/subscription", icon: Crown, active: false },
+  { title: "Settings", url: "/settings", icon: Settings, active: true },
+  { title: "Subscription", url: "/subscription", icon: Crown, active: true },
 ];
 
 export function AppSidebar() {
@@ -126,21 +126,39 @@ export function AppSidebar() {
 
       <SidebarFooter className="px-3 pb-5 border-t border-sidebar-border pt-3">
         <SidebarMenu>
-          {systemItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-default select-none">
-                  <item.icon className="h-[18px] w-[18px] shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="truncate flex-1">{item.title}</span>
-                      <Lock className="h-3 w-3 opacity-50" />
-                    </>
+          {systemItems.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  {item.active ? (
+                    <NavLink
+                      to={item.url}
+                      end
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
+                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                      )}
+                      activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                    >
+                      <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} />
+                      {!collapsed && <span className="truncate">{item.title}</span>}
+                    </NavLink>
+                  ) : (
+                    <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-default select-none">
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
+                      {!collapsed && (
+                        <>
+                          <span className="truncate flex-1">{item.title}</span>
+                          <Lock className="h-3 w-3 opacity-50" />
+                        </>
+                      )}
+                    </div>
                   )}
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
