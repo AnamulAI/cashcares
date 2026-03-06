@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { QuickAddModal } from "./QuickAddModal";
-import { useAppContext, CURRENCIES, type DatePreset, presetLabel } from "@/contexts/AppContext";
+import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -25,7 +26,13 @@ const ICON_MAP: Record<string, any> = {
   AlertTriangle, Clock, DollarSign, ArrowUpRight,
 };
 
-const DATE_PRESETS: DatePreset[] = ["this_month", "last_month", "last_3_months", "this_year", "custom"];
+const PRESET_KEYS: { preset: DatePreset; key: string }[] = [
+  { preset: "this_month", key: "datePreset.thisMonth" },
+  { preset: "last_month", key: "datePreset.lastMonth" },
+  { preset: "last_3_months", key: "datePreset.last3Months" },
+  { preset: "this_year", key: "datePreset.thisYear" },
+  { preset: "custom", key: "datePreset.customRange" },
+];
 
 export function AppHeader() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -34,9 +41,10 @@ export function AppHeader() {
   const navigate = useNavigate();
   const {
     currency, setCurrency,
-    datePreset, dateRange, setDatePreset, setCustomRange, datePresetLabel,
+    datePreset, dateRange, setDatePreset, setCustomRange,
     notifications, unreadCount, markRead, markAllRead,
   } = useAppContext();
+  const { t } = useTranslation();
 
   const handleDatePreset = (p: DatePreset) => {
     if (p === "custom") {
@@ -59,6 +67,9 @@ export function AppHeader() {
     }
   };
 
+  // Get translated label for current preset
+  const currentPresetKey = PRESET_KEYS.find(p => p.preset === datePreset)?.key || "datePreset.thisMonth";
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-[56px] items-center gap-3 border-b bg-card/90 backdrop-blur-md px-4">
@@ -67,7 +78,7 @@ export function AppHeader() {
         {/* Search */}
         <div className="relative hidden sm:block w-full max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
-          <Input placeholder="Search transactions, accounts..." className="pl-9 h-9 bg-muted/50 border-transparent focus:border-input focus:bg-background text-sm" />
+          <Input placeholder={t("topbar.searchPlaceholder")} className="pl-9 h-9 bg-muted/50 border-transparent focus:border-input focus:bg-background text-sm" />
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
@@ -97,29 +108,29 @@ export function AppHeader() {
           <Popover open={datePopoverOpen} onOpenChange={(o) => { setDatePopoverOpen(o); if (!o) setShowCustomCalendar(false); }}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="hidden lg:flex gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground">
-                {datePresetLabel} <ChevronDown className="h-3 w-3 opacity-60" />
+                {t(currentPresetKey)} <ChevronDown className="h-3 w-3 opacity-60" />
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-auto p-0">
               {!showCustomCalendar ? (
                 <div className="p-1.5 min-w-[180px]">
-                  {DATE_PRESETS.map(p => (
+                  {PRESET_KEYS.map(({ preset, key }) => (
                     <button
-                      key={p}
-                      onClick={() => handleDatePreset(p)}
+                      key={preset}
+                      onClick={() => handleDatePreset(preset)}
                       className={cn(
                         "w-full flex items-center justify-between gap-3 px-3 py-2 text-xs rounded-md hover:bg-accent transition-colors",
-                        datePreset === p && "bg-accent font-medium"
+                        datePreset === preset && "bg-accent font-medium"
                       )}
                     >
-                      {presetLabel[p]}
-                      {datePreset === p && p !== "custom" && <Check className="h-3.5 w-3.5 text-primary" />}
+                      {t(key)}
+                      {datePreset === preset && preset !== "custom" && <Check className="h-3.5 w-3.5 text-primary" />}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="p-3 space-y-3">
-                  <p className="text-xs font-medium text-muted-foreground px-1">Select date range</p>
+                  <p className="text-xs font-medium text-muted-foreground px-1">{t("topbar.selectDateRange")}</p>
                   <Calendar
                     mode="range"
                     selected={{ from: dateRange.from, to: dateRange.to }}
@@ -136,7 +147,7 @@ export function AppHeader() {
                       {format(dateRange.from, "MMM d")} — {format(dateRange.to, "MMM d, yyyy")}
                     </span>
                     <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => { setDatePopoverOpen(false); setShowCustomCalendar(false); }}>
-                      Apply
+                      {t("action.apply")}
                     </Button>
                   </div>
                 </div>
@@ -156,16 +167,16 @@ export function AppHeader() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 p-0">
               <div className="flex items-center justify-between px-4 py-3 border-b">
-                <span className="text-sm font-semibold">Notifications</span>
+                <span className="text-sm font-semibold">{t("topbar.notifications")}</span>
                 {unreadCount > 0 && (
                   <button onClick={markAllRead} className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                    <CheckCheck className="h-3 w-3" /> Mark all read
+                    <CheckCheck className="h-3 w-3" /> {t("topbar.markAllRead")}
                   </button>
                 )}
               </div>
               <div className="max-h-72 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground">No notifications</div>
+                  <div className="py-8 text-center text-sm text-muted-foreground">{t("topbar.noNotifications")}</div>
                 ) : (
                   notifications.map(n => {
                     const Icon = ICON_MAP[n.icon] || AlertTriangle;
@@ -194,7 +205,7 @@ export function AppHeader() {
               </div>
               <div className="border-t px-4 py-2.5">
                 <button onClick={() => toast.info("Notifications page coming soon")} className="text-xs text-primary hover:underline w-full text-center">
-                  View all notifications
+                  {t("topbar.viewAllNotifications")}
                 </button>
               </div>
             </PopoverContent>
@@ -216,17 +227,17 @@ export function AppHeader() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/settings")}>
-                <UserCircle className="h-4 w-4 text-muted-foreground" /> Profile
+                <UserCircle className="h-4 w-4 text-muted-foreground" /> {t("topbar.profile")}
               </DropdownMenuItem>
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/settings")}>
-                <Settings2 className="h-4 w-4 text-muted-foreground" /> Preferences
+                <Settings2 className="h-4 w-4 text-muted-foreground" /> {t("topbar.preferences")}
               </DropdownMenuItem>
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/subscription")}>
-                <CreditCard className="h-4 w-4 text-muted-foreground" /> Billing
+                <CreditCard className="h-4 w-4 text-muted-foreground" /> {t("topbar.billing")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer text-negative" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4" /> Sign Out
+                <LogOut className="h-4 w-4" /> {t("topbar.signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -234,7 +245,7 @@ export function AppHeader() {
           {/* Quick add */}
           <Button size="sm" className="h-9 gap-1.5 ml-1 shadow-sm" onClick={() => setQuickAddOpen(true)}>
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Add Record</span>
+            <span className="hidden sm:inline">{t("action.addRecord")}</span>
           </Button>
         </div>
       </header>
