@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = {
 
 export default function Partnerships() {
   const { currency, isPremium } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = usePartnerships();
   const createMut = useCreatePartnership();
   const updateMut = useUpdatePartnership();
