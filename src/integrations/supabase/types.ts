@@ -190,7 +190,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_balance: {
+        Args: { account_uuid: string; amount_val: number }
+        Returns: undefined
+      }
+      increment_usage: { Args: { cat_uuid: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
