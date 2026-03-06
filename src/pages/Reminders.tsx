@@ -157,9 +157,9 @@ export default function Reminders() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<Bell className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label="Active Reminders" value={String(activeCount)} />
+        <FinanceCard icon={<Bell className="h-5 w-5 text-feature-reminders" />} iconBg="bg-feature-reminders/10" label="Active Reminders" value={String(activeCount)} />
         <FinanceCard icon={<CalendarClock className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label="Due Today" value={String(dueTodayCount)} />
-        <FinanceCard icon={<Clock className="h-5 w-5 text-accent-foreground" />} iconBg="bg-accent" label="Upcoming This Week" value={String(upcomingWeekCount)} />
+        <FinanceCard icon={<Clock className="h-5 w-5 text-feature-reminders" />} iconBg="bg-feature-reminders/10" label="Upcoming This Week" value={String(upcomingWeekCount)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label="Overdue" value={String(overdueCount)} />
       </div>
 

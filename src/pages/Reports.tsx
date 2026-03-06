@@ -172,10 +172,10 @@ export default function Reports() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label="Net Worth" value={fmt(netWorth)} iconBg="bg-primary/10" />
-        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} label="Total Income" value={fmt(totalIncome)} iconBg="bg-positive/10" />
-        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label="Total Expense" value={fmt(totalExpense)} iconBg="bg-negative/10" />
-        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-primary" />} label="Savings" value={fmt(savings)} iconBg="bg-accent" />
-        <FinanceCard icon={<Gauge className="h-5 w-5 text-warning" />} label="Budget Util." value={`${budgetUtil}%`} iconBg="bg-warning/10" />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-feature-income" />} label="Total Income" value={fmt(totalIncome)} iconBg="bg-feature-income/10" />
+        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} label="Total Expense" value={fmt(totalExpense)} iconBg="bg-feature-expense/10" />
+        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label="Savings" value={fmt(savings)} iconBg="bg-feature-savings/10" />
+        <FinanceCard icon={<Gauge className="h-5 w-5 text-feature-budget" />} label="Budget Util." value={`${budgetUtil}%`} iconBg="bg-feature-budget/10" />
       </div>
 
       {/* Filter bar */}

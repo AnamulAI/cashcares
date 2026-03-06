@@ -264,7 +264,7 @@ export default function Settings() {
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" onClick={exportAllData}>
-                <Download className="h-5 w-5 text-primary" />
+                <Download className="h-5 w-5 text-feature-reports" />
                 <span className="font-medium">{t("settings.exportAllData")}</span>
                 <span className="text-[10px] text-muted-foreground">{t("settings.exportAllDataDesc")}</span>
               </Button>

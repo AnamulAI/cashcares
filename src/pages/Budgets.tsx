@@ -257,7 +257,7 @@ export default function Budgets() {
         <div className="space-y-4">
           <Card className="finance-card-static">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2"><Gauge className="h-4 w-4 text-primary" /> {t("budgets.budgetSummary")}</CardTitle>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2"><Gauge className="h-4 w-4 text-feature-budget" /> {t("budgets.budgetSummary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">

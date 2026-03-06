@@ -171,7 +171,7 @@ export default function Subscription() {
 
       <Card className="finance-card-static">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" /> {t("subscription.billingFaq")}</CardTitle>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><HelpCircle className="h-4 w-4 text-feature-subscription" /> {t("subscription.billingFaq")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           {faqs.map((faq, i) => (
