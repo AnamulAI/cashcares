@@ -57,8 +57,10 @@ export default function Reports() {
   const { data: accounts = [] } = useAccounts();
   const { data: categoriesRaw = [] } = useCategories();
   const { data: budgetsRaw = [] } = useBudgets();
-  const { data: receivablesRaw = [] } = useReceivables();
-  const { data: payablesRaw = [] } = usePayables();
+  const { data: receivableEntries = [] } = useAllReceivableEntries();
+  const { data: payableEntries = [] } = useAllPayableEntries();
+  const { data: payableBooks = [] } = usePayableBooks();
+  const { data: receivableBooks = [] } = useReceivableBooks();
   const { data: loansRaw = [] } = useLoans();
   const { data: assetsRaw = [] } = useAssets();
   const { data: investmentsRaw = [] } = useInvestments();
