@@ -29,6 +29,9 @@ export default function Settings() {
   const { data: categories = [] } = useCategories();
   const [importOpen, setImportOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const qc = useQueryClient();
 
   const toggleNotif = (key: keyof typeof settings.notifications) => {
     updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
