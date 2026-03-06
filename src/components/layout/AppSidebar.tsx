@@ -37,6 +37,7 @@ const navGroups = [
       { titleKey: "nav.receivables", url: "/receivables", icon: HandCoins, active: true },
       { titleKey: "nav.payables", url: "/payables", icon: CreditCard, active: true },
       { titleKey: "nav.debtLoans", url: "/debt-loans", icon: Scale, active: true },
+      { titleKey: "nav.partnerships", url: "/partnerships", icon: Users, active: true },
     ],
   },
   {
