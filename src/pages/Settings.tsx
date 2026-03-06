@@ -270,7 +270,7 @@ export default function Settings() {
         description="This will remove all demo/sample records from every module. Your manually added data will not be affected."
         confirmLabel="Clear Demo Data"
         onConfirm={handleClearDemo}
-        variant="destructive"
+        destructive
       />
     </div>
   );
