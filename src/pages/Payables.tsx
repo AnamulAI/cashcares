@@ -92,7 +92,7 @@ export default function Payables() {
     return (
       <div className="space-y-6">
         <PageHeader title={t("payables.title")} subtitle={t("payables.subtitle")} />
-        <PremiumLocked icon={<CreditCard className="h-7 w-7 text-warning" />} moduleName={t("payables.title")} description={t("premium.upgradeDesc.payables")} />
+        <PremiumLocked icon={<CreditCard className="h-7 w-7 text-feature-payables" />} moduleName={t("payables.title")} description={t("premium.upgradeDesc.payables")} />
       </div>
     );
   }
