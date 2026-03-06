@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = { open: "bg-primary/10 text-primary
 
 export default function Payables() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = usePayables();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreatePayable();
