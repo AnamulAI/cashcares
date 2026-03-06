@@ -134,6 +134,7 @@ export interface AppSettings {
   language: string;
   dateFormat: string;
   timezone: string;
+  defaultDashboardRange: DatePreset;
   theme: "light" | "dark" | "system";
   notifications: {
     email: boolean;
