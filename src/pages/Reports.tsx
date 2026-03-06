@@ -334,10 +334,22 @@ export default function Reports() {
           <DataSummaryTab icon={PiggyBank} title={t("reports.savingsReport")} noDataText={noData} items={accounts.filter(a => a.type === "savings").map(a => ({ label: a.name, value: fmt(Number(a.balance)), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="receivables" className="mt-4">
-          <DataSummaryTab icon={HandCoins} title={t("reports.receivablesReport")} noDataText={noData} items={receivablesRaw.filter((r: any) => r.status !== "collected").map((r: any) => ({ label: r.person_name, value: fmt(Number(r.total_amount) - Number(r.received_amount)), color: r.status === "overdue" ? "text-negative" : "" }))} />
+          <DataSummaryTab icon={HandCoins} title={t("reports.receivablesReport")} noDataText={noData} items={
+            receivableBooks.filter((b: any) => b.status === "active").map((b: any) => {
+              const bookEntries = receivableEntries.filter((e: any) => e.book_id === b.id && e.status !== "collected");
+              const remaining = bookEntries.reduce((s: number, e: any) => s + (Number(e.amount) - Number(e.collected_amount)), 0);
+              return { label: b.person_name, value: fmt(remaining), color: remaining > 0 ? "" : "text-positive" };
+            }).filter((i: any) => parseFloat(i.value.replace(/[^0-9.-]/g, "")) !== 0)
+          } />
         </TabsContent>
         <TabsContent value="payables" className="mt-4">
-          <DataSummaryTab icon={CreditCard} title={t("reports.payablesReport")} noDataText={noData} items={payablesRaw.filter((p: any) => p.status !== "paid").map((p: any) => ({ label: p.person_name, value: fmt(Number(p.total_amount) - Number(p.paid_amount)), color: p.status === "overdue" ? "text-negative" : "" }))} />
+          <DataSummaryTab icon={CreditCard} title={t("reports.payablesReport")} noDataText={noData} items={
+            payableBooks.filter((b: any) => b.status === "active").map((b: any) => {
+              const bookEntries = payableEntries.filter((e: any) => e.book_id === b.id && e.status !== "paid");
+              const remaining = bookEntries.reduce((s: number, e: any) => s + (Number(e.amount) - Number(e.paid_amount)), 0);
+              return { label: b.person_name, value: fmt(remaining), color: remaining > 0 ? "text-negative" : "" };
+            }).filter((i: any) => parseFloat(i.value.replace(/[^0-9.-]/g, "")) !== 0)
+          } />
         </TabsContent>
         <TabsContent value="debt" className="mt-4">
           <DataSummaryTab icon={Scale} title={t("reports.debtReport")} noDataText={noData} items={loansRaw.filter((l: any) => l.status !== "paid_off").map((l: any) => ({ label: l.lender_name, value: fmt(Number(l.principal_amount) - Number(l.paid_amount)), color: "text-negative" }))} />
