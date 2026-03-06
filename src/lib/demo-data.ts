@@ -142,11 +142,25 @@ const reminders = [
   { id: "d000000c-0001-4000-8000-000000000006", title: "Follow up Kamal — partial payment", reminder_type: "receivable", priority: "medium", status: "upcoming", due_date: "2026-03-10", related_module: "receivables", related_entity_id: "d0000005-0001-4000-8000-000000000002", note: "৳5,000 remaining from trip split" },
 ];
 
-// All demo IDs start with "d000000" so we can identify them
-const DEMO_PREFIX = "d000000";
+// Collect all demo IDs per table for safe identification (no LIKE on UUID)
+const DEMO_TABLE_DATA: { table: string; data: { id: string }[] }[] = [
+  { table: "partnership_entries", data: partnershipEntries },
+  { table: "reminders", data: reminders },
+  { table: "investments", data: investments },
+  { table: "assets", data: assets },
+  { table: "loans", data: loans },
+  { table: "payables", data: payables },
+  { table: "receivables", data: receivables },
+  { table: "budgets", data: budgets },
+  { table: "transactions", data: transactions },
+  { table: "partnerships", data: partnerships },
+  { table: "categories", data: categories },
+  { table: "accounts", data: accounts },
+];
 
 export async function isDemoDataLoaded(): Promise<boolean> {
-  const { count } = await supabase.from("accounts").select("id", { count: "exact", head: true }).like("id", `${DEMO_PREFIX}%`);
+  const demoAccountIds = accounts.map(a => a.id);
+  const { count } = await supabase.from("accounts").select("id", { count: "exact", head: true }).in("id", demoAccountIds);
   return (count ?? 0) > 0;
 }
 
@@ -191,13 +205,13 @@ export async function loadDemoData(): Promise<{ total: number }> {
 
 export async function clearDemoData(): Promise<{ total: number }> {
   let total = 0;
-  // Delete in reverse dependency order
-  const tables = ["partnership_entries", "reminders", "investments", "assets", "loans", "payables", "receivables", "budgets", "transactions", "categories", "partnerships", "accounts"];
-
-  for (const table of tables) {
-    const { data, error } = await supabase.from(table as any).delete().like("id", `${DEMO_PREFIX}%`).select("id");
+  // Delete in reverse dependency order using exact ID lists (no LIKE on UUID)
+  for (const { table, data } of DEMO_TABLE_DATA) {
+    const ids = data.map(d => d.id);
+    if (ids.length === 0) continue;
+    const { data: deleted, error } = await supabase.from(table as any).delete().in("id", ids).select("id");
     if (error) throw new Error(`Failed to clear ${table}: ${error.message}`);
-    total += data?.length ?? 0;
+    total += deleted?.length ?? 0;
   }
 
   // Reset client-side demo state
