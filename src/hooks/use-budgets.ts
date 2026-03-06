@@ -36,7 +36,7 @@ export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (budget: BudgetInsert) => {
-      const { data, error } = await supabase.from("budgets" as any).insert(budget).select().single();
+      const { data, error } = await (supabase as any).from("budgets").insert(budget).select().single();
       if (error) throw error;
       return data;
     },
