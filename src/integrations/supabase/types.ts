@@ -431,6 +431,111 @@ export type Database = {
         }
         Relationships: []
       }
+      payable_books: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          opening_balance: number
+          person_name: string
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          opening_balance?: number
+          person_name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          opening_balance?: number
+          person_name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payable_entries: {
+        Row: {
+          amount: number
+          book_id: string
+          category: string | null
+          created_at: string
+          date: string
+          description: string | null
+          due_date: string | null
+          id: string
+          linked_account_id: string | null
+          note: string | null
+          paid_amount: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          book_id: string
+          category?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          paid_amount?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          book_id?: string
+          category?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          paid_amount?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payable_entries_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "payable_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payable_entries_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payables: {
         Row: {
           created_at: string
@@ -537,6 +642,111 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      receivable_books: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          opening_balance: number
+          person_name: string
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          opening_balance?: number
+          person_name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          opening_balance?: number
+          person_name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      receivable_entries: {
+        Row: {
+          amount: number
+          book_id: string
+          category: string | null
+          collected_amount: number
+          created_at: string
+          date: string
+          description: string | null
+          due_date: string | null
+          id: string
+          linked_account_id: string | null
+          note: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          book_id: string
+          category?: string | null
+          collected_amount?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          book_id?: string
+          category?: string | null
+          collected_amount?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivable_entries_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "receivable_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivable_entries_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       receivables: {
         Row: {
