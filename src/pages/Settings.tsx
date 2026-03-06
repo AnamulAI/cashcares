@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon } from "lucide-react";
+import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2 } from "lucide-react";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -15,6 +15,9 @@ import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { ImportDataModal } from "@/components/settings/ImportDataModal";
 import { BackupRestoreModal } from "@/components/settings/BackupRestoreModal";
+import { loadDemoData, clearDemoData, isDemoDataLoaded } from "@/lib/demo-data";
+import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -26,6 +29,9 @@ export default function Settings() {
   const { data: categories = [] } = useCategories();
   const [importOpen, setImportOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const qc = useQueryClient();
 
   const toggleNotif = (key: keyof typeof settings.notifications) => {
     updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
@@ -46,6 +52,38 @@ export default function Settings() {
   const handleTimezoneChange = (v: string) => { updateSettings({ timezone: v }); toast.success(t("action.save") + " ✓"); };
   const handleDefaultRangeChange = (v: string) => { updateSettings({ defaultDashboardRange: v as DatePreset }); toast.success(t("action.save") + " ✓"); };
   const handleThemeChange = (v: "light" | "dark" | "system") => { updateSettings({ theme: v }); toast.success(t("action.save") + " ✓"); };
+
+  const handleLoadDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const already = await isDemoDataLoaded();
+      if (already) {
+        toast.info("Demo data is already loaded");
+        return;
+      }
+      const { total } = await loadDemoData();
+      qc.invalidateQueries();
+      toast.success(`Demo data loaded — ${total} records added`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load demo data");
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
+  const handleClearDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const { total } = await clearDemoData();
+      qc.invalidateQueries();
+      toast.success(`Cleared ${total} demo records`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to clear demo data");
+    } finally {
+      setDemoLoading(false);
+      setClearConfirm(false);
+    }
+  };
 
   const exportAllData = () => {
     const data = { exportedAt: new Date().toISOString(), accounts, categories, transactions };
@@ -197,10 +235,43 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Demo Data — Dev/Testing */}
+        <Card className="finance-card-static lg:col-span-2 border-dashed border-muted-foreground/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-muted-foreground" /> Demo / Test Data
+              <Badge variant="secondary" className="text-[9px] ml-1">DEV</Badge>
+            </CardTitle>
+            <CardDescription className="text-xs">Load realistic sample data across all modules for testing and review.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleLoadDemo} disabled={demoLoading}>
+                <FlaskConical className="h-3.5 w-3.5" />
+                {demoLoading ? "Loading..." : "Load Demo Data"}
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => setClearConfirm(true)} disabled={demoLoading}>
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear Demo Data
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">Seeds accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, and reminders.</p>
+          </CardContent>
+        </Card>
       </div>
 
       <ImportDataModal open={importOpen} onOpenChange={setImportOpen} />
       <BackupRestoreModal open={backupOpen} onOpenChange={setBackupOpen} />
+      <ConfirmDialog
+        open={clearConfirm}
+        onOpenChange={setClearConfirm}
+        title="Clear Demo Data"
+        description="This will remove all demo/sample records from every module. Your manually added data will not be affected."
+        confirmLabel="Clear Demo Data"
+        onConfirm={handleClearDemo}
+        destructive
+      />
     </div>
   );
 }
