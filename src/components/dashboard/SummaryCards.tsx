@@ -14,6 +14,7 @@ export function SummaryCards() {
         value={formatCurrency(s.totalBalance)}
         trend="+3.2% from last month"
         trendType="positive"
+        prominent
       />
       <StatCard
         icon={<Globe className="h-5 w-5 text-primary" />}
@@ -22,6 +23,7 @@ export function SummaryCards() {
         value={formatCurrency(s.netWorth)}
         trend="+5.1% growth"
         trendType="positive"
+        prominent
       />
       <StatCard
         icon={<TrendingUp className="h-5 w-5 text-positive" />}

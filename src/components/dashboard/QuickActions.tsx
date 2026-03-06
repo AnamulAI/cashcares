@@ -1,30 +1,35 @@
-import { Plus, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, PieChart, HandCoins, CreditCard } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, PieChart, HandCoins, CreditCard } from "lucide-react";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { cn } from "@/lib/utils";
+
+const actions = [
+  { icon: ArrowDownLeft, label: "Add Income", color: "text-positive", bg: "bg-positive/8 hover:bg-positive/12" },
+  { icon: ArrowUpRight, label: "Add Expense", color: "text-negative", bg: "bg-negative/8 hover:bg-negative/12" },
+  { icon: ArrowLeftRight, label: "Transfer", color: "text-primary", bg: "bg-primary/8 hover:bg-primary/12" },
+  { icon: PieChart, label: "Add Budget", color: "text-warning", bg: "bg-warning/8 hover:bg-warning/12" },
+  { icon: HandCoins, label: "Receivable", color: "text-primary", bg: "bg-primary/8 hover:bg-primary/12" },
+  { icon: CreditCard, label: "Payable", color: "text-warning", bg: "bg-warning/8 hover:bg-warning/12" },
+];
 
 export function QuickActions() {
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="finance-card-static p-5">
       <SectionHeader title="Quick Actions" />
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant="outline" size="sm" className="justify-start gap-2 h-10">
-          <ArrowDownLeft className="h-4 w-4 text-positive" /> Add Income
-        </Button>
-        <Button variant="outline" size="sm" className="justify-start gap-2 h-10">
-          <ArrowUpRight className="h-4 w-4 text-negative" /> Add Expense
-        </Button>
-        <Button variant="outline" size="sm" className="justify-start gap-2 h-10">
-          <ArrowLeftRight className="h-4 w-4 text-primary" /> Transfer
-        </Button>
-        <Button variant="outline" size="sm" className="justify-start gap-2 h-10">
-          <PieChart className="h-4 w-4 text-warning" /> Add Budget
-        </Button>
-        <Button variant="outline" size="sm" className="justify-start gap-2 h-10">
-          <HandCoins className="h-4 w-4 text-primary" /> Receivable
-        </Button>
-        <Button variant="outline" size="sm" className="justify-start gap-2 h-10">
-          <CreditCard className="h-4 w-4 text-warning" /> Payable
-        </Button>
+      <div className="mt-4 grid grid-cols-2 gap-2.5">
+        {actions.map((action) => (
+          <button
+            key={action.label}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 text-left cursor-pointer",
+              action.bg,
+            )}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card shadow-sm border">
+              <action.icon className={cn("h-4 w-4", action.color)} />
+            </div>
+            <span className="text-foreground/80">{action.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

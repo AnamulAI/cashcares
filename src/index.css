@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 240 20% 98%;
+    --background: 240 20% 97.5%;
     --foreground: 240 10% 10%;
 
     --card: 0 0% 100%;
@@ -16,10 +16,10 @@
     --primary: 245 58% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 20% 95%;
+    --secondary: 240 18% 95%;
     --secondary-foreground: 240 10% 20%;
 
-    --muted: 240 15% 94%;
+    --muted: 240 14% 93%;
     --muted-foreground: 240 5% 46%;
 
     --accent: 245 40% 96%;
@@ -28,14 +28,14 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 12% 91%;
-    --input: 240 12% 91%;
+    --border: 240 10% 90%;
+    --input: 240 10% 90%;
     --ring: 245 58% 51%;
 
     --radius: 0.75rem;
 
     /* Finance-specific tokens */
-    --positive: 152 69% 40%;
+    --positive: 152 69% 36%;
     --positive-foreground: 0 0% 100%;
     --negative: 0 65% 55%;
     --negative-foreground: 0 0% 100%;
@@ -43,13 +43,18 @@
     --warning-foreground: 0 0% 100%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 5% 26%;
+    --sidebar-foreground: 240 5% 34%;
     --sidebar-primary: 245 58% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 245 40% 96%;
-    --sidebar-accent-foreground: 245 58% 51%;
-    --sidebar-border: 240 12% 91%;
+    --sidebar-accent: 245 45% 96%;
+    --sidebar-accent-foreground: 245 58% 46%;
+    --sidebar-border: 240 10% 92%;
     --sidebar-ring: 245 58% 51%;
+
+    /* Premium shadow tokens */
+    --shadow-card: 0 1px 3px 0 hsl(240 10% 10% / 0.04), 0 1px 2px -1px hsl(240 10% 10% / 0.03);
+    --shadow-card-hover: 0 4px 12px 0 hsl(240 10% 10% / 0.06), 0 1px 3px -1px hsl(240 10% 10% / 0.04);
+    --shadow-elevated: 0 8px 24px 0 hsl(240 10% 10% / 0.08), 0 2px 6px -1px hsl(240 10% 10% / 0.04);
   }
 
   .dark {
@@ -96,6 +101,10 @@
     --sidebar-accent-foreground: 245 58% 70%;
     --sidebar-border: 240 10% 16%;
     --sidebar-ring: 245 58% 60%;
+
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2);
+    --shadow-card-hover: 0 4px 12px 0 hsl(0 0% 0% / 0.3);
+    --shadow-elevated: 0 8px 24px 0 hsl(0 0% 0% / 0.4);
   }
 }
 
@@ -110,5 +119,20 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: "Inter", "Hind Siliguri", system-ui, sans-serif;
     font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .finance-card {
+    @apply rounded-xl border bg-card transition-shadow duration-200;
+    box-shadow: var(--shadow-card);
+  }
+  .finance-card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  .finance-card-static {
+    @apply rounded-xl border bg-card;
+    box-shadow: var(--shadow-card);
   }
 }
