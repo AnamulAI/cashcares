@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +8,44 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { ArrowDownLeft, Paperclip } from "lucide-react";
-import { mockAccounts, mockCategories } from "@/data/mock-data";
+import { useAccounts } from "@/hooks/use-accounts";
+import { useCategories } from "@/hooks/use-categories";
+import { useCreateTransaction } from "@/hooks/use-transactions";
 
 interface AddIncomeModalProps { open: boolean; onOpenChange: (open: boolean) => void; }
 
 export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
-  const categories = mockCategories.filter(c => c.group === "income");
+  const { data: accounts = [] } = useAccounts();
+  const { data: categories = [] } = useCategories();
+  const createTxn = useCreateTransaction();
+
+  const incomeCategories = categories.filter(c => c.group === "income");
+
+  const [categoryId, setCategoryId] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [note, setNote] = useState("");
+  const [tags, setTags] = useState("");
+
+  const handleSubmit = async () => {
+    if (!accountId || !amount) return;
+    await createTxn.mutateAsync({
+      type: "income",
+      category_id: categoryId || null,
+      account_id: accountId,
+      to_account_id: null,
+      amount: Number(amount),
+      date,
+      note: note || null,
+      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : null,
+      status: "completed",
+      transfer_fee: 0,
+    });
+    setCategoryId(""); setAccountId(""); setAmount(""); setNote(""); setTags("");
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
@@ -30,46 +63,30 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
         <div className="space-y-4 mt-1">
           <div className="grid grid-cols-2 gap-4">
             <FieldGroup label="Category">
-              <Select><SelectTrigger className="h-9"><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              <Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger className="h-9"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent>{incomeCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </FieldGroup>
             <FieldGroup label="Account">
-              <Select><SelectTrigger className="h-9"><SelectValue placeholder="Select account" /></SelectTrigger>
-                <SelectContent>{mockAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+              <Select value={accountId} onValueChange={setAccountId}><SelectTrigger className="h-9"><SelectValue placeholder="Select account" /></SelectTrigger>
+                <SelectContent>{accounts.filter(a => a.is_active).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
               </Select>
             </FieldGroup>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <FieldGroup label="Amount">
-              <Input type="number" placeholder="0.00" className="h-9" />
-            </FieldGroup>
-            <FieldGroup label="Date">
-              <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="h-9" />
-            </FieldGroup>
+            <FieldGroup label="Amount"><Input type="number" placeholder="0.00" className="h-9" value={amount} onChange={e => setAmount(e.target.value)} /></FieldGroup>
+            <FieldGroup label="Date"><Input type="date" className="h-9" value={date} onChange={e => setDate(e.target.value)} /></FieldGroup>
           </div>
-          <FieldGroup label="Note">
-            <Textarea placeholder="Add a note..." rows={2} className="resize-none" />
-          </FieldGroup>
-          <FieldGroup label="Tags">
-            <Input placeholder="e.g. march, bonus" className="h-9" />
-          </FieldGroup>
+          <FieldGroup label="Note"><Textarea placeholder="Add a note..." rows={2} className="resize-none" value={note} onChange={e => setNote(e.target.value)} /></FieldGroup>
+          <FieldGroup label="Tags"><Input placeholder="e.g. march, bonus" className="h-9" value={tags} onChange={e => setTags(e.target.value)} /></FieldGroup>
           <Separator />
           <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm">Recurring</Label>
-              <p className="text-[11px] text-muted-foreground">Repeat this income automatically</p>
-            </div>
+            <div><Label className="text-sm">Recurring</Label><p className="text-[11px] text-muted-foreground">Repeat automatically</p></div>
             <Switch />
           </div>
-          <div>
-            <Label className="text-sm mb-2 block">Attachment</Label>
-            <div className="rounded-lg border-2 border-dashed border-border/60 p-4 text-center hover:border-primary/30 hover:bg-accent/30 transition-colors cursor-pointer">
-              <Paperclip className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
-              <p className="text-xs text-muted-foreground">Drop file here or click to upload</p>
-            </div>
-          </div>
-          <Button className="w-full h-10 font-medium">Add Income</Button>
+          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={createTxn.isPending || !accountId || !amount}>
+            {createTxn.isPending ? "Saving..." : "Add Income"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -77,10 +94,5 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
 }
 
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-[13px] font-medium">{label}</Label>
-      {children}
-    </div>
-  );
+  return <div className="space-y-1.5"><Label className="text-[13px] font-medium">{label}</Label>{children}</div>;
 }

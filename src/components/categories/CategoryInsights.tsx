@@ -1,11 +1,15 @@
 import { Layers, TrendingUp, EyeOff, Target } from "lucide-react";
-import { mockCategories } from "@/data/mock-data";
+import type { DbCategory } from "@/hooks/use-categories";
 
-export function CategoryInsights() {
-  const total = mockCategories.length;
-  const inactive = mockCategories.filter(c => !c.isActive).length;
-  const budgetEnabled = mockCategories.filter(c => c.usableInBudgets).length;
-  const mostUsed = [...mockCategories].sort((a, b) => b.usageCount - a.usageCount)[0];
+interface CategoryInsightsProps {
+  categories: DbCategory[];
+}
+
+export function CategoryInsights({ categories }: CategoryInsightsProps) {
+  const total = categories.length;
+  const inactive = categories.filter(c => !c.is_active).length;
+  const budgetEnabled = categories.filter(c => c.usable_in_budgets).length;
+  const mostUsed = [...categories].sort((a, b) => b.usage_count - a.usage_count)[0];
 
   const items = [
     { icon: Layers, label: "Total Categories", value: String(total), color: "text-primary bg-primary/10" },

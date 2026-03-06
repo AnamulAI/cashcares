@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockCategories } from "@/data/mock-data";
-import type { CategoryGroup } from "@/types/finance";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCategories, type DbCategory } from "@/hooks/use-categories";
 
 const groupTabs: { value: string; label: string }[] = [
   { value: "all", label: "All" },
@@ -28,12 +28,20 @@ const groupTabs: { value: string; label: string }[] = [
 
 export default function Categories() {
   const [addOpen, setAddOpen] = useState(false);
+  const [editCategory, setEditCategory] = useState<DbCategory | null>(null);
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
 
-  const filtered = mockCategories
+  const { data: categories = [], isLoading } = useCategories();
+
+  const filtered = categories
     .filter(c => tab === "all" || c.group === tab)
     .filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()));
+
+  const handleEdit = (cat: DbCategory) => {
+    setEditCategory(cat);
+    setAddOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -41,13 +49,13 @@ export default function Categories() {
         title="Categories"
         subtitle="Organize and control your financial classification system"
         actions={
-          <Button size="sm" className="gap-1.5 h-9" onClick={() => setAddOpen(true)}>
+          <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditCategory(null); setAddOpen(true); }}>
             <Plus className="h-4 w-4" /> Add Category
           </Button>
         }
       />
 
-      <CategoryInsights />
+      <CategoryInsights categories={categories} />
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -75,20 +83,22 @@ export default function Categories() {
         </div>
 
         <TabsContent value={tab} className="mt-4">
-          {filtered.length > 0 ? (
-            <CategoryList categories={filtered} />
+          {isLoading ? (
+            <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+          ) : filtered.length > 0 ? (
+            <CategoryList categories={filtered} onEdit={handleEdit} />
           ) : (
             <EmptyState
               title="No categories found"
               description="Create custom categories to organize your transactions."
               icon={<FolderOpen className="h-7 w-7 text-muted-foreground" />}
-              action={<Button size="sm" onClick={() => setAddOpen(true)}>Add Category</Button>}
+              action={<Button size="sm" onClick={() => { setEditCategory(null); setAddOpen(true); }}>Add Category</Button>}
             />
           )}
         </TabsContent>
       </Tabs>
 
-      <AddCategoryModal open={addOpen} onOpenChange={setAddOpen} />
+      <AddCategoryModal open={addOpen} onOpenChange={setAddOpen} editCategory={editCategory} />
     </div>
   );
 }

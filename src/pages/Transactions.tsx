@@ -10,8 +10,8 @@ import { TransferModal } from "@/components/transactions/TransferModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { mockTransactions } from "@/data/mock-data";
-import type { Transaction } from "@/types/finance";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTransactions } from "@/hooks/use-transactions";
 
 export default function Transactions() {
   const [incomeOpen, setIncomeOpen] = useState(false);
@@ -19,13 +19,15 @@ export default function Transactions() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
+  const [selectedTxn, setSelectedTxn] = useState<any>(null);
+
+  const { data: transactions = [], isLoading } = useTransactions();
 
   const filtered = activeTab === "all"
-    ? mockTransactions
-    : mockTransactions.filter(t => t.type === activeTab || (activeTab === "transfers" && t.type === "transfer"));
+    ? transactions
+    : transactions.filter((t: any) => t.type === activeTab || (activeTab === "transfers" && t.type === "transfer"));
 
-  const handleViewDetails = (txn: Transaction) => {
+  const handleViewDetails = (txn: any) => {
     setSelectedTxn(txn);
     setDetailsOpen(true);
   };
@@ -66,16 +68,16 @@ export default function Transactions() {
           <TabsTrigger value="drafts" disabled className="text-xs px-4 py-1.5 rounded-lg opacity-40">Drafts</TabsTrigger>
         </TabsList>
         <TabsContent value={activeTab} className="mt-4">
-          {filtered.length > 0 ? (
+          {isLoading ? (
+            <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+          ) : filtered.length > 0 ? (
             <TransactionTable transactions={filtered} onViewDetails={handleViewDetails} />
           ) : (
             <EmptyState
               title="No transactions found"
               description="Try adjusting your filters or add a new transaction to get started."
               icon={<FileText className="h-7 w-7 text-muted-foreground" />}
-              action={
-                <Button size="sm" onClick={() => setIncomeOpen(true)}>Add Transaction</Button>
-              }
+              action={<Button size="sm" onClick={() => setIncomeOpen(true)}>Add Transaction</Button>}
             />
           )}
         </TabsContent>
