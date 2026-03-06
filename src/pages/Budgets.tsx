@@ -120,6 +120,26 @@ export default function Budgets() {
 
   const resetFilters = () => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); };
 
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(b => b.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await supabase.from("budgets").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
+  };
+
   const riskyBudgets = [...budgets].sort((a, b) => {
     const pctA = Number(a.allocated_amount) > 0 ? a.spent / Number(a.allocated_amount) : 0;
     const pctB = Number(b.allocated_amount) > 0 ? b.spent / Number(b.allocated_amount) : 0;
