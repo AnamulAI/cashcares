@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -67,13 +67,11 @@ export function TransactionDetails({ transaction, open, onOpenChange }: Transact
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md overflow-y-auto">
-        <SheetHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="font-display text-lg">{t("transactions.details")}</SheetTitle>
-          </div>
-        </SheetHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="font-display text-lg">{t("transactions.details")}</DialogTitle>
+        </DialogHeader>
 
         <div className="rounded-xl bg-accent/60 p-5 text-center">
           <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center mx-auto mb-3", typeColors[transaction.type] || "")}>
@@ -157,8 +155,8 @@ export function TransactionDetails({ transaction, open, onOpenChange }: Transact
             <p>{t("transactions.createdAt")}: {fmtDate(transaction.created_at)}</p>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
