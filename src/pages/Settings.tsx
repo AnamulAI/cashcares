@@ -63,7 +63,8 @@ export default function Settings() {
       }
       const { total } = await loadDemoData();
       qc.invalidateQueries();
-      toast.success(`Demo data loaded — ${total} records added`);
+      toast.success(`Demo data loaded — ${total} records added. Reloading...`);
+      setTimeout(() => window.location.reload(), 800);
     } catch (e: any) {
       toast.error(e.message || "Failed to load demo data");
     } finally {
