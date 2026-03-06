@@ -292,6 +292,15 @@ export default function Receivables() {
         description={t("confirm.deleteDesc")}
         onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}
       />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }
