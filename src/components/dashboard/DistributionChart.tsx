@@ -1,12 +1,17 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { distributionData } from "@/data/mock-data";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { formatCurrency } from "@/config/app";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 
 export function DistributionChart() {
+  const { currency } = useAppContext();
+  const { t } = useTranslation();
+
   return (
     <div className="finance-card-static p-6">
-      <SectionHeader title="Account Distribution" />
+      <SectionHeader title={t("dashboard.accountDistribution")} />
       <div className="mt-5 flex flex-col items-center">
         <div className="h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -34,7 +39,7 @@ export function DistributionChart() {
                   boxShadow: "0 4px 12px hsl(var(--foreground) / 0.06)",
                   padding: "8px 12px",
                 }}
-                formatter={(value: number) => [formatCurrency(value), undefined]}
+                formatter={(value: number) => [formatAmount(value, currency), undefined]}
               />
             </PieChart>
           </ResponsiveContainer>

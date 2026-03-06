@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories, type DbCategory } from "@/hooks/use-categories";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const groupTabs: { value: string; label: string }[] = [
   { value: "all", label: "All" },
@@ -31,6 +32,7 @@ export default function Categories() {
   const [editCategory, setEditCategory] = useState<DbCategory | null>(null);
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
+  const { t } = useTranslation();
 
   const { data: categories = [], isLoading } = useCategories();
 
@@ -46,11 +48,11 @@ export default function Categories() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Categories"
-        subtitle="Organize and control your financial classification system"
+        title={t("categories.title")}
+        subtitle={t("categories.subtitle")}
         actions={
           <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditCategory(null); setAddOpen(true); }}>
-            <Plus className="h-4 w-4" /> Add Category
+            <Plus className="h-4 w-4" /> {t("action.addCategory")}
           </Button>
         }
       />
@@ -69,14 +71,14 @@ export default function Categories() {
           <div className="flex items-center gap-2">
             <div className="relative w-48">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Search categories..." className="pl-8 h-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input placeholder={t("categories.searchCategories")} className="pl-8 h-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select>
-              <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
+              <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue placeholder={t("common.sortBy")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="usage">Usage</SelectItem>
-                <SelectItem value="latest">Latest</SelectItem>
+                <SelectItem value="name">{t("common.name")}</SelectItem>
+                <SelectItem value="usage">{t("common.usage")}</SelectItem>
+                <SelectItem value="latest">{t("common.latest")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -89,10 +91,10 @@ export default function Categories() {
             <CategoryList categories={filtered} onEdit={handleEdit} />
           ) : (
             <EmptyState
-              title="No categories found"
-              description="Create custom categories to organize your transactions."
+              title={t("categories.noFound")}
+              description={t("categories.addFirst")}
               icon={<FolderOpen className="h-7 w-7 text-muted-foreground" />}
-              action={<Button size="sm" onClick={() => { setEditCategory(null); setAddOpen(true); }}>Add Category</Button>}
+              action={<Button size="sm" onClick={() => { setEditCategory(null); setAddOpen(true); }}>{t("action.addCategory")}</Button>}
             />
           )}
         </TabsContent>

@@ -1,6 +1,7 @@
 import { AlertTriangle, AlertCircle, Info, CheckCircle } from "lucide-react";
 import { mockAlerts } from "@/data/mock-data";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { useTranslation } from "@/i18n/useTranslation";
 import { cn } from "@/lib/utils";
 
 const alertIcons = {
@@ -18,9 +19,11 @@ const alertStyles = {
 };
 
 export function AlertsCard() {
+  const { t } = useTranslation();
+
   return (
     <div className="finance-card-static p-5">
-      <SectionHeader title="Alerts & Reminders" />
+      <SectionHeader title={t("dashboard.alertsReminders")} />
       <div className="mt-4 space-y-2.5">
         {mockAlerts.map((alert) => {
           const Icon = alertIcons[alert.type];

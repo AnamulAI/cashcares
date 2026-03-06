@@ -6,6 +6,7 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { APP_CONFIG } from "@/config/app";
 import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -15,46 +16,46 @@ import { cn } from "@/lib/utils";
 
 const navGroups = [
   {
-    label: "Overview",
+    labelKey: "nav.overview",
     items: [
-      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, active: true },
+      { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, active: true },
     ],
   },
   {
-    label: "Money",
+    labelKey: "nav.money",
     items: [
-      { title: "Transactions", url: "/transactions", icon: ArrowLeftRight, active: true },
-      { title: "Accounts", url: "/accounts", icon: Landmark, active: true },
-      { title: "Categories", url: "/categories", icon: Tag, active: true },
-      { title: "Budgets", url: "/budgets", icon: PieChart, active: true },
+      { titleKey: "nav.transactions", url: "/transactions", icon: ArrowLeftRight, active: true },
+      { titleKey: "nav.accounts", url: "/accounts", icon: Landmark, active: true },
+      { titleKey: "nav.categories", url: "/categories", icon: Tag, active: true },
+      { titleKey: "nav.budgets", url: "/budgets", icon: PieChart, active: true },
     ],
   },
   {
-    label: "Tracking",
+    labelKey: "nav.tracking",
     items: [
-      { title: "Receivables", url: "/receivables", icon: HandCoins, active: true },
-      { title: "Payables", url: "/payables", icon: CreditCard, active: true },
-      { title: "Debt & Loans", url: "/debt-loans", icon: Scale, active: true },
+      { titleKey: "nav.receivables", url: "/receivables", icon: HandCoins, active: true },
+      { titleKey: "nav.payables", url: "/payables", icon: CreditCard, active: true },
+      { titleKey: "nav.debtLoans", url: "/debt-loans", icon: Scale, active: true },
     ],
   },
   {
-    label: "Wealth",
+    labelKey: "nav.wealth",
     items: [
-      { title: "Assets", url: "/assets", icon: Building2, active: true },
-      { title: "Investments", url: "/investments", icon: TrendingUp, active: true },
+      { titleKey: "nav.assets", url: "/assets", icon: Building2, active: true },
+      { titleKey: "nav.investments", url: "/investments", icon: TrendingUp, active: true },
     ],
   },
   {
-    label: "Insights",
+    labelKey: "nav.insights",
     items: [
-      { title: "Reports", url: "/reports", icon: BarChart3, active: true },
+      { titleKey: "nav.reports", url: "/reports", icon: BarChart3, active: true },
     ],
   },
 ];
 
 const systemItems = [
-  { title: "Settings", url: "/settings", icon: Settings, active: true },
-  { title: "Subscription", url: "/subscription", icon: Crown, active: true },
+  { titleKey: "nav.settings", url: "/settings", icon: Settings, active: true },
+  { titleKey: "nav.subscription", url: "/subscription", icon: Crown, active: true },
 ];
 
 export function AppSidebar() {
@@ -62,6 +63,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { isModuleLocked } = useAppContext();
+  const { t } = useTranslation();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -81,9 +83,9 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 mt-1">
         {navGroups.map((group) => (
-          <SidebarGroup key={group.label} className="mb-1">
+          <SidebarGroup key={group.labelKey} className="mb-1">
             <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-medium px-3 mb-1">
-              {group.label}
+              {t(group.labelKey)}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -91,7 +93,7 @@ export function AppSidebar() {
                   const isActive = location.pathname === item.url;
                   const locked = !item.active || isModuleLocked(item.url);
                   return (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.titleKey}>
                       <SidebarMenuButton asChild>
                         {!locked ? (
                           <NavLink
@@ -104,14 +106,14 @@ export function AppSidebar() {
                             activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
                           >
                             <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} />
-                            {!collapsed && <span className="truncate">{item.title}</span>}
+                            {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
                           </NavLink>
                         ) : (
                           <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-default select-none">
                             <item.icon className="h-[18px] w-[18px] shrink-0" />
                             {!collapsed && (
                               <>
-                                <span className="truncate flex-1">{item.title}</span>
+                                <span className="truncate flex-1">{t(item.titleKey)}</span>
                                 <Lock className="h-3 w-3 opacity-50" />
                               </>
                             )}
@@ -132,7 +134,7 @@ export function AppSidebar() {
           {systemItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (
-              <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.titleKey}>
                 <SidebarMenuButton asChild>
                   {item.active ? (
                     <NavLink
@@ -145,14 +147,14 @@ export function AppSidebar() {
                       activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
                     >
                       <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} />
-                      {!collapsed && <span className="truncate">{item.title}</span>}
+                      {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
                     </NavLink>
                   ) : (
                     <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-default select-none">
                       <item.icon className="h-[18px] w-[18px] shrink-0" />
                       {!collapsed && (
                         <>
-                          <span className="truncate flex-1">{item.title}</span>
+                          <span className="truncate flex-1">{t(item.titleKey)}</span>
                           <Lock className="h-3 w-3 opacity-50" />
                         </>
                       )}

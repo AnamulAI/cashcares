@@ -11,18 +11,20 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { QuickAddModal } from "@/components/layout/QuickAddModal";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export default function Dashboard() {
   const [quickAdd, setQuickAdd] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-7">
       <PageHeader
-        title="Dashboard"
-        subtitle="Full overview of your money activity"
+        title={t("dashboard.title")}
+        subtitle={t("dashboard.subtitle")}
         actions={
           <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => setQuickAdd(true)}>
-            <Plus className="h-4 w-4" /> Add Record
+            <Plus className="h-4 w-4" /> {t("action.addRecord")}
           </Button>
         }
       />

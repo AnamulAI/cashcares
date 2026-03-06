@@ -17,6 +17,8 @@ import { useCategories } from "@/hooks/use-categories";
 import { useBudgets, useCreateBudget, useUpdateBudget, useDeleteBudget, type DbBudget } from "@/hooks/use-budgets";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 import { startOfMonth, endOfMonth, format, parseISO } from "date-fns";
 
 function getStatus(spent: number, allocated: number, threshold: number) {
@@ -38,6 +40,7 @@ const emptyForm: BudgetFormData = { category_id: "", allocated_amount: "", alert
 
 export default function Budgets() {
   const { currency } = useAppContext();
+  const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { data: budgetsRaw = [], isLoading } = useBudgets();
   const { data: transactionsRaw = [] } = useTransactions();
@@ -56,7 +59,6 @@ export default function Budgets() {
 
   const expenseCategories = categories.filter(c => c.group === "expense" && c.usable_in_budgets);
 
-  // Calculate spent per category for current month
   const spentByCategory = useMemo(() => {
     const now = new Date();
     const monthStart = startOfMonth(now);
@@ -104,7 +106,7 @@ export default function Budgets() {
   const remaining = totalBudget - totalSpent;
   const overLimit = budgets.filter(b => b.spent >= Number(b.allocated_amount)).length;
 
-  const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+  const fmt = (n: number) => formatAmount(n, currency);
 
   const resetFilters = () => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); };
 
@@ -165,56 +167,53 @@ export default function Budgets() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Budgets"
-        subtitle="Plan spending limits and track category-wise control"
-        actions={<Button size="sm" className="gap-1.5 h-9" onClick={openCreate}><Plus className="h-4 w-4" /> Create Budget</Button>}
+        title={t("budgets.title")}
+        subtitle={t("budgets.subtitle")}
+        actions={<Button size="sm" className="gap-1.5 h-9" onClick={openCreate}><Plus className="h-4 w-4" /> {t("action.createBudget")}</Button>}
       />
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <FinanceCard icon={<Target className="h-5 w-5 text-primary" />} label="Total Budget" value={fmt(totalBudget)} iconBg="bg-primary/10" />
-        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label="Total Spent" value={fmt(totalSpent)} iconBg="bg-negative/10" />
-        <FinanceCard icon={<ShieldCheck className="h-5 w-5 text-positive" />} label="Remaining" value={fmt(remaining)} iconBg="bg-positive/10" />
-        <FinanceCard icon={<PieChart className="h-5 w-5 text-primary" />} label="Active Budgets" value={String(budgets.filter(b => b.is_active).length)} iconBg="bg-accent" />
-        <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-warning" />} label="Over Limit" value={String(overLimit)} iconBg="bg-warning/10" />
+        <FinanceCard icon={<Target className="h-5 w-5 text-primary" />} label={t("budgets.totalBudget")} value={fmt(totalBudget)} iconBg="bg-primary/10" />
+        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label={t("budgets.totalSpent")} value={fmt(totalSpent)} iconBg="bg-negative/10" />
+        <FinanceCard icon={<ShieldCheck className="h-5 w-5 text-positive" />} label={t("budgets.remaining")} value={fmt(remaining)} iconBg="bg-positive/10" />
+        <FinanceCard icon={<PieChart className="h-5 w-5 text-primary" />} label={t("budgets.activeBudgets")} value={String(budgets.filter(b => b.is_active).length)} iconBg="bg-accent" />
+        <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-warning" />} label={t("budgets.overLimit")} value={String(overLimit)} iconBg="bg-warning/10" />
       </div>
 
-      {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-52">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search budgets..." className="pl-8 h-8 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder={t("budgets.searchBudgets")} className="pl-8 h-8 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder={t("table.category")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">{t("budgets.allCategories")}</SelectItem>
             {budgets.map(b => <SelectItem key={b.category_id} value={b.category_id}>{b.categoryName}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue placeholder={t("table.status")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="safe">Safe</SelectItem>
-            <SelectItem value="warning">Warning</SelectItem>
-            <SelectItem value="over_limit">Over Limit</SelectItem>
+            <SelectItem value="all">{t("budgets.allStatus")}</SelectItem>
+            <SelectItem value="safe">{t("budgets.safe")}</SelectItem>
+            <SelectItem value="warning">{t("budgets.warning")}</SelectItem>
+            <SelectItem value="over_limit">{t("budgets.overLimitStatus")}</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={resetFilters}><RotateCcw className="h-3 w-3" /> Reset</Button>
+        <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={resetFilters}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>
       </div>
 
-      {/* Main layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-3">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">Loading budgets...</div>
+            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">{t("common.loading")}</div>
           ) : filtered.length === 0 ? (
             <EmptyState
-              title="No budgets found"
-              description="Create your first budget to start controlling your spending."
+              title={t("budgets.noFound")}
+              description={t("budgets.addFirst")}
               icon={<PieChart className="h-7 w-7 text-muted-foreground" />}
-              action={<Button size="sm" onClick={openCreate}>Create Budget</Button>}
+              action={<Button size="sm" onClick={openCreate}>{t("action.createBudget")}</Button>}
             />
           ) : (
             filtered.map(b => {
@@ -231,7 +230,7 @@ export default function Budgets() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate">{b.categoryName}</p>
-                        <p className="text-xs text-muted-foreground">{fmt(b.spent)} of {fmt(alloc)}</p>
+                        <p className="text-xs text-muted-foreground">{fmt(b.spent)} {t("common.of")} {fmt(alloc)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -246,8 +245,8 @@ export default function Budgets() {
                     <div className="absolute top-0 h-2 w-0.5 bg-foreground/30 rounded-full" style={{ left: `${b.alert_threshold}%` }} />
                   </div>
                   <div className="flex justify-between mt-1.5">
-                    <span className="text-[10px] text-muted-foreground">{pct}% used</span>
-                    <span className="text-[10px] text-muted-foreground">Threshold: {b.alert_threshold}%</span>
+                    <span className="text-[10px] text-muted-foreground">{pct}% {t("budgets.used")}</span>
+                    <span className="text-[10px] text-muted-foreground">{t("budgets.threshold")}: {b.alert_threshold}%</span>
                   </div>
                 </div>
               );
@@ -255,21 +254,20 @@ export default function Budgets() {
           )}
         </div>
 
-        {/* Right sidebar */}
         <div className="space-y-4">
           <Card className="finance-card-static">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2"><Gauge className="h-4 w-4 text-primary" /> Budget Summary</CardTitle>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2"><Gauge className="h-4 w-4 text-primary" /> {t("budgets.budgetSummary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Overall Utilization</span>
+                <span className="text-muted-foreground">{t("budgets.overallUtilization")}</span>
                 <span className="font-semibold">{totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}%</span>
               </div>
               <Progress value={totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0} className="h-2" />
               <div className="border-t pt-3 mt-2">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Top Risk Categories</p>
-                {riskyBudgets.length === 0 && <p className="text-xs text-muted-foreground">No budgets yet</p>}
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t("budgets.topRiskCategories")}</p>
+                {riskyBudgets.length === 0 && <p className="text-xs text-muted-foreground">{t("budgets.noBudgetsYet")}</p>}
                 {riskyBudgets.map(b => {
                   const alloc = Number(b.allocated_amount);
                   const pct = alloc > 0 ? Math.round((b.spent / alloc) * 100) : 0;
@@ -286,7 +284,7 @@ export default function Budgets() {
 
           <Card className="finance-card-static">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">💡 Quick Tips</CardTitle>
+              <CardTitle className="text-sm font-semibold">{t("budgets.quickTips")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-xs text-muted-foreground leading-relaxed">• Set threshold alerts at 75–80% to catch overspending early.</p>
@@ -297,17 +295,16 @@ export default function Budgets() {
         </div>
       </div>
 
-      {/* Create/Edit Budget Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit Budget" : "Create Budget"}</DialogTitle>
+            <DialogTitle>{editingId ? t("budgets.editBudget") : t("action.createBudget")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs">Category</Label>
+              <Label className="text-xs">{t("budgets.category")}</Label>
               <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder={t("budgets.selectCategory")} /></SelectTrigger>
                 <SelectContent>
                   {expenseCategories.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -320,38 +317,37 @@ export default function Budgets() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Allocated Amount</Label>
+                <Label className="text-xs">{t("budgets.allocatedAmount")}</Label>
                 <Input type="number" placeholder="0" className="h-9 text-sm" value={form.allocated_amount} onChange={e => setForm(f => ({ ...f, allocated_amount: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Alert Threshold (%)</Label>
+                <Label className="text-xs">{t("budgets.alertThreshold")}</Label>
                 <Input type="number" placeholder="80" className="h-9 text-sm" value={form.alert_threshold} onChange={e => setForm(f => ({ ...f, alert_threshold: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Note</Label>
+              <Label className="text-xs">{t("table.note")}</Label>
               <Textarea placeholder="Optional note..." className="text-sm resize-none" rows={2} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>{t("action.cancel")}</Button>
             <Button size="sm" onClick={handleSave} disabled={saving || !form.category_id || !form.allocated_amount}>
-              {saving ? "Saving..." : editingId ? "Update Budget" : "Create Budget"}
+              {saving ? t("common.saving") : editingId ? t("action.update") : t("action.createBudget")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Budget</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to delete this budget? This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{t("budgets.deleteBudget")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("budgets.deleteConfirm")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("action.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

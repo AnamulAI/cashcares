@@ -2,12 +2,18 @@ import { mockBudgets } from "@/data/mock-data";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Progress } from "@/components/ui/progress";
-import { formatCurrency } from "@/config/app";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 
 export function BudgetProgress() {
+  const { currency } = useAppContext();
+  const { t } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency);
+
   return (
     <div className="finance-card-static p-5">
-      <SectionHeader title="Budget Progress" />
+      <SectionHeader title={t("dashboard.budgetProgress")} />
       <div className="mt-5 space-y-5">
         {mockBudgets.map((b) => {
           const pct = Math.round((b.spent / b.limit) * 100);
@@ -20,8 +26,8 @@ export function BudgetProgress() {
               </div>
               <Progress value={Math.min(pct, 100)} className="h-2 rounded-full" />
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1.5">
-                <span className="tabular-nums">{formatCurrency(b.spent)} spent</span>
-                <span className="tabular-nums">{formatCurrency(b.limit)} limit</span>
+                <span className="tabular-nums">{fmt(b.spent)} {t("common.spent")}</span>
+                <span className="tabular-nums">{fmt(b.limit)} {t("common.limit")}</span>
               </div>
             </div>
           );
