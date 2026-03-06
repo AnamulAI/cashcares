@@ -7,10 +7,13 @@ import { usePayables } from "@/hooks/use-payables";
 import { useLoans } from "@/hooks/use-loans";
 import { useAssets } from "@/hooks/use-assets";
 import { useInvestments } from "@/hooks/use-investments";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 
 export function SecondaryCards() {
   const { currency } = useAppContext();
-  const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+  const fmt = (n: number) => formatAmount(n, currency);
+  const { t } = useTranslation();
 
   const { data: accounts = [] } = useAccounts();
   const { data: receivables = [] } = useReceivables();
@@ -28,12 +31,12 @@ export function SecondaryCards() {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      <FinanceCard icon={<PiggyBank className="h-[18px] w-[18px] text-positive" />} iconBg="bg-positive/10" label="Savings" value={fmt(savings)} />
-      <FinanceCard icon={<HandCoins className="h-[18px] w-[18px] text-primary" />} iconBg="bg-primary/10" label="Receivables" value={fmt(totalReceivable)} />
-      <FinanceCard icon={<CreditCard className="h-[18px] w-[18px] text-warning" />} iconBg="bg-warning/10" label="Payables" value={fmt(totalPayable)} />
-      <FinanceCard icon={<Scale className="h-[18px] w-[18px] text-negative" />} iconBg="bg-negative/10" label="Debt / Loans" value={fmt(totalDebt)} />
-      <FinanceCard icon={<TrendingUp className="h-[18px] w-[18px] text-primary" />} iconBg="bg-primary/10" label="Investments" value={fmt(totalInvestments)} />
-      <FinanceCard icon={<Building2 className="h-[18px] w-[18px] text-muted-foreground" />} iconBg="bg-muted" label="Assets" value={fmt(totalAssets)} />
+      <FinanceCard icon={<PiggyBank className="h-[18px] w-[18px] text-positive" />} iconBg="bg-positive/10" label={t("dashboard.savings")} value={fmt(savings)} />
+      <FinanceCard icon={<HandCoins className="h-[18px] w-[18px] text-primary" />} iconBg="bg-primary/10" label={t("dashboard.receivables")} value={fmt(totalReceivable)} />
+      <FinanceCard icon={<CreditCard className="h-[18px] w-[18px] text-warning" />} iconBg="bg-warning/10" label={t("dashboard.payables")} value={fmt(totalPayable)} />
+      <FinanceCard icon={<Scale className="h-[18px] w-[18px] text-negative" />} iconBg="bg-negative/10" label={t("dashboard.debtLoans")} value={fmt(totalDebt)} />
+      <FinanceCard icon={<TrendingUp className="h-[18px] w-[18px] text-primary" />} iconBg="bg-primary/10" label={t("dashboard.investments")} value={fmt(totalInvestments)} />
+      <FinanceCard icon={<Building2 className="h-[18px] w-[18px] text-muted-foreground" />} iconBg="bg-muted" label={t("dashboard.assets")} value={fmt(totalAssets)} />
     </div>
   );
 }
