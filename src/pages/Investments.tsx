@@ -79,7 +79,7 @@ export default function Investments() {
     return (
       <div className="space-y-6">
         <PageHeader title={t("investments.title")} subtitle={t("investments.subtitle")} />
-        <PremiumLocked icon={<TrendingUp className="h-7 w-7 text-primary" />} moduleName={t("investments.title")} description={t("premium.upgradeDesc.investments")} />
+        <PremiumLocked icon={<TrendingUp className="h-7 w-7 text-feature-investments" />} moduleName={t("investments.title")} description={t("premium.upgradeDesc.investments")} />
       </div>
     );
   }
