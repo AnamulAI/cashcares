@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, FolderOpen } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { CategoryList } from "@/components/categories/CategoryList";
+import { CategoryInsights } from "@/components/categories/CategoryInsights";
 import { AddCategoryModal } from "@/components/categories/AddCategoryModal";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,7 +39,7 @@ export default function Categories() {
     <div className="space-y-6">
       <PageHeader
         title="Categories"
-        subtitle="Organize transactions with smart custom categories"
+        subtitle="Organize and control your financial classification system"
         actions={
           <Button size="sm" className="gap-1.5 h-9" onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4" /> Add Category
@@ -45,32 +47,44 @@ export default function Categories() {
         }
       />
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <div className="overflow-x-auto">
-          <TabsList>
-            {groupTabs.map(g => (
-              <TabsTrigger key={g.value} value={g.value}>{g.label}</TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+      <CategoryInsights />
 
-        <div className="flex items-center gap-2 mt-4">
-          <div className="relative w-full sm:w-56">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search categories..." className="pl-8 h-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <Tabs value={tab} onValueChange={setTab}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="overflow-x-auto">
+            <TabsList className="bg-muted/60 p-1 h-auto gap-1">
+              {groupTabs.map(g => (
+                <TabsTrigger key={g.value} value={g.value} className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:shadow-sm">{g.label}</TabsTrigger>
+              ))}
+            </TabsList>
           </div>
-          <Select>
-            <SelectTrigger className="w-32 h-9 text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="usage">Usage</SelectItem>
-              <SelectItem value="latest">Latest</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <div className="relative w-48">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Search categories..." className="pl-8 h-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <Select>
+              <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="usage">Usage</SelectItem>
+                <SelectItem value="latest">Latest</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <TabsContent value={tab} className="mt-4">
-          <CategoryList categories={filtered} />
+          {filtered.length > 0 ? (
+            <CategoryList categories={filtered} />
+          ) : (
+            <EmptyState
+              title="No categories found"
+              description="Create custom categories to organize your transactions."
+              icon={<FolderOpen className="h-7 w-7 text-muted-foreground" />}
+              action={<Button size="sm" onClick={() => setAddOpen(true)}>Add Category</Button>}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
