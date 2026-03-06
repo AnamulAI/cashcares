@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, DollarSign, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, HandCoins, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { ArrowLeft, Plus, DollarSign, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, HandCoins, CheckCircle2, AlertTriangle, Clock, Eye } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
