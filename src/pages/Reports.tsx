@@ -51,6 +51,7 @@ function DataSummaryTab({ icon: Icon, title, items }: { icon: React.ElementType;
 
 export default function Reports() {
   const { currency, dateRange } = useAppContext();
+  const { t, lang } = useTranslation();
   const { data: transactionsRaw = [] } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: categoriesRaw = [] } = useCategories();

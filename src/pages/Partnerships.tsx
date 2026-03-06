@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { usePartnerships, useCreatePartnership, useUpdatePartnership, useDeletePartnership, useCreatePartnershipEntry, PartnershipInsert } from "@/hooks/use-partnerships";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 
 const statusColors: Record<string, string> = {
   active: "bg-positive/10 text-positive",
