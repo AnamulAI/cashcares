@@ -23,6 +23,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          is_demo: boolean
           is_primary: boolean
           name: string
           notes: string | null
@@ -38,6 +39,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_primary?: boolean
           name: string
           notes?: string | null
@@ -53,6 +55,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_primary?: boolean
           name?: string
           notes?: string | null
@@ -70,6 +73,7 @@ export type Database = {
           created_at: string
           current_value: number
           id: string
+          is_demo: boolean
           linked_account_id: string | null
           note: string | null
           purchase_value: number
@@ -84,6 +88,7 @@ export type Database = {
           created_at?: string
           current_value?: number
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           purchase_value?: number
@@ -98,6 +103,7 @@ export type Database = {
           created_at?: string
           current_value?: number
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           purchase_value?: number
@@ -123,6 +129,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          is_demo: boolean
           note: string | null
           period_type: string
           start_date: string
@@ -136,6 +143,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           note?: string | null
           period_type?: string
           start_date?: string
@@ -149,6 +157,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           note?: string | null
           period_type?: string
           start_date?: string
@@ -174,6 +183,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          is_demo: boolean
           is_subcategory: boolean
           name: string
           parent_id: string | null
@@ -190,6 +200,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_subcategory?: boolean
           name: string
           parent_id?: string | null
@@ -206,6 +217,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_subcategory?: boolean
           name?: string
           parent_id?: string | null
@@ -232,6 +244,7 @@ export type Database = {
           invested_amount: number
           investment_name: string
           investment_type: string
+          is_demo: boolean
           linked_account_id: string | null
           note: string | null
           start_date: string | null
@@ -246,6 +259,7 @@ export type Database = {
           invested_amount?: number
           investment_name: string
           investment_type?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           start_date?: string | null
@@ -260,6 +274,7 @@ export type Database = {
           invested_amount?: number
           investment_name?: string
           investment_type?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           start_date?: string | null
@@ -284,6 +299,7 @@ export type Database = {
           id: string
           installment_amount: number | null
           interest_rate: number | null
+          is_demo: boolean
           lender_name: string
           linked_account_id: string | null
           loan_type: string
@@ -300,6 +316,7 @@ export type Database = {
           id?: string
           installment_amount?: number | null
           interest_rate?: number | null
+          is_demo?: boolean
           lender_name: string
           linked_account_id?: string | null
           loan_type?: string
@@ -316,6 +333,7 @@ export type Database = {
           id?: string
           installment_amount?: number | null
           interest_rate?: number | null
+          is_demo?: boolean
           lender_name?: string
           linked_account_id?: string | null
           loan_type?: string
@@ -345,6 +363,7 @@ export type Database = {
           description: string | null
           entry_type: string
           id: string
+          is_demo: boolean
           note: string | null
           partnership_id: string
           user_id: string
@@ -357,6 +376,7 @@ export type Database = {
           description?: string | null
           entry_type?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           partnership_id: string
           user_id?: string
@@ -369,6 +389,7 @@ export type Database = {
           description?: string | null
           entry_type?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           partnership_id?: string
           user_id?: string
@@ -387,6 +408,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_demo: boolean
           note: string | null
           partner_contribution: number
           partner_name: string
@@ -402,6 +424,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           partner_contribution?: number
           partner_name: string
@@ -417,6 +440,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           partner_contribution?: number
           partner_name?: string
@@ -437,6 +461,7 @@ export type Database = {
           description: string | null
           email: string | null
           id: string
+          is_demo: boolean
           opening_balance: number
           person_name: string
           phone: string | null
@@ -449,6 +474,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           opening_balance?: number
           person_name: string
           phone?: string | null
@@ -461,6 +487,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           opening_balance?: number
           person_name?: string
           phone?: string | null
@@ -480,6 +507,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          is_demo: boolean
           linked_account_id: string | null
           note: string | null
           paid_amount: number
@@ -496,6 +524,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           paid_amount?: number
@@ -512,6 +541,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           paid_amount?: number
@@ -541,6 +571,7 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          is_demo: boolean
           linked_account_id: string | null
           note: string | null
           paid_amount: number
@@ -555,6 +586,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           paid_amount?: number
@@ -569,6 +601,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           paid_amount?: number
@@ -649,6 +682,7 @@ export type Database = {
           description: string | null
           email: string | null
           id: string
+          is_demo: boolean
           opening_balance: number
           person_name: string
           phone: string | null
@@ -661,6 +695,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           opening_balance?: number
           person_name: string
           phone?: string | null
@@ -673,6 +708,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           opening_balance?: number
           person_name?: string
           phone?: string | null
@@ -693,6 +729,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          is_demo: boolean
           linked_account_id: string | null
           note: string | null
           status: string
@@ -709,6 +746,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           status?: string
@@ -725,6 +763,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           status?: string
@@ -753,6 +792,7 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          is_demo: boolean
           linked_account_id: string | null
           note: string | null
           person_name: string
@@ -767,6 +807,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           person_name: string
@@ -781,6 +822,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          is_demo?: boolean
           linked_account_id?: string | null
           note?: string | null
           person_name?: string
@@ -806,6 +848,7 @@ export type Database = {
           created_at: string
           due_date: string
           id: string
+          is_demo: boolean
           note: string | null
           priority: string
           related_entity_id: string | null
@@ -820,6 +863,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           priority?: string
           related_entity_id?: string | null
@@ -834,6 +878,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           priority?: string
           related_entity_id?: string | null
@@ -854,6 +899,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          is_demo: boolean
           note: string | null
           status: string
           tags: string[] | null
@@ -870,6 +916,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           status?: string
           tags?: string[] | null
@@ -886,6 +933,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          is_demo?: boolean
           note?: string | null
           status?: string
           tags?: string[] | null
