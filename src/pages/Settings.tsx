@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,8 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
+import { ImportDataModal } from "@/components/settings/ImportDataModal";
+import { BackupRestoreModal } from "@/components/settings/BackupRestoreModal";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -21,6 +24,8 @@ export default function Settings() {
   const { data: transactions = [] } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
+  const [importOpen, setImportOpen] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
 
   const toggleNotif = (key: keyof typeof settings.notifications) => {
     updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
@@ -29,10 +34,7 @@ export default function Settings() {
 
   const handleCurrencyChange = (code: string) => {
     const c = CURRENCIES.find(x => x.code === code);
-    if (c) {
-      setCurrency(c);
-      toast.success(t("action.save") + " ✓");
-    }
+    if (c) { setCurrency(c); toast.success(t("action.save") + " ✓"); }
   };
 
   const handleLanguageChange = (v: string) => {
@@ -40,33 +42,13 @@ export default function Settings() {
     toast.success(v === "bn" ? "ভাষা পরিবর্তন হয়েছে" : "Language updated");
   };
 
-  const handleDateFormatChange = (v: string) => {
-    updateSettings({ dateFormat: v });
-    toast.success(t("action.save") + " ✓");
-  };
-
-  const handleTimezoneChange = (v: string) => {
-    updateSettings({ timezone: v });
-    toast.success(t("action.save") + " ✓");
-  };
-
-  const handleDefaultRangeChange = (v: string) => {
-    updateSettings({ defaultDashboardRange: v as DatePreset });
-    toast.success(t("action.save") + " ✓");
-  };
-
-  const handleThemeChange = (v: "light" | "dark" | "system") => {
-    updateSettings({ theme: v });
-    toast.success(t("action.save") + " ✓");
-  };
+  const handleDateFormatChange = (v: string) => { updateSettings({ dateFormat: v }); toast.success(t("action.save") + " ✓"); };
+  const handleTimezoneChange = (v: string) => { updateSettings({ timezone: v }); toast.success(t("action.save") + " ✓"); };
+  const handleDefaultRangeChange = (v: string) => { updateSettings({ defaultDashboardRange: v as DatePreset }); toast.success(t("action.save") + " ✓"); };
+  const handleThemeChange = (v: "light" | "dark" | "system") => { updateSettings({ theme: v }); toast.success(t("action.save") + " ✓"); };
 
   const exportAllData = () => {
-    const data = {
-      exportedAt: new Date().toISOString(),
-      accounts,
-      categories,
-      transactions,
-    };
+    const data = { exportedAt: new Date().toISOString(), accounts, categories, transactions };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -90,76 +72,28 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.currency")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.currencyDesc")}</p>
-              </div>
-              <Select value={currency.code} onValueChange={handleCurrencyChange}>
-                <SelectTrigger className="w-[100px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div><Label className="text-xs font-medium">{t("settings.currency")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.currencyDesc")}</p></div>
+              <Select value={currency.code} onValueChange={handleCurrencyChange}><SelectTrigger className="w-[100px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}</SelectContent></Select>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.language")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.languageDesc")}</p>
-              </div>
-              <Select value={settings.language} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="bn">বাংলা</SelectItem>
-                </SelectContent>
-              </Select>
+              <div><Label className="text-xs font-medium">{t("settings.language")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.languageDesc")}</p></div>
+              <Select value={settings.language} onValueChange={handleLanguageChange}><SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="bn">বাংলা</SelectItem></SelectContent></Select>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.dateFormat")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.dateFormatDesc")}</p>
-              </div>
-              <Select value={settings.dateFormat} onValueChange={handleDateFormatChange}>
-                <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
-                  <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
-                  <SelectItem value="ymd">YYYY-MM-DD</SelectItem>
-                </SelectContent>
-              </Select>
+              <div><Label className="text-xs font-medium">{t("settings.dateFormat")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.dateFormatDesc")}</p></div>
+              <Select value={settings.dateFormat} onValueChange={handleDateFormatChange}><SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="dmy">DD/MM/YYYY</SelectItem><SelectItem value="mdy">MM/DD/YYYY</SelectItem><SelectItem value="ymd">YYYY-MM-DD</SelectItem></SelectContent></Select>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.timezone")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.timezoneDesc")}</p>
-              </div>
-              <Select value={settings.timezone} onValueChange={handleTimezoneChange}>
-                <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dhaka">Asia/Dhaka (GMT+6)</SelectItem>
-                  <SelectItem value="utc">UTC</SelectItem>
-                  <SelectItem value="est">US/Eastern</SelectItem>
-                </SelectContent>
-              </Select>
+              <div><Label className="text-xs font-medium">{t("settings.timezone")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.timezoneDesc")}</p></div>
+              <Select value={settings.timezone} onValueChange={handleTimezoneChange}><SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="dhaka">Asia/Dhaka (GMT+6)</SelectItem><SelectItem value="utc">UTC</SelectItem><SelectItem value="est">US/Eastern</SelectItem></SelectContent></Select>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">Default Dashboard Range</Label>
-                <p className="text-[11px] text-muted-foreground">Initial date range when loading dashboard</p>
-              </div>
-              <Select value={settings.defaultDashboardRange || "this_month"} onValueChange={handleDefaultRangeChange}>
-                <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="this_month">{t("datePreset.thisMonth")}</SelectItem>
-                  <SelectItem value="last_month">{t("datePreset.lastMonth")}</SelectItem>
-                  <SelectItem value="last_3_months">{t("datePreset.last3Months")}</SelectItem>
-                  <SelectItem value="this_year">{t("datePreset.thisYear")}</SelectItem>
-                </SelectContent>
-              </Select>
+              <div><Label className="text-xs font-medium">Default Dashboard Range</Label><p className="text-[11px] text-muted-foreground">Initial date range when loading dashboard</p></div>
+              <Select value={settings.defaultDashboardRange || "this_month"} onValueChange={handleDefaultRangeChange}><SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="this_month">{t("datePreset.thisMonth")}</SelectItem><SelectItem value="last_month">{t("datePreset.lastMonth")}</SelectItem><SelectItem value="last_3_months">{t("datePreset.last3Months")}</SelectItem><SelectItem value="this_year">{t("datePreset.thisYear")}</SelectItem></SelectContent></Select>
             </div>
           </CardContent>
         </Card>
@@ -180,10 +114,7 @@ export default function Settings() {
             ]).map((item, i) => (
               <div key={item.key}>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-xs font-medium">{item.label}</Label>
-                    <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                  </div>
+                  <div><Label className="text-xs font-medium">{item.label}</Label><p className="text-[11px] text-muted-foreground">{item.desc}</p></div>
                   <Switch checked={settings.notifications[item.key]} onCheckedChange={() => toggleNotif(item.key)} />
                 </div>
                 {i < 4 && <Separator className="mt-4" />}
@@ -207,13 +138,7 @@ export default function Settings() {
                   { value: "dark" as const, icon: Moon, label: t("settings.dark") },
                   { value: "system" as const, icon: Monitor, label: t("settings.system") },
                 ]).map(thm => (
-                  <Button
-                    key={thm.value}
-                    variant={settings.theme === thm.value ? "default" : "outline"}
-                    size="sm"
-                    className="gap-1.5 text-xs flex-1"
-                    onClick={() => handleThemeChange(thm.value)}
-                  >
+                  <Button key={thm.value} variant={settings.theme === thm.value ? "default" : "outline"} size="sm" className="gap-1.5 text-xs flex-1" onClick={() => handleThemeChange(thm.value)}>
                     <thm.icon className="h-3.5 w-3.5" /> {thm.label}
                   </Button>
                 ))}
@@ -230,26 +155,17 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.changePassword")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.changePasswordDesc")}</p>
-              </div>
+              <div><Label className="text-xs font-medium">{t("settings.changePassword")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.changePasswordDesc")}</p></div>
               <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => toast.info("Password change requires authentication to be set up first.")}>{t("settings.change")}</Button>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.twoFactor")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.twoFactorDesc")}</p>
-              </div>
+              <div><Label className="text-xs font-medium">{t("settings.twoFactor")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.twoFactorDesc")}</p></div>
               <Badge variant="secondary" className="text-[10px]">{t("settings.comingSoon")}</Badge>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-medium">{t("settings.sessionActivity")}</Label>
-                <p className="text-[11px] text-muted-foreground">{t("settings.sessionDesc")}</p>
-              </div>
+              <div><Label className="text-xs font-medium">{t("settings.sessionActivity")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.sessionDesc")}</p></div>
               <Badge variant="secondary" className="text-[10px]">{t("settings.comingSoon")}</Badge>
             </div>
           </CardContent>
@@ -268,20 +184,23 @@ export default function Settings() {
                 <span className="font-medium">{t("settings.exportAllData")}</span>
                 <span className="text-[10px] text-muted-foreground">{t("settings.exportAllDataDesc")}</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" disabled>
-                <Upload className="h-5 w-5 text-muted-foreground" />
+              <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" onClick={() => setImportOpen(true)}>
+                <Upload className="h-5 w-5 text-feature-reports" />
                 <span className="font-medium">{t("settings.importData")}</span>
-                <span className="text-[10px] text-muted-foreground">{t("settings.comingSoon")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("import.importDesc")}</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" disabled>
-                <RefreshCw className="h-5 w-5 text-muted-foreground" />
+              <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" onClick={() => setBackupOpen(true)}>
+                <RefreshCw className="h-5 w-5 text-feature-reports" />
                 <span className="font-medium">{t("settings.backupRestore")}</span>
-                <span className="text-[10px] text-muted-foreground">{t("settings.comingSoon")}</span>
+                <span className="text-[10px] text-muted-foreground">{t("backup.backupDesc")}</span>
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <ImportDataModal open={importOpen} onOpenChange={setImportOpen} />
+      <BackupRestoreModal open={backupOpen} onOpenChange={setBackupOpen} />
     </div>
   );
 }
