@@ -40,8 +40,8 @@ const navGroups = [
   {
     label: "Wealth",
     items: [
-      { title: "Assets", url: "/assets", icon: Building2, active: false },
-      { title: "Investments", url: "/investments", icon: TrendingUp, active: false },
+      { title: "Assets", url: "/assets", icon: Building2, active: true },
+      { title: "Investments", url: "/investments", icon: TrendingUp, active: true },
     ],
   },
   {

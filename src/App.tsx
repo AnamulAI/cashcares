@@ -43,11 +43,11 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/subscription" element={<Subscription />} />
-            <Route path="/assets" element={<ComingSoon />} />
-            <Route path="/investments" element={<ComingSoon />} />
-            <Route path="/receivables" element={<ComingSoon />} />
-            <Route path="/payables" element={<ComingSoon />} />
-            <Route path="/debt-loans" element={<ComingSoon />} />
+            <Route path="/receivables" element={<Receivables />} />
+            <Route path="/payables" element={<Payables />} />
+            <Route path="/debt-loans" element={<DebtLoans />} />
+            <Route path="/assets" element={<Assets />} />
+            <Route path="/investments" element={<Investments />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
