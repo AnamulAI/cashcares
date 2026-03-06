@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/use-transactions";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export default function Transactions() {
   const [incomeOpen, setIncomeOpen] = useState(false);
@@ -21,42 +22,31 @@ export default function Transactions() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
   const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
+  const { t } = useTranslation();
 
   const { data: transactions = [], isLoading } = useTransactions();
 
   const filtered = useMemo(() => {
     let result = transactions;
-
-    // Tab filter
     if (activeTab !== "all") {
       result = result.filter((t: any) =>
         activeTab === "transfers" ? t.type === "transfer" : t.type === activeTab
       );
     }
-
-    // Type filter
     if (filters.type !== "all") {
       result = result.filter((t: any) => t.type === filters.type);
     }
-
-    // Category filter
     if (filters.categoryId !== "all") {
       result = result.filter((t: any) => t.category_id === filters.categoryId);
     }
-
-    // Account filter
     if (filters.accountId !== "all") {
       result = result.filter((t: any) =>
         t.account_id === filters.accountId || t.to_account_id === filters.accountId
       );
     }
-
-    // Status filter
     if (filters.status !== "all") {
       result = result.filter((t: any) => t.status === filters.status);
     }
-
-    // Search filter
     if (filters.search.trim()) {
       const q = filters.search.toLowerCase();
       result = result.filter((t: any) => {
@@ -67,7 +57,6 @@ export default function Transactions() {
         return note.includes(q) || catName.includes(q) || accName.includes(q) || type.includes(q);
       });
     }
-
     return result;
   }, [transactions, activeTab, filters]);
 
@@ -81,22 +70,22 @@ export default function Transactions() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Transactions"
-        subtitle="Track, filter and manage all money activity"
+        title={t("transactions.title")}
+        subtitle={t("transactions.subtitle")}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5 h-9 text-xs border-positive/30 text-positive hover:bg-positive/5 hover:text-positive" onClick={() => setIncomeOpen(true)}>
-              <ArrowDownLeft className="h-3.5 w-3.5" /> Income
+              <ArrowDownLeft className="h-3.5 w-3.5" /> {t("transactions.income")}
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5 h-9 text-xs border-negative/30 text-negative hover:bg-negative/5 hover:text-negative" onClick={() => setExpenseOpen(true)}>
-              <ArrowUpRight className="h-3.5 w-3.5" /> Expense
+              <ArrowUpRight className="h-3.5 w-3.5" /> {t("transactions.expense")}
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5 h-9 text-xs border-primary/30 text-primary hover:bg-primary/5 hover:text-primary" onClick={() => setTransferOpen(true)}>
-              <ArrowLeftRight className="h-3.5 w-3.5" /> Transfer
+              <ArrowLeftRight className="h-3.5 w-3.5" /> {t("action.transfer")}
             </Button>
             <div className="w-px h-5 bg-border mx-0.5" />
             <Button variant="ghost" size="sm" className="h-9 text-xs gap-1.5 text-muted-foreground">
-              <Download className="h-3.5 w-3.5" /> Export
+              <Download className="h-3.5 w-3.5" /> {t("action.export")}
             </Button>
           </div>
         }
@@ -106,12 +95,12 @@ export default function Transactions() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-1">
-          <TabsTrigger value="all" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">All</TabsTrigger>
-          <TabsTrigger value="income" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">Income</TabsTrigger>
-          <TabsTrigger value="expense" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">Expense</TabsTrigger>
-          <TabsTrigger value="transfers" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">Transfers</TabsTrigger>
-          <TabsTrigger value="recurring" disabled className="text-xs px-4 py-1.5 rounded-lg opacity-40">Recurring</TabsTrigger>
-          <TabsTrigger value="drafts" disabled className="text-xs px-4 py-1.5 rounded-lg opacity-40">Drafts</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">{t("transactions.all")}</TabsTrigger>
+          <TabsTrigger value="income" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">{t("transactions.income")}</TabsTrigger>
+          <TabsTrigger value="expense" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">{t("transactions.expense")}</TabsTrigger>
+          <TabsTrigger value="transfers" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">{t("transactions.transfers")}</TabsTrigger>
+          <TabsTrigger value="recurring" disabled className="text-xs px-4 py-1.5 rounded-lg opacity-40">{t("transactions.recurring")}</TabsTrigger>
+          <TabsTrigger value="drafts" disabled className="text-xs px-4 py-1.5 rounded-lg opacity-40">{t("transactions.drafts")}</TabsTrigger>
         </TabsList>
         <TabsContent value={activeTab} className="mt-4">
           {isLoading ? (
@@ -120,13 +109,13 @@ export default function Transactions() {
             <TransactionTable transactions={filtered} onViewDetails={handleViewDetails} />
           ) : (
             <EmptyState
-              title={hasActiveFilters ? "No transactions match your filters" : "No transactions found"}
-              description={hasActiveFilters ? "Try adjusting or clearing your filters." : "Add a new transaction to get started."}
+              title={hasActiveFilters ? t("transactions.noMatch") : t("transactions.noFound")}
+              description={hasActiveFilters ? t("transactions.adjustFilters") : t("transactions.addFirst")}
               icon={hasActiveFilters ? <SearchX className="h-7 w-7 text-muted-foreground" /> : <FileText className="h-7 w-7 text-muted-foreground" />}
               action={
                 hasActiveFilters
-                  ? <Button size="sm" variant="outline" onClick={() => setFilters(emptyFilters)}>Clear Filters</Button>
-                  : <Button size="sm" onClick={() => setIncomeOpen(true)}>Add Transaction</Button>
+                  ? <Button size="sm" variant="outline" onClick={() => setFilters(emptyFilters)}>{t("action.clearFilters")}</Button>
+                  : <Button size="sm" onClick={() => setIncomeOpen(true)}>{t("action.addIncome")}</Button>
               }
             />
           )}
