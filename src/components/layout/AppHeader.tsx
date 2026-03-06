@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Bell, Search, Plus, ChevronDown, User, CreditCard, LogOut,
-  Settings2, UserCircle, Check, Calendar as CalendarIcon,
-  AlertTriangle, Clock, DollarSign, ArrowUpRight, CheckCheck,
+  Settings2, UserCircle, Check, AlertTriangle, Clock, DollarSign,
+  ArrowUpRight, CheckCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -19,34 +18,25 @@ import {
 import { cn } from "@/lib/utils";
 import { QuickAddModal } from "./QuickAddModal";
 import { useAppContext, CURRENCIES, type DatePreset, presetLabel } from "@/contexts/AppContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const MOCK_NOTIFICATIONS = [
-  { id: "1", icon: AlertTriangle, color: "text-warning", title: "Budget threshold reached", desc: "Food & Dining is at 90% of limit", time: "2 min ago", read: false },
-  { id: "2", icon: Clock, color: "text-negative", title: "Receivable overdue", desc: "Invoice #1042 — ৳12,000 past due", time: "1 hour ago", read: false },
-  { id: "3", icon: DollarSign, color: "text-primary", title: "Payable due soon", desc: "Rent payment due in 3 days", time: "3 hours ago", read: false },
-  { id: "4", icon: ArrowUpRight, color: "text-positive", title: "New transaction added", desc: "Salary credited — ৳85,000", time: "Yesterday", read: true },
-];
+const ICON_MAP: Record<string, any> = {
+  AlertTriangle, Clock, DollarSign, ArrowUpRight,
+};
 
 const DATE_PRESETS: DatePreset[] = ["this_month", "last_month", "last_3_months", "this_year", "custom"];
 
 export function AppHeader() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [showCustomCalendar, setShowCustomCalendar] = useState(false);
   const navigate = useNavigate();
-  const { currency, setCurrency, datePreset, dateRange, setDatePreset, setCustomRange, datePresetLabel } = useAppContext();
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const markRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
+  const {
+    currency, setCurrency,
+    datePreset, dateRange, setDatePreset, setCustomRange, datePresetLabel,
+    notifications, unreadCount, markRead, markAllRead,
+  } = useAppContext();
 
   const handleDatePreset = (p: DatePreset) => {
     if (p === "custom") {
@@ -55,6 +45,17 @@ export function AppHeader() {
       setDatePreset(p);
       setShowCustomCalendar(false);
       setDatePopoverOpen(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      toast.success("Signed out successfully");
+      navigate("/");
+    } catch {
+      toast.error("Sign out failed");
     }
   };
 
@@ -167,7 +168,7 @@ export function AppHeader() {
                   <div className="py-8 text-center text-sm text-muted-foreground">No notifications</div>
                 ) : (
                   notifications.map(n => {
-                    const Icon = n.icon;
+                    const Icon = ICON_MAP[n.icon] || AlertTriangle;
                     return (
                       <button
                         key={n.id}
@@ -177,7 +178,7 @@ export function AppHeader() {
                           !n.read && "bg-primary/[0.03]"
                         )}
                       >
-                        <div className={cn("mt-0.5 h-7 w-7 rounded-lg flex items-center justify-center shrink-0", n.color, "bg-current/10")}>
+                        <div className={cn("mt-0.5 h-7 w-7 rounded-lg flex items-center justify-center shrink-0 bg-muted/60")}>
                           <Icon className={cn("h-3.5 w-3.5", n.color)} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -192,7 +193,9 @@ export function AppHeader() {
                 )}
               </div>
               <div className="border-t px-4 py-2.5">
-                <button className="text-xs text-primary hover:underline w-full text-center">View all notifications</button>
+                <button onClick={() => toast.info("Notifications page coming soon")} className="text-xs text-primary hover:underline w-full text-center">
+                  View all notifications
+                </button>
               </div>
             </PopoverContent>
           </Popover>
@@ -222,7 +225,7 @@ export function AppHeader() {
                 <CreditCard className="h-4 w-4 text-muted-foreground" /> Billing
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer text-negative" onClick={() => toast.info("Sign out flow not yet connected")}>
+              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer text-negative" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" /> Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
