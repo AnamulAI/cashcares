@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -22,9 +21,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount } from "@/lib/formatters";
+import { formatAmount, formatPercent } from "@/lib/formatters";
 
-function DataSummaryTab({ icon: Icon, title, items }: { icon: React.ElementType; title: string; items: { label: string; value: string; color?: string }[] }) {
+function DataSummaryTab({ icon: Icon, title, items, noDataText }: { icon: React.ElementType; title: string; items: { label: string; value: string; color?: string }[]; noDataText: string }) {
   return (
     <Card className="finance-card-static">
       <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Icon className="h-4 w-4" /> {title}</CardTitle></CardHeader>
@@ -32,7 +31,7 @@ function DataSummaryTab({ icon: Icon, title, items }: { icon: React.ElementType;
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Icon className="h-8 w-8 text-muted-foreground/40 mb-2" />
-            <p className="text-sm text-muted-foreground">No data available yet</p>
+            <p className="text-sm text-muted-foreground">{noDataText}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -66,7 +65,6 @@ export default function Reports() {
   const [categoryFilterVal, setCategoryFilterVal] = useState("all");
   const fmt = (n: number) => formatAmount(n, currency, lang);
 
-  // Filter transactions by date range and filters
   const filteredTxns = useMemo(() => {
     return (transactionsRaw as any[]).filter((t: any) => {
       const d = parseISO(t.date);
@@ -82,7 +80,6 @@ export default function Reports() {
   const savings = totalIncome - totalExpense;
   const netWorth = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
-  // Budget utilization
   const budgetUtil = useMemo(() => {
     if (!budgetsRaw.length) return 0;
     const now = new Date();
@@ -97,7 +94,6 @@ export default function Reports() {
     return Math.round((totalSpent / totalAlloc) * 100);
   }, [budgetsRaw, transactionsRaw]);
 
-  // Monthly income vs expense chart data
   const monthlyData = useMemo(() => {
     const months: Record<string, { month: string; income: number; expense: number }> = {};
     filteredTxns.forEach(t => {
@@ -111,11 +107,10 @@ export default function Reports() {
 
   const netMovement = monthlyData.map(m => ({ month: m.month, net: m.income - m.expense }));
 
-  // Expense breakdown by category
   const expenseBreakdown = useMemo(() => {
     const map: Record<string, { name: string; value: number; color: string }> = {};
     filteredTxns.filter(t => t.type === "expense").forEach((t: any) => {
-      const catName = t.category?.name || "Other";
+      const catName = t.category?.name || t("reports.other");
       const cat = categoriesRaw.find(c => c.id === t.category_id);
       if (!map[catName]) map[catName] = { name: catName, value: 0, color: cat?.color || "#6366f1" };
       map[catName].value += Number(t.amount);
@@ -123,11 +118,10 @@ export default function Reports() {
     return Object.values(map).sort((a, b) => b.value - a.value);
   }, [filteredTxns, categoriesRaw]);
 
-  // Top income sources
   const incomeSources = useMemo(() => {
     const map: Record<string, { name: string; value: number }> = {};
     filteredTxns.filter(t => t.type === "income").forEach((t: any) => {
-      const catName = t.category?.name || "Other";
+      const catName = t.category?.name || t("reports.other");
       if (!map[catName]) map[catName] = { name: catName, value: 0 };
       map[catName].value += Number(t.amount);
     });
@@ -135,7 +129,7 @@ export default function Reports() {
   }, [filteredTxns]);
 
   const exportCSV = () => {
-    const headers = ["Date", "Type", "Category", "Account", "Amount", "Note", "Status"];
+    const headers = [t("table.date"), t("table.type"), t("table.category"), t("table.account"), t("table.amount"), t("table.note"), t("table.status")];
     const rows = filteredTxns.map((t: any) => [
       t.date, t.type, t.category?.name || "", t.account?.name || "", t.amount, t.note || "", t.status,
     ]);
@@ -147,70 +141,82 @@ export default function Reports() {
     a.download = `cashcare-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Report exported as CSV");
+    toast.success(t("reports.csvExported"));
   };
+
+  const tabItems = [
+    { value: "overview", label: t("reports.overview") },
+    { value: "income", label: t("reports.income") },
+    { value: "expense", label: t("reports.expense") },
+    { value: "budget", label: t("reports.budget") },
+    { value: "savings", label: t("reports.savingsTab") },
+    { value: "assets", label: t("reports.assetsTab") },
+    { value: "investments", label: t("reports.investmentsTab") },
+    { value: "receivables", label: t("reports.receivablesTab") },
+    { value: "payables", label: t("reports.payablesTab") },
+    { value: "debt", label: t("reports.debtTab") },
+  ];
+
+  const noData = t("common.noDataAvailable");
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Reports"
-        subtitle="Analyze your money activity with clear financial insights"
+        title={t("reports.title")}
+        subtitle={t("reports.subtitle")}
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1.5 h-9"><Download className="h-4 w-4" /> Export Report</Button>
+              <Button size="sm" variant="outline" className="gap-1.5 h-9"><Download className="h-4 w-4" /> {t("action.exportReport")}</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled><FileText className="h-4 w-4 mr-2" /> Export as PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCSV}><Layers className="h-4 w-4 mr-2" /> Export as CSV</DropdownMenuItem>
-              <DropdownMenuItem disabled><BarChart3 className="h-4 w-4 mr-2" /> Monthly Summary</DropdownMenuItem>
+              <DropdownMenuItem disabled><FileText className="h-4 w-4 mr-2" /> {t("reports.exportPDF")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCSV}><Layers className="h-4 w-4 mr-2" /> {t("reports.exportCSV")}</DropdownMenuItem>
+              <DropdownMenuItem disabled><BarChart3 className="h-4 w-4 mr-2" /> {t("reports.monthlySummary")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         }
       />
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label="Net Worth" value={fmt(netWorth)} iconBg="bg-primary/10" />
-        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-feature-income" />} label="Total Income" value={fmt(totalIncome)} iconBg="bg-feature-income/10" />
-        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} label="Total Expense" value={fmt(totalExpense)} iconBg="bg-feature-expense/10" />
-        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label="Savings" value={fmt(savings)} iconBg="bg-feature-savings/10" />
-        <FinanceCard icon={<Gauge className="h-5 w-5 text-feature-budget" />} label="Budget Util." value={`${budgetUtil}%`} iconBg="bg-feature-budget/10" />
+        <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label={t("reports.netWorth")} value={fmt(netWorth)} iconBg="bg-primary/10" />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-feature-income" />} label={t("reports.totalIncome")} value={fmt(totalIncome)} iconBg="bg-feature-income/10" />
+        <FinanceCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} label={t("reports.totalExpense")} value={fmt(totalExpense)} iconBg="bg-feature-expense/10" />
+        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label={t("reports.savings")} value={fmt(savings)} iconBg="bg-feature-savings/10" />
+        <FinanceCard icon={<Gauge className="h-5 w-5 text-feature-budget" />} label={t("reports.budgetUtil")} value={formatPercent(budgetUtil, lang)} iconBg="bg-feature-budget/10" />
       </div>
 
-      {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={accountFilter} onValueChange={setAccountFilter}>
           <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Accounts</SelectItem>
+            <SelectItem value="all">{t("reports.allAccounts")}</SelectItem>
             {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={categoryFilterVal} onValueChange={setCategoryFilterVal}>
           <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">{t("reports.allCategories")}</SelectItem>
             {categoriesRaw.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Report tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-0.5 overflow-x-auto flex-wrap">
-          {["overview","income","expense","budget","savings","assets","investments","receivables","payables","debt"].map(t => (
-            <TabsTrigger key={t} value={t} className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:shadow-sm capitalize">{t === "debt" ? "Debt & Loans" : t}</TabsTrigger>
+          {tabItems.map(t => (
+            <TabsTrigger key={t.value} value={t.value} className="text-xs px-3 py-1.5 rounded-lg data-[state=active]:shadow-sm capitalize">{t.label}</TabsTrigger>
           ))}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <Card className="finance-card-static lg:col-span-3">
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Income vs Expense</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">{t("reports.incomeVsExpense")}</CardTitle></CardHeader>
               <CardContent>
                 {monthlyData.length === 0 ? (
-                  <div className="flex items-center justify-center h-[280px] text-sm text-muted-foreground">No transaction data for this period</div>
+                  <div className="flex items-center justify-center h-[280px] text-sm text-muted-foreground">{t("reports.noTransactionData")}</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthlyData} barGap={4}>
@@ -219,18 +225,18 @@ export default function Reports() {
                       <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                       <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
                       <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey="income" fill="hsl(var(--positive))" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="expense" fill="hsl(var(--negative))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="income" name={t("transactions.income")} fill="hsl(var(--positive))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expense" name={t("transactions.expense")} fill="hsl(var(--negative))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>
             </Card>
             <Card className="finance-card-static lg:col-span-2">
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Net Movement</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">{t("reports.netMovement")}</CardTitle></CardHeader>
               <CardContent>
                 {netMovement.length === 0 ? (
-                  <div className="flex items-center justify-center h-[280px] text-sm text-muted-foreground">No data</div>
+                  <div className="flex items-center justify-center h-[280px] text-sm text-muted-foreground">{t("reports.noData")}</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <LineChart data={netMovement}>
@@ -238,7 +244,7 @@ export default function Reports() {
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                       <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                       <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                      <Line type="monotone" dataKey="net" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="net" name={t("reports.netMovement")} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -248,10 +254,10 @@ export default function Reports() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card className="finance-card-static">
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Expense Breakdown</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">{t("reports.expenseBreakdown")}</CardTitle></CardHeader>
               <CardContent>
                 {expenseBreakdown.length === 0 ? (
-                  <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">No expenses in this period</div>
+                  <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">{t("reports.noExpenses")}</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
@@ -266,11 +272,11 @@ export default function Reports() {
               </CardContent>
             </Card>
             <Card className="finance-card-static">
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Top Categories</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">{t("reports.topCategories")}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Top Spending</p>
-                  {expenseBreakdown.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t("reports.topSpending")}</p>
+                  {expenseBreakdown.length === 0 && <p className="text-xs text-muted-foreground">{t("reports.noData")}</p>}
                   {expenseBreakdown.slice(0, 4).map((e, i) => (
                     <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
                       <span className="text-xs">{e.name}</span>
@@ -279,8 +285,8 @@ export default function Reports() {
                   ))}
                 </div>
                 <div className="pt-2">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Top Income Sources</p>
-                  {incomeSources.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t("reports.topIncomeSources")}</p>
+                  {incomeSources.length === 0 && <p className="text-xs text-muted-foreground">{t("reports.noData")}</p>}
                   {incomeSources.map((e, i) => (
                     <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
                       <span className="text-xs">{e.name}</span>
@@ -294,31 +300,31 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="income" className="mt-4">
-          <DataSummaryTab icon={TrendingUp} title="Income Report" items={incomeSources.map(s => ({ label: s.name, value: fmt(s.value), color: "text-positive" }))} />
+          <DataSummaryTab icon={TrendingUp} title={t("reports.incomeReport")} noDataText={noData} items={incomeSources.map(s => ({ label: s.name, value: fmt(s.value), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="expense" className="mt-4">
-          <DataSummaryTab icon={TrendingDown} title="Expense Report" items={expenseBreakdown.map(e => ({ label: e.name, value: fmt(e.value), color: "text-negative" }))} />
+          <DataSummaryTab icon={TrendingDown} title={t("reports.expenseReport")} noDataText={noData} items={expenseBreakdown.map(e => ({ label: e.name, value: fmt(e.value), color: "text-negative" }))} />
         </TabsContent>
         <TabsContent value="budget" className="mt-4">
-          <DataSummaryTab icon={Gauge} title="Budget Report" items={budgetsRaw.map((b: any) => ({ label: b.category?.name || "Unknown", value: `${fmt(Number(b.allocated_amount))} allocated` }))} />
+          <DataSummaryTab icon={Gauge} title={t("reports.budgetReport")} noDataText={noData} items={budgetsRaw.map((b: any) => ({ label: b.category?.name || "Unknown", value: `${fmt(Number(b.allocated_amount))} ${t("common.allocated")}` }))} />
         </TabsContent>
         <TabsContent value="savings" className="mt-4">
-          <DataSummaryTab icon={PiggyBank} title="Savings Report" items={accounts.filter(a => a.type === "savings").map(a => ({ label: a.name, value: fmt(Number(a.balance)), color: "text-positive" }))} />
+          <DataSummaryTab icon={PiggyBank} title={t("reports.savingsReport")} noDataText={noData} items={accounts.filter(a => a.type === "savings").map(a => ({ label: a.name, value: fmt(Number(a.balance)), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="receivables" className="mt-4">
-          <DataSummaryTab icon={HandCoins} title="Receivables Report" items={receivablesRaw.filter((r: any) => r.status !== "collected").map((r: any) => ({ label: r.person_name, value: fmt(Number(r.total_amount) - Number(r.received_amount)), color: r.status === "overdue" ? "text-negative" : "" }))} />
+          <DataSummaryTab icon={HandCoins} title={t("reports.receivablesReport")} noDataText={noData} items={receivablesRaw.filter((r: any) => r.status !== "collected").map((r: any) => ({ label: r.person_name, value: fmt(Number(r.total_amount) - Number(r.received_amount)), color: r.status === "overdue" ? "text-negative" : "" }))} />
         </TabsContent>
         <TabsContent value="payables" className="mt-4">
-          <DataSummaryTab icon={CreditCard} title="Payables Report" items={payablesRaw.filter((p: any) => p.status !== "paid").map((p: any) => ({ label: p.person_name, value: fmt(Number(p.total_amount) - Number(p.paid_amount)), color: p.status === "overdue" ? "text-negative" : "" }))} />
+          <DataSummaryTab icon={CreditCard} title={t("reports.payablesReport")} noDataText={noData} items={payablesRaw.filter((p: any) => p.status !== "paid").map((p: any) => ({ label: p.person_name, value: fmt(Number(p.total_amount) - Number(p.paid_amount)), color: p.status === "overdue" ? "text-negative" : "" }))} />
         </TabsContent>
         <TabsContent value="debt" className="mt-4">
-          <DataSummaryTab icon={Scale} title="Debt & Loans Report" items={loansRaw.filter((l: any) => l.status !== "paid_off").map((l: any) => ({ label: l.lender_name, value: fmt(Number(l.principal_amount) - Number(l.paid_amount)), color: "text-negative" }))} />
+          <DataSummaryTab icon={Scale} title={t("reports.debtReport")} noDataText={noData} items={loansRaw.filter((l: any) => l.status !== "paid_off").map((l: any) => ({ label: l.lender_name, value: fmt(Number(l.principal_amount) - Number(l.paid_amount)), color: "text-negative" }))} />
         </TabsContent>
         <TabsContent value="assets" className="mt-4">
-          <DataSummaryTab icon={Building2} title="Asset Report" items={assetsRaw.filter((a: any) => a.status === "active").map((a: any) => ({ label: a.asset_name, value: fmt(Number(a.current_value)) }))} />
+          <DataSummaryTab icon={Building2} title={t("reports.assetReport")} noDataText={noData} items={assetsRaw.filter((a: any) => a.status === "active").map((a: any) => ({ label: a.asset_name, value: fmt(Number(a.current_value)) }))} />
         </TabsContent>
         <TabsContent value="investments" className="mt-4">
-          <DataSummaryTab icon={TrendingUp} title="Investment Report" items={investmentsRaw.filter((i: any) => i.status === "active").map((i: any) => { const pl = Number(i.current_value) - Number(i.invested_amount); return { label: i.investment_name, value: `${pl >= 0 ? "+" : ""}${fmt(pl)}`, color: pl >= 0 ? "text-positive" : "text-negative" }; })} />
+          <DataSummaryTab icon={TrendingUp} title={t("reports.investmentReport")} noDataText={noData} items={investmentsRaw.filter((i: any) => i.status === "active").map((i: any) => { const pl = Number(i.current_value) - Number(i.invested_amount); return { label: i.investment_name, value: `${pl >= 0 ? "+" : ""}${fmt(pl)}`, color: pl >= 0 ? "text-positive" : "text-negative" }; })} />
         </TabsContent>
       </Tabs>
     </div>
