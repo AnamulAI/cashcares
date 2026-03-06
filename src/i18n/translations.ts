@@ -272,6 +272,15 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Investments
     "investments.title": "Investments",
     "investments.subtitle": "Track allocated capital and growth over time",
+    // Partnerships
+    "nav.partnerships": "Partnerships",
+    "partnerships.title": "Partnership Ledger",
+    "partnerships.subtitle": "Track shared contributions, expenses, and settlement balances",
+    "action.addPartnership": "Add Partnership",
+    // Reminders
+    "nav.reminders": "Reminders",
+    "reminders.title": "Reminder Center",
+    "reminders.subtitle": "Stay on top of dues, alerts, and follow-ups",
     // Topbar
     "topbar.searchPlaceholder": "Search transactions, accounts...",
     "topbar.notifications": "Notifications",
