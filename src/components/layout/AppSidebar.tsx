@@ -32,16 +32,16 @@ const navGroups = [
   {
     label: "Tracking",
     items: [
-      { title: "Receivables", url: "/receivables", icon: HandCoins, active: false },
-      { title: "Payables", url: "/payables", icon: CreditCard, active: false },
-      { title: "Debt & Loans", url: "/debt-loans", icon: Scale, active: false },
+      { title: "Receivables", url: "/receivables", icon: HandCoins, active: true },
+      { title: "Payables", url: "/payables", icon: CreditCard, active: true },
+      { title: "Debt & Loans", url: "/debt-loans", icon: Scale, active: true },
     ],
   },
   {
     label: "Wealth",
     items: [
-      { title: "Assets", url: "/assets", icon: Building2, active: false },
-      { title: "Investments", url: "/investments", icon: TrendingUp, active: false },
+      { title: "Assets", url: "/assets", icon: Building2, active: true },
+      { title: "Investments", url: "/investments", icon: TrendingUp, active: true },
     ],
   },
   {

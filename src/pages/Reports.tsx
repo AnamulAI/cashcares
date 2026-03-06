@@ -13,20 +13,35 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useBudgets } from "@/hooks/use-budgets";
+import { useReceivables } from "@/hooks/use-receivables";
+import { usePayables } from "@/hooks/use-payables";
+import { useLoans } from "@/hooks/use-loans";
+import { useAssets } from "@/hooks/use-assets";
+import { useInvestments } from "@/hooks/use-investments";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 
-function PlaceholderTab({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
+function DataSummaryTab({ icon: Icon, title, items }: { icon: React.ElementType; title: string; items: { label: string; value: string; color?: string }[] }) {
   return (
     <Card className="finance-card-static">
-      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent mb-4">
-          <Icon className="h-7 w-7 text-muted-foreground" />
-        </div>
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">{description}</p>
-        <Badge variant="secondary" className="mt-3 text-[10px]">Coming Soon</Badge>
+      <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Icon className="h-4 w-4" /> {title}</CardTitle></CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Icon className="h-8 w-8 text-muted-foreground/40 mb-2" />
+            <p className="text-sm text-muted-foreground">No data available yet</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                <span className="text-xs">{item.label}</span>
+                <span className={`text-xs font-semibold ${item.color || ""}`}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -38,6 +53,11 @@ export default function Reports() {
   const { data: accounts = [] } = useAccounts();
   const { data: categoriesRaw = [] } = useCategories();
   const { data: budgetsRaw = [] } = useBudgets();
+  const { data: receivablesRaw = [] } = useReceivables();
+  const { data: payablesRaw = [] } = usePayables();
+  const { data: loansRaw = [] } = useLoans();
+  const { data: assetsRaw = [] } = useAssets();
+  const { data: investmentsRaw = [] } = useInvestments();
   const [tab, setTab] = useState("overview");
   const [accountFilter, setAccountFilter] = useState("all");
   const [categoryFilterVal, setCategoryFilterVal] = useState("all");
@@ -271,31 +291,31 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="income" className="mt-4">
-          <PlaceholderTab icon={TrendingUp} title="Income Report" description="Detailed income analysis by source, account, and time period will be available here." />
+          <DataSummaryTab icon={TrendingUp} title="Income Report" items={incomeSources.map(s => ({ label: s.name, value: fmt(s.value), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="expense" className="mt-4">
-          <PlaceholderTab icon={TrendingDown} title="Expense Report" description="Category-wise expense breakdown with trends and comparisons." />
+          <DataSummaryTab icon={TrendingDown} title="Expense Report" items={expenseBreakdown.map(e => ({ label: e.name, value: fmt(e.value), color: "text-negative" }))} />
         </TabsContent>
         <TabsContent value="budget" className="mt-4">
-          <PlaceholderTab icon={Gauge} title="Budget Report" description="Track budget utilization, overspending patterns, and monthly comparisons." />
+          <DataSummaryTab icon={Gauge} title="Budget Report" items={budgetsRaw.map((b: any) => ({ label: b.category?.name || "Unknown", value: `${fmt(Number(b.allocated_amount))} allocated` }))} />
         </TabsContent>
         <TabsContent value="savings" className="mt-4">
-          <PlaceholderTab icon={PiggyBank} title="Savings Report" description="Analyze your savings rate, growth trends, and goal progress." />
-        </TabsContent>
-        <TabsContent value="assets" className="mt-4">
-          <PlaceholderTab icon={Building2} title="Asset Report" description="Overview of your asset portfolio, valuations, and appreciation trends." />
-        </TabsContent>
-        <TabsContent value="investments" className="mt-4">
-          <PlaceholderTab icon={TrendingUp} title="Investment Report" description="Track investment performance, returns, and allocation breakdown." />
+          <DataSummaryTab icon={PiggyBank} title="Savings Report" items={accounts.filter(a => a.type === "savings").map(a => ({ label: a.name, value: fmt(Number(a.balance)), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="receivables" className="mt-4">
-          <PlaceholderTab icon={HandCoins} title="Receivables Report" description="Outstanding receivables, aging analysis, and collection status." />
+          <DataSummaryTab icon={HandCoins} title="Receivables Report" items={receivablesRaw.filter((r: any) => r.status !== "collected").map((r: any) => ({ label: r.person_name, value: fmt(Number(r.total_amount) - Number(r.received_amount)), color: r.status === "overdue" ? "text-negative" : "" }))} />
         </TabsContent>
         <TabsContent value="payables" className="mt-4">
-          <PlaceholderTab icon={CreditCard} title="Payables Report" description="Upcoming and overdue payables with payment schedule tracking." />
+          <DataSummaryTab icon={CreditCard} title="Payables Report" items={payablesRaw.filter((p: any) => p.status !== "paid").map((p: any) => ({ label: p.person_name, value: fmt(Number(p.total_amount) - Number(p.paid_amount)), color: p.status === "overdue" ? "text-negative" : "" }))} />
         </TabsContent>
         <TabsContent value="debt" className="mt-4">
-          <PlaceholderTab icon={Scale} title="Debt & Loans Report" description="Loan balances, repayment progress, and interest analysis." />
+          <DataSummaryTab icon={Scale} title="Debt & Loans Report" items={loansRaw.filter((l: any) => l.status !== "paid_off").map((l: any) => ({ label: l.lender_name, value: fmt(Number(l.principal_amount) - Number(l.paid_amount)), color: "text-negative" }))} />
+        </TabsContent>
+        <TabsContent value="assets" className="mt-4">
+          <DataSummaryTab icon={Building2} title="Asset Report" items={assetsRaw.filter((a: any) => a.status === "active").map((a: any) => ({ label: a.asset_name, value: fmt(Number(a.current_value)) }))} />
+        </TabsContent>
+        <TabsContent value="investments" className="mt-4">
+          <DataSummaryTab icon={TrendingUp} title="Investment Report" items={investmentsRaw.filter((i: any) => i.status === "active").map((i: any) => { const pl = Number(i.current_value) - Number(i.invested_amount); return { label: i.investment_name, value: `${pl >= 0 ? "+" : ""}${fmt(pl)}`, color: pl >= 0 ? "text-positive" : "text-negative" }; })} />
         </TabsContent>
       </Tabs>
     </div>

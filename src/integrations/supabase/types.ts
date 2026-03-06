@@ -59,6 +59,56 @@ export type Database = {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          acquisition_date: string | null
+          asset_name: string
+          asset_type: string
+          created_at: string
+          current_value: number
+          id: string
+          linked_account_id: string | null
+          note: string | null
+          purchase_value: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acquisition_date?: string | null
+          asset_name: string
+          asset_type?: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          purchase_value?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acquisition_date?: string | null
+          asset_name?: string
+          asset_type?: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          purchase_value?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           alert_threshold: number
@@ -158,6 +208,212 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investments: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          invested_amount: number
+          investment_name: string
+          investment_type: string
+          linked_account_id: string | null
+          note: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          invested_amount?: number
+          investment_name: string
+          investment_type?: string
+          linked_account_id?: string | null
+          note?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          invested_amount?: number
+          investment_name?: string
+          investment_type?: string
+          linked_account_id?: string | null
+          note?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loans: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          installment_amount: number | null
+          interest_rate: number | null
+          lender_name: string
+          linked_account_id: string | null
+          loan_type: string
+          note: string | null
+          paid_amount: number
+          principal_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installment_amount?: number | null
+          interest_rate?: number | null
+          lender_name: string
+          linked_account_id?: string | null
+          loan_type?: string
+          note?: string | null
+          paid_amount?: number
+          principal_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installment_amount?: number | null
+          interest_rate?: number | null
+          lender_name?: string
+          linked_account_id?: string | null
+          loan_type?: string
+          note?: string | null
+          paid_amount?: number
+          principal_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payables: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          linked_account_id: string | null
+          note: string | null
+          paid_amount: number
+          person_name: string
+          reason: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          paid_amount?: number
+          person_name: string
+          reason?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          paid_amount?: number
+          person_name?: string
+          reason?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payables_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          linked_account_id: string | null
+          note: string | null
+          person_name: string
+          reason: string | null
+          received_amount: number
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          person_name: string
+          reason?: string | null
+          received_amount?: number
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          linked_account_id?: string | null
+          note?: string | null
+          person_name?: string
+          reason?: string | null
+          received_amount?: number
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
         ]
