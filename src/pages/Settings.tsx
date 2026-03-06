@@ -77,7 +77,8 @@ export default function Settings() {
     try {
       const { total } = await clearDemoData();
       qc.invalidateQueries();
-      toast.success(`Cleared ${total} demo records`);
+      toast.success(`Cleared ${total} demo records. Reloading...`);
+      setTimeout(() => window.location.reload(), 800);
     } catch (e: any) {
       toast.error(e.message || "Failed to clear demo data");
     } finally {
