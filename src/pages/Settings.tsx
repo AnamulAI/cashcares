@@ -235,10 +235,43 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Demo Data — Dev/Testing */}
+        <Card className="finance-card-static lg:col-span-2 border-dashed border-muted-foreground/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-muted-foreground" /> Demo / Test Data
+              <Badge variant="secondary" className="text-[9px] ml-1">DEV</Badge>
+            </CardTitle>
+            <CardDescription className="text-xs">Load realistic sample data across all modules for testing and review.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleLoadDemo} disabled={demoLoading}>
+                <FlaskConical className="h-3.5 w-3.5" />
+                {demoLoading ? "Loading..." : "Load Demo Data"}
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => setClearConfirm(true)} disabled={demoLoading}>
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear Demo Data
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">Seeds accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, and reminders.</p>
+          </CardContent>
+        </Card>
       </div>
 
       <ImportDataModal open={importOpen} onOpenChange={setImportOpen} />
       <BackupRestoreModal open={backupOpen} onOpenChange={setBackupOpen} />
+      <ConfirmDialog
+        open={clearConfirm}
+        onOpenChange={setClearConfirm}
+        title="Clear Demo Data"
+        description="This will remove all demo/sample records from every module. Your manually added data will not be affected."
+        confirmLabel="Clear Demo Data"
+        onConfirm={handleClearDemo}
+        variant="destructive"
+      />
     </div>
   );
 }
