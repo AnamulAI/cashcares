@@ -12,8 +12,10 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useBudgets } from "@/hooks/use-budgets";
-import { useReceivables } from "@/hooks/use-receivables";
-import { usePayables } from "@/hooks/use-payables";
+import { useAllReceivableEntries } from "@/hooks/use-receivable-entries";
+import { useAllPayableEntries } from "@/hooks/use-payable-entries";
+import { usePayableBooks } from "@/hooks/use-payable-books";
+import { useReceivableBooks } from "@/hooks/use-receivable-books";
 import { useLoans } from "@/hooks/use-loans";
 import { useAssets } from "@/hooks/use-assets";
 import { useInvestments } from "@/hooks/use-investments";
@@ -55,8 +57,10 @@ export default function Reports() {
   const { data: accounts = [] } = useAccounts();
   const { data: categoriesRaw = [] } = useCategories();
   const { data: budgetsRaw = [] } = useBudgets();
-  const { data: receivablesRaw = [] } = useReceivables();
-  const { data: payablesRaw = [] } = usePayables();
+  const { data: receivableEntries = [] } = useAllReceivableEntries();
+  const { data: payableEntries = [] } = useAllPayableEntries();
+  const { data: payableBooks = [] } = usePayableBooks();
+  const { data: receivableBooks = [] } = useReceivableBooks();
   const { data: loansRaw = [] } = useLoans();
   const { data: assetsRaw = [] } = useAssets();
   const { data: investmentsRaw = [] } = useInvestments();
@@ -77,8 +81,12 @@ export default function Reports() {
 
   const totalIncome = filteredTxns.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const totalExpense = filteredTxns.filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
-  const savings = totalIncome - totalExpense;
-  const netWorth = accounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalReceivableAmt = receivableEntries.filter((r: any) => r.status !== "collected").reduce((s: number, r: any) => s + (Number(r.amount) - Number(r.collected_amount)), 0);
+  const totalPayableAmt = payableEntries.filter((p: any) => p.status !== "paid").reduce((s: number, p: any) => s + (Number(p.amount) - Number(p.paid_amount)), 0);
+  const totalDebtAmt = loansRaw.filter((l: any) => l.status !== "paid_off").reduce((s: number, l: any) => s + (Number(l.principal_amount) - Number(l.paid_amount)), 0);
+  const totalAssetsAmt = assetsRaw.filter((a: any) => a.status === "active").reduce((s: number, a: any) => s + Number(a.current_value), 0);
+  const totalInvestAmt = investmentsRaw.filter((i: any) => i.status === "active").reduce((s: number, i: any) => s + Number(i.current_value), 0);
+  const netWorth = accounts.reduce((s, a) => s + Number(a.balance), 0) + totalAssetsAmt + totalInvestAmt + totalReceivableAmt - totalPayableAmt - totalDebtAmt;
 
   const budgetUtil = useMemo(() => {
     if (!budgetsRaw.length) return 0;
@@ -200,7 +208,7 @@ export default function Reports() {
         <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label={t("reports.netWorth")} value={fmt(netWorth)} iconBg="bg-primary/10" />
         <FinanceCard icon={<TrendingUp className="h-5 w-5 text-feature-income" />} label={t("reports.totalIncome")} value={fmt(totalIncome)} iconBg="bg-feature-income/10" />
         <FinanceCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} label={t("reports.totalExpense")} value={fmt(totalExpense)} iconBg="bg-feature-expense/10" />
-        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label={t("reports.savings")} value={fmt(savings)} iconBg="bg-feature-savings/10" />
+        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label={t("reports.savings")} value={fmt(totalIncome - totalExpense)} iconBg="bg-feature-savings/10" />
         <FinanceCard icon={<Gauge className="h-5 w-5 text-feature-budget" />} label={t("reports.budgetUtil")} value={formatPercent(budgetUtil, lang)} iconBg="bg-feature-budget/10" />
       </div>
 
@@ -330,10 +338,22 @@ export default function Reports() {
           <DataSummaryTab icon={PiggyBank} title={t("reports.savingsReport")} noDataText={noData} items={accounts.filter(a => a.type === "savings").map(a => ({ label: a.name, value: fmt(Number(a.balance)), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="receivables" className="mt-4">
-          <DataSummaryTab icon={HandCoins} title={t("reports.receivablesReport")} noDataText={noData} items={receivablesRaw.filter((r: any) => r.status !== "collected").map((r: any) => ({ label: r.person_name, value: fmt(Number(r.total_amount) - Number(r.received_amount)), color: r.status === "overdue" ? "text-negative" : "" }))} />
+          <DataSummaryTab icon={HandCoins} title={t("reports.receivablesReport")} noDataText={noData} items={
+            receivableBooks.filter((b: any) => b.status === "active").map((b: any) => {
+              const bookEntries = receivableEntries.filter((e: any) => e.book_id === b.id && e.status !== "collected");
+              const remaining = bookEntries.reduce((s: number, e: any) => s + (Number(e.amount) - Number(e.collected_amount)), 0);
+              return { label: b.person_name, value: fmt(remaining), color: remaining > 0 ? "" : "text-positive" };
+            }).filter((i: any) => parseFloat(i.value.replace(/[^0-9.-]/g, "")) !== 0)
+          } />
         </TabsContent>
         <TabsContent value="payables" className="mt-4">
-          <DataSummaryTab icon={CreditCard} title={t("reports.payablesReport")} noDataText={noData} items={payablesRaw.filter((p: any) => p.status !== "paid").map((p: any) => ({ label: p.person_name, value: fmt(Number(p.total_amount) - Number(p.paid_amount)), color: p.status === "overdue" ? "text-negative" : "" }))} />
+          <DataSummaryTab icon={CreditCard} title={t("reports.payablesReport")} noDataText={noData} items={
+            payableBooks.filter((b: any) => b.status === "active").map((b: any) => {
+              const bookEntries = payableEntries.filter((e: any) => e.book_id === b.id && e.status !== "paid");
+              const remaining = bookEntries.reduce((s: number, e: any) => s + (Number(e.amount) - Number(e.paid_amount)), 0);
+              return { label: b.person_name, value: fmt(remaining), color: remaining > 0 ? "text-negative" : "" };
+            }).filter((i: any) => parseFloat(i.value.replace(/[^0-9.-]/g, "")) !== 0)
+          } />
         </TabsContent>
         <TabsContent value="debt" className="mt-4">
           <DataSummaryTab icon={Scale} title={t("reports.debtReport")} noDataText={noData} items={loansRaw.filter((l: any) => l.status !== "paid_off").map((l: any) => ({ label: l.lender_name, value: fmt(Number(l.principal_amount) - Number(l.paid_amount)), color: "text-negative" }))} />
