@@ -31,7 +31,7 @@ const statusColors: Record<string, string> = {
 
 export default function Receivables() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useReceivables();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateReceivable();
