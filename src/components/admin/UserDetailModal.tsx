@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Phone, Calendar, Wallet, ArrowLeftRight, CreditCard, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, Mail, Phone, Calendar, Wallet, ArrowLeftRight, CreditCard, Shield, MapPin, Building2, Crown } from "lucide-react";
 
-interface UserDetail {
+export interface UserDetail {
   id: string;
   full_name: string | null;
   email: string | null;
@@ -15,6 +17,7 @@ interface UserDetail {
   created_at: string;
   role: string;
   plan: string;
+  status: string;
   accountCount: number;
   transactionCount: number;
   budgetCount: number;
@@ -24,9 +27,17 @@ interface UserDetailModalProps {
   user: UserDetail | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEditRole?: () => void;
+  onEditPlan?: () => void;
 }
 
-export function UserDetailModal({ user, open, onOpenChange }: UserDetailModalProps) {
+const statusColors: Record<string, string> = {
+  active: "text-positive",
+  suspended: "text-warning",
+  inactive: "text-muted-foreground",
+};
+
+export function UserDetailModal({ user, open, onOpenChange, onEditRole, onEditPlan }: UserDetailModalProps) {
   if (!user) return null;
 
   const initial = (user.full_name || user.email || "?").charAt(0).toUpperCase();
@@ -51,12 +62,15 @@ export function UserDetailModal({ user, open, onOpenChange }: UserDetailModalPro
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">{user.full_name || "No name"}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-              <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 <Badge variant={user.role === "admin" ? "default" : "secondary"} className="text-[10px] gap-1">
                   <Shield className="h-3 w-3" /> {user.role}
                 </Badge>
-                <Badge variant={user.plan !== "free" ? "default" : "outline"} className="text-[10px]">
-                  {user.plan}
+                <Badge variant={user.plan !== "free" ? "default" : "outline"} className="text-[10px] gap-1">
+                  <Crown className="h-3 w-3" /> {user.plan}
+                </Badge>
+                <Badge variant="outline" className={`text-[10px] ${statusColors[user.status] || ""}`}>
+                  {user.status}
                 </Badge>
               </div>
             </div>
@@ -65,27 +79,27 @@ export function UserDetailModal({ user, open, onOpenChange }: UserDetailModalPro
           <Separator />
 
           {/* Info rows */}
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {user.phone && (
               <div className="flex items-center gap-3 text-xs">
-                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{user.phone}</span>
               </div>
             )}
             {user.company_name && (
               <div className="flex items-center gap-3 text-xs">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{user.company_name}{user.role_title ? ` — ${user.role_title}` : ""}</span>
               </div>
             )}
             {user.country && (
               <div className="flex items-center gap-3 text-xs">
-                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{user.country}</span>
               </div>
             )}
             <div className="flex items-center gap-3 text-xs">
-              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span>Joined {new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
             </div>
           </div>
@@ -105,6 +119,20 @@ export function UserDetailModal({ user, open, onOpenChange }: UserDetailModalPro
                 <p className="text-[10px] text-muted-foreground">{s.label}</p>
               </div>
             ))}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 pt-1">
+            {onEditRole && (
+              <Button size="sm" variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => { onOpenChange(false); onEditRole(); }}>
+                <Shield className="h-3.5 w-3.5" /> Edit Role
+              </Button>
+            )}
+            {onEditPlan && (
+              <Button size="sm" variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => { onOpenChange(false); onEditPlan(); }}>
+                <Crown className="h-3.5 w-3.5" /> Update Plan
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
