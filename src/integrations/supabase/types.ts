@@ -28,6 +28,7 @@ export type Database = {
           notes: string | null
           type: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           balance?: number
@@ -42,6 +43,7 @@ export type Database = {
           notes?: string | null
           type?: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           balance?: number
@@ -56,6 +58,7 @@ export type Database = {
           notes?: string | null
           type?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -72,6 +75,7 @@ export type Database = {
           purchase_value: number
           status: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           acquisition_date?: string | null
@@ -85,6 +89,7 @@ export type Database = {
           purchase_value?: number
           status?: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           acquisition_date?: string | null
@@ -98,6 +103,7 @@ export type Database = {
           purchase_value?: number
           status?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -121,6 +127,7 @@ export type Database = {
           period_type: string
           start_date: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           alert_threshold?: number
@@ -133,6 +140,7 @@ export type Database = {
           period_type?: string
           start_date?: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           alert_threshold?: number
@@ -145,6 +153,7 @@ export type Database = {
           period_type?: string
           start_date?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -171,6 +180,7 @@ export type Database = {
           updated_at: string
           usable_in_budgets: boolean
           usage_count: number
+          user_id: string
         }
         Insert: {
           color?: string
@@ -186,6 +196,7 @@ export type Database = {
           updated_at?: string
           usable_in_budgets?: boolean
           usage_count?: number
+          user_id?: string
         }
         Update: {
           color?: string
@@ -201,6 +212,7 @@ export type Database = {
           updated_at?: string
           usable_in_budgets?: boolean
           usage_count?: number
+          user_id?: string
         }
         Relationships: [
           {
@@ -225,6 +237,7 @@ export type Database = {
           start_date: string | null
           status: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -238,6 +251,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           created_at?: string
@@ -251,6 +265,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -277,6 +292,7 @@ export type Database = {
           principal_amount: number
           status: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -292,6 +308,7 @@ export type Database = {
           principal_amount?: number
           status?: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           created_at?: string
@@ -307,6 +324,7 @@ export type Database = {
           principal_amount?: number
           status?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -329,6 +347,7 @@ export type Database = {
           id: string
           note: string | null
           partnership_id: string
+          user_id: string
         }
         Insert: {
           amount?: number
@@ -340,6 +359,7 @@ export type Database = {
           id?: string
           note?: string | null
           partnership_id: string
+          user_id?: string
         }
         Update: {
           amount?: number
@@ -351,6 +371,7 @@ export type Database = {
           id?: string
           note?: string | null
           partnership_id?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -375,6 +396,7 @@ export type Database = {
           start_date: string | null
           status: string
           updated_at: string
+          user_id: string
           your_contribution: number
         }
         Insert: {
@@ -389,6 +411,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+          user_id?: string
           your_contribution?: number
         }
         Update: {
@@ -403,6 +426,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
+          user_id?: string
           your_contribution?: number
         }
         Relationships: []
@@ -420,6 +444,7 @@ export type Database = {
           status: string
           total_amount: number
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -433,6 +458,7 @@ export type Database = {
           status?: string
           total_amount?: number
           updated_at?: string
+          user_id?: string
         }
         Update: {
           created_at?: string
@@ -446,6 +472,7 @@ export type Database = {
           status?: string
           total_amount?: number
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -518,6 +545,7 @@ export type Database = {
           status: string
           total_amount: number
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -531,6 +559,7 @@ export type Database = {
           status?: string
           total_amount?: number
           updated_at?: string
+          user_id?: string
         }
         Update: {
           created_at?: string
@@ -544,6 +573,7 @@ export type Database = {
           status?: string
           total_amount?: number
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -568,6 +598,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -581,6 +612,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           created_at?: string
@@ -594,6 +626,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -612,6 +645,7 @@ export type Database = {
           transfer_fee: number | null
           type: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           account_id: string
@@ -627,6 +661,7 @@ export type Database = {
           transfer_fee?: number | null
           type?: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           account_id?: string
@@ -642,6 +677,7 @@ export type Database = {
           transfer_fee?: number | null
           type?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
