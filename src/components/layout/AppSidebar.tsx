@@ -51,6 +51,7 @@ const navGroups = [
     labelKey: "nav.insights",
     items: [
       { titleKey: "nav.reports", url: "/reports", icon: BarChart3, active: true },
+      { titleKey: "nav.reminders", url: "/reminders", icon: Bell, active: true },
     ],
   },
 ];
