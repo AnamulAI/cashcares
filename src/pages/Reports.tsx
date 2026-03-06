@@ -21,6 +21,8 @@ import { useInvestments } from "@/hooks/use-investments";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 
 function DataSummaryTab({ icon: Icon, title, items }: { icon: React.ElementType; title: string; items: { label: string; value: string; color?: string }[] }) {
   return (
