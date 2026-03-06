@@ -46,7 +46,7 @@ const navGroups = [
   {
     label: "Insights",
     items: [
-      { title: "Reports", url: "/reports", icon: BarChart3, active: false },
+      { title: "Reports", url: "/reports", icon: BarChart3, active: true },
     ],
   },
 ];
