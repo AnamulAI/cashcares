@@ -58,7 +58,9 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/receivables" element={<Receivables />} />
+            <Route path="/receivables/:id" element={<ReceivableLedger />} />
             <Route path="/payables" element={<Payables />} />
+            <Route path="/payables/:id" element={<PayableLedger />} />
             <Route path="/debt-loans" element={<DebtLoans />} />
             <Route path="/assets" element={<Assets />} />
             <Route path="/investments" element={<Investments />} />
