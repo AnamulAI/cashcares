@@ -2,8 +2,8 @@ import { PiggyBank, HandCoins, CreditCard, Scale, TrendingUp, Building2 } from "
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAccounts } from "@/hooks/use-accounts";
-import { useReceivables } from "@/hooks/use-receivables";
-import { usePayables } from "@/hooks/use-payables";
+import { useAllPayableEntries } from "@/hooks/use-payable-entries";
+import { useAllReceivableEntries } from "@/hooks/use-receivable-entries";
 import { useLoans } from "@/hooks/use-loans";
 import { useAssets } from "@/hooks/use-assets";
 import { useInvestments } from "@/hooks/use-investments";
@@ -16,15 +16,19 @@ export function SecondaryCards() {
   const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const { data: accounts = [] } = useAccounts();
-  const { data: receivables = [] } = useReceivables();
-  const { data: payables = [] } = usePayables();
+  const { data: receivableEntries = [] } = useAllReceivableEntries();
+  const { data: payableEntries = [] } = useAllPayableEntries();
   const { data: loans = [] } = useLoans();
   const { data: assets = [] } = useAssets();
   const { data: investments = [] } = useInvestments();
 
   const savings = accounts.filter(a => a.type === "savings").reduce((s, a) => s + Number(a.balance), 0);
-  const totalReceivable = receivables.filter(r => r.status !== "collected").reduce((s, r) => s + (Number(r.total_amount) - Number(r.received_amount)), 0);
-  const totalPayable = payables.filter(p => p.status !== "paid").reduce((s, p) => s + (Number(p.total_amount) - Number(p.paid_amount)), 0);
+  const totalReceivable = receivableEntries
+    .filter((r: any) => r.status !== "collected")
+    .reduce((s: number, r: any) => s + (Number(r.amount) - Number(r.collected_amount)), 0);
+  const totalPayable = payableEntries
+    .filter((p: any) => p.status !== "paid")
+    .reduce((s: number, p: any) => s + (Number(p.amount) - Number(p.paid_amount)), 0);
   const totalDebt = loans.filter(l => l.status !== "paid_off").reduce((s, l) => s + (Number(l.principal_amount) - Number(l.paid_amount)), 0);
   const totalInvestments = investments.filter(i => i.status === "active").reduce((s, i) => s + Number(i.current_value), 0);
   const totalAssets = assets.filter(a => a.status === "active").reduce((s, a) => s + Number(a.current_value), 0);
