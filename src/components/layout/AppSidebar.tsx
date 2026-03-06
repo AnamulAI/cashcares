@@ -52,8 +52,8 @@ const navGroups = [
 ];
 
 const systemItems = [
-  { title: "Settings", url: "/settings", icon: Settings, active: false },
-  { title: "Subscription", url: "/subscription", icon: Crown, active: false },
+  { title: "Settings", url: "/settings", icon: Settings, active: true },
+  { title: "Subscription", url: "/subscription", icon: Crown, active: true },
 ];
 
 export function AppSidebar() {
