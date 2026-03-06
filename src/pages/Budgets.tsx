@@ -53,6 +53,7 @@ export default function Budgets() {
   const createBudget = useCreateBudget();
   const updateBudget = useUpdateBudget();
   const deleteBudget = useDeleteBudget();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -62,6 +63,9 @@ export default function Budgets() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<BudgetFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const expenseCategories = categories.filter(c => c.group === "expense" && c.usable_in_budgets);
 
