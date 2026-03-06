@@ -190,8 +190,9 @@ export default function Receivables() {
       ) : (
         <Card className="finance-card-static overflow-hidden">
           <Table>
-            <TableHeader>
+             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && selected.size === filtered.length} onCheckedChange={toggleAll} /></TableHead>
                 <TableHead className="text-xs">{t("module.person")}</TableHead>
                 <TableHead className="text-xs">{t("table.reason")}</TableHead>
                 <TableHead className="text-xs text-right">{t("module.total")}</TableHead>
@@ -207,7 +208,7 @@ export default function Receivables() {
                 const remaining = Number(r.total_amount) - Number(r.received_amount);
                 return (
                   <TableRow key={r.id} className="group">
-                    <TableCell className="text-xs font-medium">{r.person_name}</TableCell>
+                    <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleOne(r.id)} /></TableCell>
                     <TableCell className="text-xs text-muted-foreground">{r.reason || "—"}</TableCell>
                     <TableCell className="text-xs text-right font-semibold">{fmt(Number(r.total_amount))}</TableCell>
                     <TableCell className="text-xs text-right text-positive">{fmt(Number(r.received_amount))}</TableCell>
