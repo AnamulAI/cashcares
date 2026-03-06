@@ -258,7 +258,7 @@ export default function Settings() {
         {/* Data & Export */}
         <Card className="finance-card-static lg:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> {t("settings.dataExport")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-feature-reports" /> {t("settings.dataExport")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.dataExportDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
