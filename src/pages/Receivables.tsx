@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, DollarSign } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -12,52 +13,43 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useReceivables, useCreateReceivable, useUpdateReceivable, useDeleteReceivable, useRecordCollection, ReceivableInsert } from "@/hooks/use-receivables";
-import { useAccounts } from "@/hooks/use-accounts";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useReceivableBooks, useCreateReceivableBook, useUpdateReceivableBook, useDeleteReceivableBook, ReceivableBookInsert } from "@/hooks/use-receivable-books";
+import { useAllReceivableEntries } from "@/hooks/use-receivable-entries";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO, isAfter, startOfMonth, endOfMonth } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  open: "bg-primary/10 text-primary",
-  partial: "bg-warning/10 text-warning",
-  collected: "bg-positive/10 text-positive",
-  overdue: "bg-negative/10 text-negative",
+  active: "bg-primary/10 text-primary",
+  closed: "bg-muted text-muted-foreground",
 };
 
 export default function Receivables() {
   const { currency, isPremium, settings } = useAppContext();
   const { t, lang } = useTranslation();
-  const { data: items = [], isLoading } = useReceivables();
-  const { data: accounts = [] } = useAccounts();
-  const createMut = useCreateReceivable();
-  const updateMut = useUpdateReceivable();
-  const deleteMut = useDeleteReceivable();
-  const collectMut = useRecordCollection();
+  const navigate = useNavigate();
+  const { data: books = [], isLoading } = useReceivableBooks();
+  const { data: allEntries = [] } = useAllReceivableEntries();
+  const createMut = useCreateReceivableBook();
+  const updateMut = useUpdateReceivableBook();
+  const deleteMut = useDeleteReceivableBook();
 
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [collectModal, setCollectModal] = useState<any>(null);
-  const [collectAmt, setCollectAmt] = useState("");
-  const [collectAcct, setCollectAcct] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const qc = useQueryClient();
 
-  const [form, setForm] = useState({ person_name: "", reason: "", total_amount: "", received_amount: "0", due_date: "", linked_account_id: "", note: "", status: "open" });
+  const [form, setForm] = useState({ person_name: "", description: "", phone: "", email: "", status: "active", opening_balance: "0" });
 
   const fmt = (n: number) => formatAmount(n, currency, lang);
   const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
@@ -66,56 +58,56 @@ export default function Receivables() {
   const mStart = startOfMonth(now);
   const mEnd = endOfMonth(now);
 
-  const processed = useMemo(() => items.map(r => {
-    if (r.status === "open" && r.due_date && isAfter(now, parseISO(r.due_date))) return { ...r, status: "overdue" };
-    return r;
-  }), [items]);
+  // Compute per-book aggregates
+  const bookAggregates = useMemo(() => {
+    const map: Record<string, { entryCount: number; totalAmount: number; collectedAmount: number; hasOverdue: boolean }> = {};
+    allEntries.forEach(e => {
+      if (!map[e.book_id]) map[e.book_id] = { entryCount: 0, totalAmount: 0, collectedAmount: 0, hasOverdue: false };
+      const agg = map[e.book_id];
+      agg.entryCount++;
+      agg.totalAmount += Number(e.amount);
+      agg.collectedAmount += Number(e.collected_amount);
+      if (e.status === "open" && e.due_date && isAfter(now, parseISO(e.due_date))) agg.hasOverdue = true;
+    });
+    return map;
+  }, [allEntries]);
 
-  const filtered = useMemo(() => processed.filter(r => {
-    if (statusFilter !== "all" && r.status !== statusFilter) return false;
-    if (search && !r.person_name.toLowerCase().includes(search.toLowerCase()) && !(r.reason || "").toLowerCase().includes(search.toLowerCase())) return false;
+  const totalReceivable = Object.values(bookAggregates).reduce((s, a) => s + (a.totalAmount - a.collectedAmount), 0);
+  const overdueAmt = allEntries.filter(e => (e.status === "open" && e.due_date && isAfter(now, parseISO(e.due_date))) || e.status === "overdue").reduce((s, e) => s + (Number(e.amount) - Number(e.collected_amount)), 0);
+  const collectedThisMonth = allEntries.filter(e => e.status === "collected" && e.updated_at && parseISO(e.updated_at) >= mStart && parseISO(e.updated_at) <= mEnd).reduce((s, e) => s + Number(e.collected_amount), 0);
+  const openBooksCount = books.filter(b => b.status === "active").length;
+
+  const filtered = useMemo(() => books.filter(b => {
+    if (statusFilter !== "all" && b.status !== statusFilter) return false;
+    if (search && !b.person_name.toLowerCase().includes(search.toLowerCase()) && !(b.description || "").toLowerCase().includes(search.toLowerCase())) return false;
     return true;
-  }), [processed, statusFilter, search]);
-
-  const totalReceivable = processed.reduce((s, r) => s + (Number(r.total_amount) - Number(r.received_amount)), 0);
-  const overdueAmt = processed.filter(r => r.status === "overdue").reduce((s, r) => s + (Number(r.total_amount) - Number(r.received_amount)), 0);
-  const collectedThisMonth = items.filter(r => r.status === "collected" && r.updated_at && parseISO(r.updated_at) >= mStart && parseISO(r.updated_at) <= mEnd).reduce((s, r) => s + Number(r.received_amount), 0);
-  const openCount = processed.filter(r => r.status !== "collected").length;
+  }), [books, statusFilter, search]);
 
   const openModal = (item?: any) => {
     if (item) {
       setEditing(item);
-      setForm({ person_name: item.person_name, reason: item.reason || "", total_amount: String(item.total_amount), received_amount: String(item.received_amount), due_date: item.due_date || "", linked_account_id: item.linked_account_id || "", note: item.note || "", status: item.status });
+      setForm({ person_name: item.person_name, description: item.description || "", phone: item.phone || "", email: item.email || "", status: item.status, opening_balance: String(item.opening_balance) });
     } else {
       setEditing(null);
-      setForm({ person_name: "", reason: "", total_amount: "", received_amount: "0", due_date: "", linked_account_id: "", note: "", status: "open" });
+      setForm({ person_name: "", description: "", phone: "", email: "", status: "active", opening_balance: "0" });
     }
     setModal(true);
   };
 
   const handleSave = () => {
-    const payload: ReceivableInsert = {
+    const payload: ReceivableBookInsert = {
       person_name: form.person_name,
-      reason: form.reason || null,
-      total_amount: Number(form.total_amount),
-      received_amount: Number(form.received_amount || 0),
-      due_date: form.due_date || null,
-      linked_account_id: form.linked_account_id || null,
-      note: form.note || null,
+      description: form.description || null,
+      phone: form.phone || null,
+      email: form.email || null,
       status: form.status,
+      opening_balance: Number(form.opening_balance || 0),
     };
     if (editing) {
       updateMut.mutate({ id: editing.id, ...payload }, { onSuccess: () => setModal(false) });
     } else {
       createMut.mutate(payload, { onSuccess: () => setModal(false) });
     }
-  };
-
-  const handleCollect = () => {
-    if (!collectModal || !collectAmt) return;
-    collectMut.mutate({ id: collectModal.id, amount: Number(collectAmt), linkedAccountId: collectAcct || collectModal.linked_account_id }, {
-      onSuccess: () => { setCollectModal(null); setCollectAmt(""); setCollectAcct(""); }
-    });
   };
 
   const toggleAll = () => {
@@ -130,11 +122,10 @@ export default function Receivables() {
   const handleBulkDelete = async () => {
     setBulkDeleting(true);
     try {
-      for (const id of selected) { await supabase.from("receivables").delete().eq("id", id); }
-      qc.invalidateQueries({ queryKey: ["receivables"] });
-      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
-      setSelected(new Set());
-      setBulkDeleteOpen(false);
+      for (const id of selected) { await (await import("@/integrations/supabase/client")).supabase.from("receivable_books" as any).delete().eq("id", id); }
+      const { useQueryClient } = await import("@tanstack/react-query");
+      // just invalidate via deleteMut pattern
+      window.location.reload();
     } finally { setBulkDeleting(false); }
   };
 
@@ -149,28 +140,30 @@ export default function Receivables() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("receivables.title")} subtitle={t("receivables.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addReceivable")}</Button>} />
+      <PageHeader
+        title={t("receivables.title")}
+        subtitle="Track money expected from people or entities"
+        actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Person</Button>}
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <FinanceCard icon={<HandCoins className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("module.totalReceivable")} value={fmt(totalReceivable)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("module.overdue")} value={fmt(overdueAmt)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.collectedThisMonth")} value={fmt(collectedThisMonth)} />
-        <FinanceCard icon={<Clock className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("module.openCount")} value={String(openCount)} />
+        <FinanceCard icon={<Clock className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label="Open Books" value={String(openBooksCount)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder={t("action.search") + "..."} value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
+          <Input placeholder="Search person..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("module.allStatus")}</SelectItem>
-            <SelectItem value="open">{t("status.open")}</SelectItem>
-            <SelectItem value="partial">{t("status.partial")}</SelectItem>
-            <SelectItem value="collected">{t("status.collected")}</SelectItem>
-            <SelectItem value="overdue">{t("status.overdue")}</SelectItem>
+            <SelectItem value="active">{t("status.active")}</SelectItem>
+            <SelectItem value="closed">{t("status.closed")}</SelectItem>
           </SelectContent>
         </Select>
         {(search || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>}
@@ -179,108 +172,91 @@ export default function Receivables() {
       <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
 
       {isLoading ? (
-        <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+        <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<HandCoins className="h-7 w-7 text-muted-foreground" />}
           title={t("module.noReceivables")}
-          description={t("module.noReceivablesDesc")}
-          action={<Button size="sm" onClick={() => openModal()}><Plus className="h-4 w-4 mr-1" /> {t("action.addReceivable")}</Button>}
+          description="Add your first person to start tracking receivables."
+          action={<Button size="sm" onClick={() => openModal()}><Plus className="h-4 w-4 mr-1" /> Add Person</Button>}
         />
       ) : (
-        <Card className="finance-card-static overflow-hidden">
-          <Table>
-             <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && selected.size === filtered.length} onCheckedChange={toggleAll} /></TableHead>
-                <TableHead className="text-xs">{t("module.person")}</TableHead>
-                <TableHead className="text-xs">{t("table.reason")}</TableHead>
-                <TableHead className="text-xs text-right">{t("module.total")}</TableHead>
-                <TableHead className="text-xs text-right">{t("module.received")}</TableHead>
-                <TableHead className="text-xs text-right">{t("table.remaining")}</TableHead>
-                <TableHead className="text-xs">{t("table.dueDate")}</TableHead>
-                <TableHead className="text-xs">{t("table.status")}</TableHead>
-                <TableHead className="text-xs text-right">{t("table.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(r => {
-                const remaining = Number(r.total_amount) - Number(r.received_amount);
-                return (
-                  <TableRow key={r.id} className="group">
-                    <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleOne(r.id)} /></TableCell>
-                    <TableCell className="text-xs font-medium">{r.person_name}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{r.reason || "—"}</TableCell>
-                    <TableCell className="text-xs text-right font-semibold">{fmt(Number(r.total_amount))}</TableCell>
-                    <TableCell className="text-xs text-right text-positive">{fmt(Number(r.received_amount))}</TableCell>
-                    <TableCell className="text-xs text-right">{fmt(remaining)}</TableCell>
-                    <TableCell className="text-xs">{r.due_date ? fmtDate(r.due_date) : "—"}</TableCell>
-                    <TableCell><Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[r.status] || ""}`}>{r.status}</Badge></TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {r.status !== "collected" && <Button variant="ghost" size="icon" className="h-7 w-7" title={t("module.recordCollection")} onClick={() => { setCollectModal(r); setCollectAmt(""); setCollectAcct(r.linked_account_id || ""); }}><DollarSign className="h-3.5 w-3.5" /></Button>}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openModal(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-negative" onClick={() => setDeleteId(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
+        <div className="space-y-2">
+          {filtered.map(book => {
+            const agg = bookAggregates[book.id] || { entryCount: 0, totalAmount: 0, collectedAmount: 0, hasOverdue: false };
+            const remaining = agg.totalAmount - agg.collectedAmount + Number(book.opening_balance);
+            return (
+              <Card key={book.id} className="finance-card-static p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/receivables/${book.id}`)}>
+                <div className="flex items-center gap-3">
+                  <Checkbox checked={selected.has(book.id)} onCheckedChange={() => toggleOne(book.id)} onClick={e => e.stopPropagation()} />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-feature-receivables/10">
+                    <BookOpen className="h-5 w-5 text-feature-receivables" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold truncate">{book.person_name}</h3>
+                      <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[book.status] || ""}`}>{book.status}</Badge>
+                      {agg.hasOverdue && <Badge variant="secondary" className="text-[10px] bg-negative/10 text-negative">Overdue</Badge>}
+                    </div>
+                    {book.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{book.description}</p>}
+                    <p className="text-[11px] text-muted-foreground mt-1">{agg.entryCount} entries · Created {fmtDate(book.created_at)}</p>
+                  </div>
+                  <div className="text-right shrink-0 hidden sm:block">
+                    <p className="text-xs text-muted-foreground">Total: {fmt(agg.totalAmount)}</p>
+                    <p className="text-xs text-positive">Collected: {fmt(agg.collectedAmount)}</p>
+                    <p className="text-sm font-bold mt-0.5">Remaining: {fmt(remaining > 0 ? remaining : 0)}</p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/receivables/${book.id}`); }}><BookOpen className="h-3.5 w-3.5 mr-2" /> Open Ledger</DropdownMenuItem>
+                      <DropdownMenuItem onClick={e => { e.stopPropagation(); openModal(book); }}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/receivables/${book.id}`); }}><FileText className="h-3.5 w-3.5 mr-2" /> Report</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={e => { e.stopPropagation(); setDeleteId(book.id); }}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Book Modal */}
       <Dialog open={modal} onOpenChange={setModal}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>{editing ? t("module.editReceivable") : t("module.addReceivable")}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit Person" : "Add Person"}</DialogTitle>
+            <DialogDescription>Create a receivable book for a person or entity.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3 py-1">
-            <div><Label className="text-xs">{t("module.personName")} *</Label><Input value={form.person_name} onChange={e => setForm(f => ({ ...f, person_name: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
-            <div><Label className="text-xs">{t("table.reason")}</Label><Input value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            <div><Label className="text-xs">Person Name *</Label><Input value={form.person_name} onChange={e => setForm(f => ({ ...f, person_name: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            <div><Label className="text-xs">Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 text-sm" rows={2} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">{t("module.totalAmount")} *</Label><Input type="number" min="0" value={form.total_amount} onChange={e => setForm(f => ({ ...f, total_amount: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
-              <div><Label className="text-xs">{t("module.receivedAmount")}</Label><Input type="number" min="0" value={form.received_amount} onChange={e => setForm(f => ({ ...f, received_amount: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+              <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">{t("table.dueDate")}</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
               <div>
-                <Label className="text-xs">{t("module.linkedAccount")}</Label>
-                <Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}>
-                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                <Label className="text-xs">Status</Label>
+                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
+              <div><Label className="text-xs">Opening Balance</Label><Input type="number" min="0" value={form.opening_balance} onChange={e => setForm(f => ({ ...f, opening_balance: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
             </div>
-            <div><Label className="text-xs">{t("table.note")}</Label><Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1 text-sm" rows={2} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setModal(false)}>{t("action.cancel")}</Button>
-            <Button size="sm" onClick={handleSave} disabled={!form.person_name || !form.total_amount || createMut.isPending || updateMut.isPending}>
+            <Button size="sm" onClick={handleSave} disabled={!form.person_name || createMut.isPending || updateMut.isPending}>
               {createMut.isPending || updateMut.isPending ? t("common.saving") : t("action.save")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Collection Modal */}
-      <Dialog open={!!collectModal} onOpenChange={() => setCollectModal(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>{t("module.recordCollection")}</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-1">
-            <p className="text-xs text-muted-foreground">{t("module.remaining")}: {collectModal && fmt(Number(collectModal.total_amount) - Number(collectModal.received_amount))}</p>
-            <div><Label className="text-xs">{t("module.collectionAmount")} *</Label><Input type="number" min="0" value={collectAmt} onChange={e => setCollectAmt(e.target.value)} className="mt-1 h-9 text-sm" /></div>
-            <div>
-              <Label className="text-xs">{t("module.creditToAccount")}</Label>
-              <Select value={collectAcct} onValueChange={setCollectAcct}>
-                <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setCollectModal(null)}>{t("action.cancel")}</Button>
-            <Button size="sm" onClick={handleCollect} disabled={!collectAmt || collectMut.isPending}>{collectMut.isPending ? t("module.recording") : t("module.record")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -288,8 +264,8 @@ export default function Receivables() {
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={() => setDeleteId(null)}
-        title={t("confirm.deleteReceivable")}
-        description={t("confirm.deleteDesc")}
+        title="Delete this receivable book?"
+        description="This will permanently delete this book and all its entries."
         onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}
       />
       <ConfirmDialog

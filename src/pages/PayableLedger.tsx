@@ -1,0 +1,330 @@
+import { useState, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Plus, DollarSign, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, CreditCard, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { FinanceCard } from "@/components/shared/FinanceCard";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { usePayableBook } from "@/hooks/use-payable-books";
+import { usePayableEntries, useCreatePayableEntry, useUpdatePayableEntry, useDeletePayableEntry, useRecordEntryPayment, PayableEntryInsert } from "@/hooks/use-payable-entries";
+import { useAccounts } from "@/hooks/use-accounts";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
+import { parseISO, isAfter, format } from "date-fns";
+
+const statusColors: Record<string, string> = {
+  open: "bg-primary/10 text-primary",
+  partial: "bg-warning/10 text-warning",
+  paid: "bg-positive/10 text-positive",
+  overdue: "bg-negative/10 text-negative",
+};
+
+export default function PayableLedger() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { currency, settings } = useAppContext();
+  const { t, lang } = useTranslation();
+  const { data: book, isLoading: bookLoading } = usePayableBook(id);
+  const { data: entries = [], isLoading: entriesLoading } = usePayableEntries(id);
+  const { data: accounts = [] } = useAccounts();
+  const createMut = useCreatePayableEntry();
+  const updateMut = useUpdatePayableEntry();
+  const deleteMut = useDeletePayableEntry();
+  const payMut = useRecordEntryPayment();
+
+  const [entryModal, setEntryModal] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [payModal, setPayModal] = useState<any>(null);
+  const [payAmt, setPayAmt] = useState("");
+  const [payAcct, setPayAcct] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [form, setForm] = useState({ date: format(new Date(), "yyyy-MM-dd"), description: "", category: "", linked_account_id: "", amount: "", paid_amount: "0", due_date: "", note: "", status: "open" });
+
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
+  const now = new Date();
+
+  const processed = useMemo(() => entries.map(e => {
+    if (e.status === "open" && e.due_date && isAfter(now, parseISO(e.due_date))) return { ...e, status: "overdue" };
+    return e;
+  }), [entries]);
+
+  const filtered = useMemo(() => processed.filter(e => {
+    if (statusFilter !== "all" && e.status !== statusFilter) return false;
+    return true;
+  }), [processed, statusFilter]);
+
+  const totalAmount = processed.reduce((s, e) => s + Number(e.amount), 0);
+  const totalPaid = processed.reduce((s, e) => s + Number(e.paid_amount), 0);
+  const remaining = totalAmount - totalPaid + Number(book?.opening_balance || 0);
+  const overdueCount = processed.filter(e => e.status === "overdue").length;
+
+  const openEntryModal = (item?: any) => {
+    if (item) {
+      setEditing(item);
+      setForm({ date: item.date, description: item.description || "", category: item.category || "", linked_account_id: item.linked_account_id || "", amount: String(item.amount), paid_amount: String(item.paid_amount), due_date: item.due_date || "", note: item.note || "", status: item.status });
+    } else {
+      setEditing(null);
+      setForm({ date: format(new Date(), "yyyy-MM-dd"), description: "", category: "", linked_account_id: "", amount: "", paid_amount: "0", due_date: "", note: "", status: "open" });
+    }
+    setEntryModal(true);
+  };
+
+  const handleSaveEntry = () => {
+    if (!id) return;
+    const payload: PayableEntryInsert = {
+      book_id: id,
+      date: form.date,
+      description: form.description || null,
+      category: form.category || null,
+      linked_account_id: form.linked_account_id || null,
+      amount: Number(form.amount),
+      paid_amount: Number(form.paid_amount || 0),
+      due_date: form.due_date || null,
+      note: form.note || null,
+      status: form.status,
+    };
+    if (editing) {
+      updateMut.mutate({ id: editing.id, ...payload }, { onSuccess: () => setEntryModal(false) });
+    } else {
+      createMut.mutate(payload, { onSuccess: () => setEntryModal(false) });
+    }
+  };
+
+  const handlePay = () => {
+    if (!payModal || !payAmt) return;
+    payMut.mutate({ id: payModal.id, amount: Number(payAmt), linkedAccountId: payAcct || payModal.linked_account_id }, {
+      onSuccess: () => { setPayModal(null); setPayAmt(""); setPayAcct(""); }
+    });
+  };
+
+  const handleDuplicate = (entry: any) => {
+    if (!id) return;
+    createMut.mutate({
+      book_id: id,
+      date: format(new Date(), "yyyy-MM-dd"),
+      description: entry.description,
+      category: entry.category,
+      linked_account_id: entry.linked_account_id,
+      amount: Number(entry.amount),
+      paid_amount: 0,
+      due_date: null,
+      note: entry.note,
+      status: "open",
+    });
+  };
+
+  const handlePrint = () => window.print();
+
+  const handleCSV = () => {
+    const headers = ["Date", "Description", "Category", "Account", "Amount", "Paid", "Balance", "Status"];
+    const rows = processed.map(e => [
+      e.date, e.description || "", e.category || "", e.linked_account?.name || "", e.amount, e.paid_amount, Number(e.amount) - Number(e.paid_amount), e.status
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `payable-${book?.person_name || "ledger"}-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (bookLoading) return <div className="space-y-4 p-6"><Skeleton className="h-8 w-64" /><Skeleton className="h-20" /></div>;
+
+  if (!book) return <div className="p-6"><p className="text-muted-foreground">Book not found.</p><Button variant="link" onClick={() => navigate("/payables")}>← Back</Button></div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="hidden print-only">
+        <h1 className="text-xl font-bold">{book.person_name} — Payable Ledger</h1>
+        <p className="text-sm text-muted-foreground">{book.description || ""}</p>
+        <p className="text-xs text-muted-foreground mt-1">Generated: {formatAppDateTime(new Date(), settings.dateFormat, settings.timezone, lang)}</p>
+      </div>
+
+      <div className="flex items-center gap-2 no-print">
+        <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/payables")}><ArrowLeft className="h-4 w-4" /> Back</Button>
+      </div>
+
+      <PageHeader
+        title={book.person_name}
+        subtitle={book.description || "Payable ledger"}
+        actions={
+          <div className="flex items-center gap-2 no-print">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setPayModal({ id: "bulk" })}><DollarSign className="h-4 w-4" /> Record Payment</Button>
+            <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.print()}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <FinanceCard icon={<CreditCard className="h-5 w-5 text-feature-payables" />} iconBg="bg-feature-payables/10" label={t("module.totalPayable")} value={fmt(totalAmount)} />
+        <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label="Total Paid" value={fmt(totalPaid)} />
+        <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label="Remaining" value={fmt(remaining > 0 ? remaining : 0)} />
+        <FinanceCard icon={<Clock className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label="Overdue Entries" value={String(overdueCount)} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 no-print">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("module.allStatus")}</SelectItem>
+            <SelectItem value="open">{t("status.open")}</SelectItem>
+            <SelectItem value="partial">{t("status.partial")}</SelectItem>
+            <SelectItem value="paid">{t("status.paid")}</SelectItem>
+            <SelectItem value="overdue">{t("status.overdue")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {entriesLoading ? (
+        <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+      ) : filtered.length === 0 ? (
+        <Card className="finance-card-static p-8 text-center">
+          <p className="text-muted-foreground text-sm">No entries yet.</p>
+          <Button size="sm" className="mt-3" onClick={() => openEntryModal()}><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
+        </Card>
+      ) : (
+        <Card className="finance-card-static overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">{t("table.date")}</TableHead>
+                <TableHead className="text-xs">Description</TableHead>
+                <TableHead className="text-xs">Category</TableHead>
+                <TableHead className="text-xs">Account</TableHead>
+                <TableHead className="text-xs text-right">{t("table.amount")}</TableHead>
+                <TableHead className="text-xs text-right">{t("table.paid")}</TableHead>
+                <TableHead className="text-xs text-right">Balance</TableHead>
+                <TableHead className="text-xs">{t("table.status")}</TableHead>
+                <TableHead className="text-xs text-right no-print">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(e => {
+                const balance = Number(e.amount) - Number(e.paid_amount);
+                return (
+                  <TableRow key={e.id}>
+                    <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
+                    <TableCell className="text-xs">{e.description || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{e.category || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{e.linked_account?.name || "—"}</TableCell>
+                    <TableCell className="text-xs text-right font-semibold">{fmt(Number(e.amount))}</TableCell>
+                    <TableCell className="text-xs text-right text-positive">{fmt(Number(e.paid_amount))}</TableCell>
+                    <TableCell className="text-xs text-right">{fmt(balance)}</TableCell>
+                    <TableCell><Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[e.status] || ""}`}>{e.status}</Badge></TableCell>
+                    <TableCell className="text-right no-print">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {e.status !== "paid" && <DropdownMenuItem onClick={() => { setPayModal(e); setPayAmt(""); setPayAcct(e.linked_account_id || ""); }}><DollarSign className="h-3.5 w-3.5 mr-2" /> Record Payment</DropdownMenuItem>}
+                          <DropdownMenuItem onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5 mr-2" /> Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEntryModal(e)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      {/* Add/Edit Entry Modal */}
+      <Dialog open={entryModal} onOpenChange={setEntryModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit Entry" : "Add Entry"}</DialogTitle>
+            <DialogDescription>Add a payable entry for {book.person_name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">{t("table.date")} *</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+              <div><Label className="text-xs">Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            </div>
+            <div><Label className="text-xs">Description</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+              <div>
+                <Label className="text-xs">Account</Label>
+                <Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}>
+                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">{t("table.amount")} *</Label><Input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+              <div><Label className="text-xs">Paid</Label><Input type="number" min="0" value={form.paid_amount} onChange={e => setForm(f => ({ ...f, paid_amount: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+            </div>
+            <div><Label className="text-xs">{t("table.note")}</Label><Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1 text-sm" rows={2} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEntryModal(false)}>{t("action.cancel")}</Button>
+            <Button size="sm" onClick={handleSaveEntry} disabled={!form.amount || !form.date || createMut.isPending || updateMut.isPending}>
+              {createMut.isPending || updateMut.isPending ? t("common.saving") : t("action.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Modal */}
+      <Dialog open={!!payModal} onOpenChange={() => setPayModal(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("module.recordPayment")}</DialogTitle>
+            <DialogDescription>Record a payment for {book.person_name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            {payModal && payModal.id !== "bulk" && (
+              <p className="text-xs text-muted-foreground">{t("module.remaining")}: {fmt(Number(payModal.amount) - Number(payModal.paid_amount))}</p>
+            )}
+            <div><Label className="text-xs">{t("module.paymentAmount")} *</Label><Input type="number" min="0" value={payAmt} onChange={e => setPayAmt(e.target.value)} className="mt-1 h-9 text-sm" /></div>
+            <div>
+              <Label className="text-xs">{t("module.debitFromAccount")}</Label>
+              <Select value={payAcct} onValueChange={setPayAcct}>
+                <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setPayModal(null)}>{t("action.cancel")}</Button>
+            <Button size="sm" onClick={handlePay} disabled={!payAmt || payMut.isPending}>{payMut.isPending ? t("module.recording") : t("module.record")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        title="Delete this entry?"
+        description={t("confirm.deleteDesc")}
+        onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}
+      />
+    </div>
+  );
+}

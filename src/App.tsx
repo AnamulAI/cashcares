@@ -22,6 +22,8 @@ import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
 import Receivables from "./pages/Receivables";
 import Payables from "./pages/Payables";
+import ReceivableLedger from "./pages/ReceivableLedger";
+import PayableLedger from "./pages/PayableLedger";
 import DebtLoans from "./pages/DebtLoans";
 import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
@@ -56,7 +58,9 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/receivables" element={<Receivables />} />
+            <Route path="/receivables/:id" element={<ReceivableLedger />} />
             <Route path="/payables" element={<Payables />} />
+            <Route path="/payables/:id" element={<PayableLedger />} />
             <Route path="/debt-loans" element={<DebtLoans />} />
             <Route path="/assets" element={<Assets />} />
             <Route path="/investments" element={<Investments />} />
