@@ -498,6 +498,8 @@ export type Database = {
           phone: string | null
           role_title: string | null
           state_division: string | null
+          status: string
+          subscription_plan: string
           updated_at: string
         }
         Insert: {
@@ -513,6 +515,8 @@ export type Database = {
           phone?: string | null
           role_title?: string | null
           state_division?: string | null
+          status?: string
+          subscription_plan?: string
           updated_at?: string
         }
         Update: {
@@ -528,6 +532,8 @@ export type Database = {
           phone?: string | null
           role_title?: string | null
           state_division?: string | null
+          status?: string
+          subscription_plan?: string
           updated_at?: string
         }
         Relationships: []
@@ -740,7 +746,7 @@ export type Database = {
       increment_usage: { Args: { cat_uuid: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "manager" | "support"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -868,7 +874,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "manager", "support"],
     },
   },
 } as const
