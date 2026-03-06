@@ -92,7 +92,7 @@ export default function Payables() {
     return (
       <div className="space-y-6">
         <PageHeader title={t("payables.title")} subtitle={t("payables.subtitle")} />
-        <PremiumLocked icon={<CreditCard className="h-7 w-7 text-warning" />} moduleName={t("payables.title")} description={t("premium.upgradeDesc.payables")} />
+        <PremiumLocked icon={<CreditCard className="h-7 w-7 text-feature-payables" />} moduleName={t("payables.title")} description={t("premium.upgradeDesc.payables")} />
       </div>
     );
   }
@@ -102,10 +102,10 @@ export default function Payables() {
       <PageHeader title={t("payables.title")} subtitle={t("payables.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addPayable")}</Button>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<CreditCard className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("module.totalPayable")} value={fmt(totalPayable)} />
+        <FinanceCard icon={<CreditCard className="h-5 w-5 text-feature-payables" />} iconBg="bg-feature-payables/10" label={t("module.totalPayable")} value={fmt(totalPayable)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("module.overdue")} value={fmt(overdueAmt)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.paidThisMonth")} value={fmt(paidThisMonth)} />
-        <FinanceCard icon={<Clock className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("module.openCount")} value={String(openCount)} />
+        <FinanceCard icon={<Clock className="h-5 w-5 text-feature-payables" />} iconBg="bg-feature-payables/10" label={t("module.openCount")} value={String(openCount)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

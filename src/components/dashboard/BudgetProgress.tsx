@@ -17,12 +17,12 @@ export function BudgetProgress() {
       <div className="mt-5 space-y-5">
         {mockBudgets.map((b) => {
           const pct = Math.round((b.spent / b.limit) * 100);
-          const status = pct >= 100 ? "overdue" : pct >= 75 ? "pending" : "active";
+          const status = pct >= 100 ? "over_limit" : pct >= 75 ? "warning" : "safe";
           return (
             <div key={b.id}>
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="font-semibold text-[13px]">{b.categoryName}</span>
-                <StatusBadge status={status === "overdue" ? "overdue" : status === "pending" ? "pending" : "active"} />
+                <StatusBadge status={status} />
               </div>
               <Progress value={Math.min(pct, 100)} className="h-2 rounded-full" />
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1.5">

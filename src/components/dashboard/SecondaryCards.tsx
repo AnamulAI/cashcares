@@ -31,12 +31,12 @@ export function SecondaryCards() {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      <FinanceCard icon={<PiggyBank className="h-[18px] w-[18px] text-positive" />} iconBg="bg-positive/10" label={t("dashboard.savings")} value={fmt(savings)} />
-      <FinanceCard icon={<HandCoins className="h-[18px] w-[18px] text-primary" />} iconBg="bg-primary/10" label={t("dashboard.receivables")} value={fmt(totalReceivable)} />
-      <FinanceCard icon={<CreditCard className="h-[18px] w-[18px] text-warning" />} iconBg="bg-warning/10" label={t("dashboard.payables")} value={fmt(totalPayable)} />
-      <FinanceCard icon={<Scale className="h-[18px] w-[18px] text-negative" />} iconBg="bg-negative/10" label={t("dashboard.debtLoans")} value={fmt(totalDebt)} />
-      <FinanceCard icon={<TrendingUp className="h-[18px] w-[18px] text-primary" />} iconBg="bg-primary/10" label={t("dashboard.investments")} value={fmt(totalInvestments)} />
-      <FinanceCard icon={<Building2 className="h-[18px] w-[18px] text-muted-foreground" />} iconBg="bg-muted" label={t("dashboard.assets")} value={fmt(totalAssets)} />
+      <FinanceCard icon={<PiggyBank className="h-[18px] w-[18px] text-feature-savings" />} iconBg="bg-feature-savings/10" label={t("dashboard.savings")} value={fmt(savings)} />
+      <FinanceCard icon={<HandCoins className="h-[18px] w-[18px] text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("dashboard.receivables")} value={fmt(totalReceivable)} />
+      <FinanceCard icon={<CreditCard className="h-[18px] w-[18px] text-feature-payables" />} iconBg="bg-feature-payables/10" label={t("dashboard.payables")} value={fmt(totalPayable)} />
+      <FinanceCard icon={<Scale className="h-[18px] w-[18px] text-feature-debt" />} iconBg="bg-feature-debt/10" label={t("dashboard.debtLoans")} value={fmt(totalDebt)} />
+      <FinanceCard icon={<TrendingUp className="h-[18px] w-[18px] text-feature-investments" />} iconBg="bg-feature-investments/10" label={t("dashboard.investments")} value={fmt(totalInvestments)} />
+      <FinanceCard icon={<Building2 className="h-[18px] w-[18px] text-feature-assets" />} iconBg="bg-feature-assets/10" label={t("dashboard.assets")} value={fmt(totalAssets)} />
     </div>
   );
 }

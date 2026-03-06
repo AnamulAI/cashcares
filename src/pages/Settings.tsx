@@ -85,7 +85,7 @@ export default function Settings() {
         {/* General Preferences */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> {t("settings.generalPreferences")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Globe className="h-4 w-4 text-feature-settings" /> {t("settings.generalPreferences")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.localeSettings")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -167,7 +167,7 @@ export default function Settings() {
         {/* Notifications */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Bell className="h-4 w-4 text-primary" /> {t("settings.notifications")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Bell className="h-4 w-4 text-feature-reminders" /> {t("settings.notifications")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.notificationsDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -195,7 +195,7 @@ export default function Settings() {
         {/* Appearance */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> {t("settings.appearance")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4 text-feature-categories" /> {t("settings.appearance")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.appearanceDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -225,7 +225,7 @@ export default function Settings() {
         {/* Security */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> {t("settings.security")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-feature-settings" /> {t("settings.security")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.securityDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -258,13 +258,13 @@ export default function Settings() {
         {/* Data & Export */}
         <Card className="finance-card-static lg:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> {t("settings.dataExport")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-feature-reports" /> {t("settings.dataExport")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.dataExportDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" onClick={exportAllData}>
-                <Download className="h-5 w-5 text-primary" />
+                <Download className="h-5 w-5 text-feature-reports" />
                 <span className="font-medium">{t("settings.exportAllData")}</span>
                 <span className="text-[10px] text-muted-foreground">{t("settings.exportAllDataDesc")}</span>
               </Button>

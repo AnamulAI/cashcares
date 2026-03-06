@@ -139,7 +139,7 @@ export default function Partnerships() {
         <PageHeader title={t("partnerships.title", "Partnership Ledger")} subtitle={t("partnerships.subtitle", "Track shared contributions, expenses, and settlement balances")} />
         <Card className="finance-card-static">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mb-4"><Users className="h-7 w-7 text-primary" /></div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-feature-partnerships/10 mb-4"><Users className="h-7 w-7 text-feature-partnerships" /></div>
             <h3 className="text-base font-semibold">Premium Module</h3>
             <p className="mt-1 text-sm text-muted-foreground max-w-sm">Upgrade to Premium to track partnerships and shared finances.</p>
             <Button className="mt-4" onClick={() => window.location.href = "/subscription"}>{t("action.upgrade")}</Button>
@@ -158,9 +158,9 @@ export default function Partnerships() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<Users className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label="Total Partnerships" value={String(totalPartnerships)} />
-        <FinanceCard icon={<DollarSign className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label="Your Contribution" value={fmt(totalYourContribution)} />
-        <FinanceCard icon={<HandCoins className="h-5 w-5 text-accent-foreground" />} iconBg="bg-accent" label="Partner Contribution" value={fmt(totalPartnerContribution)} />
+        <FinanceCard icon={<Users className="h-5 w-5 text-feature-partnerships" />} iconBg="bg-feature-partnerships/10" label="Total Partnerships" value={String(totalPartnerships)} />
+        <FinanceCard icon={<DollarSign className="h-5 w-5 text-feature-income" />} iconBg="bg-feature-income/10" label="Your Contribution" value={fmt(totalYourContribution)} />
+        <FinanceCard icon={<HandCoins className="h-5 w-5 text-feature-partnerships" />} iconBg="bg-feature-partnerships/10" label="Partner Contribution" value={fmt(totalPartnerContribution)} />
         <FinanceCard icon={<Scale className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label="Outstanding Settlement" value={fmt(outstandingSettlement)} />
       </div>
 

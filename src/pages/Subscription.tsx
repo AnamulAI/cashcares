@@ -68,8 +68,8 @@ export default function Subscription() {
 
       <Card className="finance-card-static border-primary/20">
         <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-            <Crown className="h-6 w-6 text-primary" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-feature-subscription/10 shrink-0">
+            <Crown className="h-6 w-6 text-feature-subscription" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export default function Subscription() {
 
       <Card className="finance-card-static">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" /> {t("subscription.billingFaq")}</CardTitle>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><HelpCircle className="h-4 w-4 text-feature-subscription" /> {t("subscription.billingFaq")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           {faqs.map((faq, i) => (
