@@ -25,7 +25,7 @@ const navGroups = [
       { title: "Transactions", url: "/transactions", icon: ArrowLeftRight, active: true },
       { title: "Accounts", url: "/accounts", icon: Landmark, active: true },
       { title: "Categories", url: "/categories", icon: Tag, active: true },
-      { title: "Budgets", url: "/budgets", icon: PieChart, active: false },
+      { title: "Budgets", url: "/budgets", icon: PieChart, active: true },
     ],
   },
   {
