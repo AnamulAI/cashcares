@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useCollectionHistory } from "@/hooks/use-payment-history";
 import { History } from "lucide-react";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 
 interface Props {
   entry: any;
