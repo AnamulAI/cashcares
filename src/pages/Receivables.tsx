@@ -123,10 +123,10 @@ export default function Receivables() {
       <PageHeader title={t("receivables.title")} subtitle={t("receivables.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addReceivable")}</Button>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<HandCoins className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("module.totalReceivable")} value={fmt(totalReceivable)} />
+        <FinanceCard icon={<HandCoins className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("module.totalReceivable")} value={fmt(totalReceivable)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("module.overdue")} value={fmt(overdueAmt)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.collectedThisMonth")} value={fmt(collectedThisMonth)} />
-        <FinanceCard icon={<Clock className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("module.openCount")} value={String(openCount)} />
+        <FinanceCard icon={<Clock className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("module.openCount")} value={String(openCount)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
