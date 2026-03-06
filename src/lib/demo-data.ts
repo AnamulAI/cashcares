@@ -145,10 +145,10 @@ const reminders = [
 // --- Public API ---
 
 export async function isDemoDataLoaded(): Promise<boolean> {
-  const { count } = await supabase
+  const { count } = await (supabase as any)
     .from("accounts")
     .select("id", { count: "exact", head: true })
-    .eq("is_demo" as any, true);
+    .eq("is_demo", true);
   return (count ?? 0) > 0;
 }
 
