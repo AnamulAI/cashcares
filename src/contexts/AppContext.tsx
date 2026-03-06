@@ -149,6 +149,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   dateFormat: "dmy",
   timezone: "dhaka",
+  defaultDashboardRange: "this_month",
   theme: "light",
   notifications: {
     email: true,
