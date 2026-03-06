@@ -106,7 +106,7 @@ export default function Budgets() {
   const remaining = totalBudget - totalSpent;
   const overLimit = budgets.filter(b => b.spent >= Number(b.allocated_amount)).length;
 
-  const fmt = (n: number) => formatAmount(n, currency);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const resetFilters = () => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); };
 
