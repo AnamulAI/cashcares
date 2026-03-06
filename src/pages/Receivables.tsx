@@ -52,6 +52,10 @@ export default function Receivables() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const qc = useQueryClient();
 
   const [form, setForm] = useState({ person_name: "", reason: "", total_amount: "", received_amount: "0", due_date: "", linked_account_id: "", note: "", status: "open" });
 
