@@ -22,6 +22,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
 import { parseISO, isAfter, format } from "date-fns";
+import { ReceivableEntryDetailModal } from "@/components/ledger/ReceivableEntryDetailModal";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
