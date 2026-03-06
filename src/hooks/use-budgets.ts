@@ -22,12 +22,12 @@ export function useBudgets() {
   return useQuery({
     queryKey: ["budgets"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("budgets" as any)
+      const { data, error } = await (supabase as any)
+        .from("budgets")
         .select("*, category:categories!budgets_category_id_fkey(name, icon, color, group)")
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as (DbBudget & { category: { name: string; icon: string | null; color: string; group: string } })[];
+      return (data || []) as (DbBudget & { category: { name: string; icon: string | null; color: string; group: string } })[];
     },
   });
 }
