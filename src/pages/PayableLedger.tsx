@@ -168,7 +168,7 @@ export default function PayableLedger() {
         subtitle={book.description || "Payable ledger"}
         actions={
           <div className="flex items-center gap-2 no-print">
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => setPayModal({ id: "bulk" })}><DollarSign className="h-4 w-4" /> Record Payment</Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => { const entry = processed.find(e => e.status !== "paid"); if (entry) { setPayModal({ ...entry, bookLevel: true }); setPayAmt(""); setPayAcct(entry.linked_account_id || ""); } }}><DollarSign className="h-4 w-4" /> Record Payment</Button>
             <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
