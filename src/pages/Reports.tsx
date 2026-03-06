@@ -204,7 +204,7 @@ export default function Reports() {
         <FinanceCard icon={<Gauge className="h-5 w-5 text-feature-budget" />} label={t("reports.budgetUtil")} value={formatPercent(budgetUtil, lang)} iconBg="bg-feature-budget/10" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 no-print">
         <Select value={accountFilter} onValueChange={setAccountFilter}>
           <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
