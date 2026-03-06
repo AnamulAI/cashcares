@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { Button } from "@/components/ui/button";
