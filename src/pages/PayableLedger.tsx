@@ -304,7 +304,7 @@ export default function PayableLedger() {
             <DialogDescription>Record a payment for {book.person_name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
-            {payModal && payModal.id !== "bulk" && (
+            {payModal && payModal.amount != null && (
               <p className="text-xs text-muted-foreground">{t("module.remaining")}: {fmt(Number(payModal.amount) - Number(payModal.paid_amount))}</p>
             )}
             <div><Label className="text-xs">{t("module.paymentAmount")} *</Label><Input type="number" min="0" value={payAmt} onChange={e => setPayAmt(e.target.value)} className="mt-1 h-9 text-sm" /></div>
