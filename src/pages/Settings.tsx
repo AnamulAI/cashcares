@@ -167,7 +167,7 @@ export default function Settings() {
         {/* Notifications */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Bell className="h-4 w-4 text-primary" /> {t("settings.notifications")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Bell className="h-4 w-4 text-feature-reminders" /> {t("settings.notifications")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.notificationsDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
