@@ -58,12 +58,25 @@ export function getPresetRange(preset: DatePreset): DateRange {
   }
 }
 
+function loadDefaultRange(): DatePreset {
+  try {
+    const settingsRaw = localStorage.getItem("cc_settings");
+    if (settingsRaw) {
+      const s = JSON.parse(settingsRaw);
+      if (s.defaultDashboardRange && presetLabel[s.defaultDashboardRange as DatePreset]) {
+        return s.defaultDashboardRange as DatePreset;
+      }
+    }
+  } catch {}
+  return "this_month";
+}
+
 function loadDatePreset(): DatePreset {
   try {
     const saved = localStorage.getItem("cc_date_preset") as DatePreset | null;
     if (saved && presetLabel[saved]) return saved;
   } catch {}
-  return "this_month";
+  return loadDefaultRange();
 }
 
 function loadCustomRange(): DateRange | null {
