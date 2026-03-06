@@ -106,10 +106,10 @@ export default function DebtLoans() {
       <PageHeader title={t("debtLoans.title")} subtitle={t("debtLoans.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addLoan")}</Button>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<Scale className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("module.totalOutstanding")} value={fmt(totalDebt)} />
+        <FinanceCard icon={<Scale className="h-5 w-5 text-feature-debt" />} iconBg="bg-feature-debt/10" label={t("module.totalOutstanding")} value={fmt(totalDebt)} />
         <FinanceCard icon={<Clock className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("module.dueThisMonth")} value={fmt(dueThisMonth)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.paidThisMonth")} value={fmt(paidThisMonth)} />
-        <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("module.activeLoans")} value={String(activeCount)} />
+        <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-feature-debt" />} iconBg="bg-feature-debt/10" label={t("module.activeLoans")} value={String(activeCount)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

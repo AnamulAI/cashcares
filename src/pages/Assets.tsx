@@ -90,8 +90,8 @@ export default function Assets() {
       <PageHeader title={t("assets.title")} subtitle={t("assets.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addAsset")}</Button>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<Building2 className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("module.totalAssetValue")} value={fmt(totalValue)} />
-        <FinanceCard icon={<Hash className="h-5 w-5 text-muted-foreground" />} iconBg="bg-muted" label={t("module.assetCount")} value={String(activeItems.length)} />
+        <FinanceCard icon={<Building2 className="h-5 w-5 text-feature-assets" />} iconBg="bg-feature-assets/10" label={t("module.totalAssetValue")} value={fmt(totalValue)} />
+        <FinanceCard icon={<Hash className="h-5 w-5 text-feature-assets" />} iconBg="bg-feature-assets/10" label={t("module.assetCount")} value={String(activeItems.length)} />
         <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.highestValue")} value={fmt(highestValue)} />
         <FinanceCard icon={<TrendingDown className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("module.updatedThisMonth")} value={String(updatedThisMonth)} />
       </div>

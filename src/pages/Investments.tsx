@@ -89,10 +89,10 @@ export default function Investments() {
       <PageHeader title={t("investments.title")} subtitle={t("investments.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addInvestment")}</Button>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("module.totalInvested")} value={fmt(totalInvested)} />
-        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("module.currentValue")} value={fmt(totalCurrentValue)} />
+        <FinanceCard icon={<DollarSign className="h-5 w-5 text-feature-investments" />} iconBg="bg-feature-investments/10" label={t("module.totalInvested")} value={fmt(totalInvested)} />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-feature-investments" />} iconBg="bg-feature-investments/10" label={t("module.currentValue")} value={fmt(totalCurrentValue)} />
         <FinanceCard icon={totalPL >= 0 ? <TrendingUp className="h-5 w-5 text-positive" /> : <TrendingDown className="h-5 w-5 text-negative" />} iconBg={totalPL >= 0 ? "bg-positive/10" : "bg-negative/10"} label={t("module.profitLoss")} value={`${totalPL >= 0 ? "+" : ""}${fmt(totalPL)}`} />
-        <FinanceCard icon={<Hash className="h-5 w-5 text-muted-foreground" />} iconBg="bg-muted" label={t("module.activeCount")} value={String(activeCount)} />
+        <FinanceCard icon={<Hash className="h-5 w-5 text-feature-investments" />} iconBg="bg-feature-investments/10" label={t("module.activeCount")} value={String(activeCount)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

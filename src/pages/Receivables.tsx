@@ -113,7 +113,7 @@ export default function Receivables() {
     return (
       <div className="space-y-6">
         <PageHeader title={t("receivables.title")} subtitle={t("receivables.subtitle")} />
-        <PremiumLocked icon={<HandCoins className="h-7 w-7 text-primary" />} moduleName={t("receivables.title")} description={t("premium.upgradeDesc.receivables")} />
+        <PremiumLocked icon={<HandCoins className="h-7 w-7 text-feature-receivables" />} moduleName={t("receivables.title")} description={t("premium.upgradeDesc.receivables")} />
       </div>
     );
   }
