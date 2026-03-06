@@ -105,8 +105,12 @@ export default function ReceivableLedger() {
   };
 
   const handleCollect = () => {
-    if (!collectModal || !collectAmt) return;
-    collectMut.mutate({ id: collectModal.id, amount: Number(collectAmt), linkedAccountId: collectAcct || collectModal.linked_account_id }, {
+    if (!collectAmt) return;
+    const targetEntry = collectModal?.bookLevel
+      ? processed.find(e => e.status !== "collected")
+      : collectModal;
+    if (!targetEntry?.id) return;
+    collectMut.mutate({ id: targetEntry.id, amount: Number(collectAmt), linkedAccountId: collectAcct || targetEntry.linked_account_id }, {
       onSuccess: () => { setCollectModal(null); setCollectAmt(""); setCollectAcct(""); }
     });
   };
