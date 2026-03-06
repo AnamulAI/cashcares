@@ -208,7 +208,7 @@ export default function Reports() {
         <FinanceCard icon={<DollarSign className="h-5 w-5 text-primary" />} label={t("reports.netWorth")} value={fmt(netWorth)} iconBg="bg-primary/10" />
         <FinanceCard icon={<TrendingUp className="h-5 w-5 text-feature-income" />} label={t("reports.totalIncome")} value={fmt(totalIncome)} iconBg="bg-feature-income/10" />
         <FinanceCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} label={t("reports.totalExpense")} value={fmt(totalExpense)} iconBg="bg-feature-expense/10" />
-        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label={t("reports.savings")} value={fmt(savings)} iconBg="bg-feature-savings/10" />
+        <FinanceCard icon={<PiggyBank className="h-5 w-5 text-feature-savings" />} label={t("reports.savings")} value={fmt(totalIncome - totalExpense)} iconBg="bg-feature-savings/10" />
         <FinanceCard icon={<Gauge className="h-5 w-5 text-feature-budget" />} label={t("reports.budgetUtil")} value={formatPercent(budgetUtil, lang)} iconBg="bg-feature-budget/10" />
       </div>
 
