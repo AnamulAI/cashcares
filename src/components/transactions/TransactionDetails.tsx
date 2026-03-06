@@ -1,12 +1,16 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { formatAmount } from "@/lib/formatters";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Paperclip, Tag } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Paperclip, Tag, Copy, Trash2, Pencil } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useDeleteTransaction, useCreateTransaction } from "@/hooks/use-transactions";
+import { toast } from "sonner";
 
 const typeIcons: Record<string, any> = { income: ArrowDownLeft, expense: ArrowUpRight, transfer: ArrowLeftRight };
 const typeColors: Record<string, string> = {
@@ -22,12 +26,45 @@ interface TransactionDetailsProps {
 }
 
 export function TransactionDetails({ transaction, open, onOpenChange }: TransactionDetailsProps) {
-  const { currency } = useAppContext();
+  const { currency, settings } = useAppContext();
   const { t, lang } = useTranslation();
   const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
+  const deleteTxn = useDeleteTransaction();
+  const createTxn = useCreateTransaction();
 
   if (!transaction) return null;
   const Icon = typeIcons[transaction.type] || ArrowUpRight;
+
+  const handleDuplicate = async () => {
+    await createTxn.mutateAsync({
+      type: transaction.type,
+      category_id: transaction.category_id || null,
+      account_id: transaction.account_id,
+      to_account_id: transaction.to_account_id || null,
+      amount: Number(transaction.amount),
+      date: new Date().toISOString().split("T")[0],
+      note: transaction.note ? `${transaction.note} (copy)` : null,
+      tags: transaction.tags || null,
+      status: "completed",
+      transfer_fee: transaction.transfer_fee ? Number(transaction.transfer_fee) : 0,
+    });
+    toast.success(t("transactions.duplicated"));
+    onOpenChange(false);
+  };
+
+  const handleDelete = () => {
+    deleteTxn.mutate({
+      id: transaction.id,
+      type: transaction.type,
+      amount: Number(transaction.amount),
+      account_id: transaction.account_id,
+      to_account_id: transaction.to_account_id,
+      transfer_fee: transaction.transfer_fee ? Number(transaction.transfer_fee) : null,
+      category_id: transaction.category_id,
+    });
+    onOpenChange(false);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -45,15 +82,40 @@ export function TransactionDetails({ transaction, open, onOpenChange }: Transact
           <p className={cn("text-3xl font-bold font-display tracking-tight", transaction.type === "income" && "text-positive", transaction.type === "expense" && "text-negative")}>
             {transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : ""}{fmt(transaction.amount)}
           </p>
-          <p className="text-sm text-muted-foreground mt-1 capitalize">{transaction.type}</p>
+          <p className="text-sm text-muted-foreground mt-1 capitalize">{t(`transactions.${transaction.type}`)}</p>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 mt-4">
+          <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs h-8" onClick={handleDuplicate} disabled={createTxn.isPending}>
+            <Copy className="h-3.5 w-3.5" /> {t("action.duplicate")}
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs h-8 border-destructive/30 text-destructive hover:bg-destructive/5">
+                <Trash2 className="h-3.5 w-3.5" /> {t("action.delete")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("confirm.deleteTransaction")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("confirm.deleteTransactionDesc")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("action.delete")}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="mt-5 space-y-4">
           <div className="space-y-3">
-            <DetailRow label={t("table.date")} value={transaction.date} />
+            <DetailRow label={t("table.date")} value={fmtDate(transaction.date)} />
             <DetailRow label={t("table.category")} value={transaction.category?.name || "—"} />
             <DetailRow label={t("table.account")} value={transaction.account?.name || "—"} />
             {transaction.to_account?.name && <DetailRow label={t("accounts.toAccount")} value={transaction.to_account.name} />}
+            {transaction.transfer_fee > 0 && <DetailRow label={t("transactions.transferFee")} value={fmt(transaction.transfer_fee)} />}
             <DetailRow label={t("table.status")}><StatusBadge status={transaction.status} /></DetailRow>
           </div>
 
@@ -88,6 +150,11 @@ export function TransactionDetails({ transaction, open, onOpenChange }: Transact
               <Paperclip className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">{t("transactions.noAttachments")}</p>
             </div>
+          </div>
+
+          <Separator />
+          <div className="text-[11px] text-muted-foreground space-y-1">
+            <p>{t("transactions.createdAt")}: {fmtDate(transaction.created_at)}</p>
           </div>
         </div>
       </SheetContent>

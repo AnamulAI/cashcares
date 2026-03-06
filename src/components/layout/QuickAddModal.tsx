@@ -10,6 +10,7 @@ import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from "lucide-react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreateTransaction } from "@/hooks/use-transactions";
+import { useTranslation } from "@/i18n/useTranslation";
 import { toast } from "sonner";
 
 interface QuickAddModalProps {
@@ -22,26 +23,24 @@ export function QuickAddModal({ open, onOpenChange, defaultTab = "income" }: Qui
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const createTxn = useCreateTransaction();
+  const { t } = useTranslation();
 
   const incomeCategories = categories.filter(c => c.group === "income");
   const expenseCategories = categories.filter(c => c.group === "expense");
   const activeAccounts = accounts.filter(a => a.is_active);
 
-  // Income state
   const [iCat, setICat] = useState("");
   const [iAcc, setIAcc] = useState("");
   const [iAmt, setIAmt] = useState("");
   const [iDate, setIDate] = useState(new Date().toISOString().split("T")[0]);
   const [iNote, setINote] = useState("");
 
-  // Expense state
   const [eCat, setECat] = useState("");
   const [eAcc, setEAcc] = useState("");
   const [eAmt, setEAmt] = useState("");
   const [eDate, setEDate] = useState(new Date().toISOString().split("T")[0]);
   const [eNote, setENote] = useState("");
 
-  // Transfer state
   const [tFrom, setTFrom] = useState("");
   const [tTo, setTTo] = useState("");
   const [tAmt, setTAmt] = useState("");
@@ -69,7 +68,7 @@ export function QuickAddModal({ open, onOpenChange, defaultTab = "income" }: Qui
 
   const handleTransfer = async () => {
     if (!tFrom || !tTo || !tAmt) return;
-    if (tFrom === tTo) { toast.error("Cannot transfer to the same account"); return; }
+    if (tFrom === tTo) { toast.error(t("transactions.sameAccountError")); return; }
     await createTxn.mutateAsync({ type: "transfer", category_id: null, account_id: tFrom, to_account_id: tTo, amount: Number(tAmt), date: tDate, note: tNote || null, tags: null, status: "completed", transfer_fee: Number(tFee) || 0 });
     reset(); onOpenChange(false);
   };
@@ -78,57 +77,57 @@ export function QuickAddModal({ open, onOpenChange, defaultTab = "income" }: Qui
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="font-display text-lg">Add Record</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">Create a new financial record quickly and accurately</DialogDescription>
+          <DialogTitle className="font-display text-lg">{t("action.addRecord")}</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">{t("transactions.quickAddDesc")}</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue={defaultTab} className="w-full">
           <div className="px-6">
             <TabsList className="w-full h-10 bg-muted/60 p-1 rounded-lg">
-              <TabsTrigger value="income" className="flex-1 gap-1.5 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-md"><ArrowDownLeft className="h-3.5 w-3.5" /> Income</TabsTrigger>
-              <TabsTrigger value="expense" className="flex-1 gap-1.5 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-md"><ArrowUpRight className="h-3.5 w-3.5" /> Expense</TabsTrigger>
-              <TabsTrigger value="transfer" className="flex-1 gap-1.5 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-md"><ArrowLeftRight className="h-3.5 w-3.5" /> Transfer</TabsTrigger>
+              <TabsTrigger value="income" className="flex-1 gap-1.5 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-md"><ArrowDownLeft className="h-3.5 w-3.5" /> {t("transactions.income")}</TabsTrigger>
+              <TabsTrigger value="expense" className="flex-1 gap-1.5 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-md"><ArrowUpRight className="h-3.5 w-3.5" /> {t("transactions.expense")}</TabsTrigger>
+              <TabsTrigger value="transfer" className="flex-1 gap-1.5 text-sm data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-md"><ArrowLeftRight className="h-3.5 w-3.5" /> {t("action.transfer")}</TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="income" className="px-6 pb-6 pt-5 space-y-5 mt-0">
             <div className="grid grid-cols-2 gap-4">
-              <F label="Category"><Select value={iCat} onValueChange={setICat}><SelectTrigger className="h-10"><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{incomeCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></F>
-              <F label="Account"><Select value={iAcc} onValueChange={setIAcc}><SelectTrigger className="h-10"><SelectValue placeholder="Select account" /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
+              <F label={t("table.category")}><Select value={iCat} onValueChange={setICat}><SelectTrigger className="h-10"><SelectValue placeholder={t("transactions.selectCategory")} /></SelectTrigger><SelectContent>{incomeCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></F>
+              <F label={t("table.account")}><Select value={iAcc} onValueChange={setIAcc}><SelectTrigger className="h-10"><SelectValue placeholder={t("transactions.selectAccount")} /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <F label="Amount"><Input type="number" placeholder="0.00" className="h-10" value={iAmt} onChange={e => setIAmt(e.target.value)} /></F>
-              <F label="Date"><Input type="date" className="h-10" value={iDate} onChange={e => setIDate(e.target.value)} /></F>
+              <F label={t("table.amount")}><Input type="number" placeholder="0.00" className="h-10" value={iAmt} onChange={e => setIAmt(e.target.value)} /></F>
+              <F label={t("table.date")}><Input type="date" className="h-10" value={iDate} onChange={e => setIDate(e.target.value)} /></F>
             </div>
-            <F label="Note"><Textarea placeholder="Add a note..." rows={2} className="resize-none" value={iNote} onChange={e => setINote(e.target.value)} /></F>
-            <Button className="w-full h-10 shadow-sm font-medium" onClick={handleIncome} disabled={createTxn.isPending || !iAcc || !iAmt}>{createTxn.isPending ? "Saving..." : "Add Income"}</Button>
+            <F label={t("table.note")}><Textarea placeholder={t("transactions.addNote")} rows={2} className="resize-none" value={iNote} onChange={e => setINote(e.target.value)} /></F>
+            <Button className="w-full h-10 shadow-sm font-medium" onClick={handleIncome} disabled={createTxn.isPending || !iAcc || !iAmt}>{createTxn.isPending ? t("action.saving") : t("action.addIncome")}</Button>
           </TabsContent>
 
           <TabsContent value="expense" className="px-6 pb-6 pt-5 space-y-5 mt-0">
             <div className="grid grid-cols-2 gap-4">
-              <F label="Category"><Select value={eCat} onValueChange={setECat}><SelectTrigger className="h-10"><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{expenseCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></F>
-              <F label="Account"><Select value={eAcc} onValueChange={setEAcc}><SelectTrigger className="h-10"><SelectValue placeholder="Select account" /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
+              <F label={t("table.category")}><Select value={eCat} onValueChange={setECat}><SelectTrigger className="h-10"><SelectValue placeholder={t("transactions.selectCategory")} /></SelectTrigger><SelectContent>{expenseCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></F>
+              <F label={t("table.account")}><Select value={eAcc} onValueChange={setEAcc}><SelectTrigger className="h-10"><SelectValue placeholder={t("transactions.selectAccount")} /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <F label="Amount"><Input type="number" placeholder="0.00" className="h-10" value={eAmt} onChange={e => setEAmt(e.target.value)} /></F>
-              <F label="Date"><Input type="date" className="h-10" value={eDate} onChange={e => setEDate(e.target.value)} /></F>
+              <F label={t("table.amount")}><Input type="number" placeholder="0.00" className="h-10" value={eAmt} onChange={e => setEAmt(e.target.value)} /></F>
+              <F label={t("table.date")}><Input type="date" className="h-10" value={eDate} onChange={e => setEDate(e.target.value)} /></F>
             </div>
-            <F label="Note"><Textarea placeholder="Add a note..." rows={2} className="resize-none" value={eNote} onChange={e => setENote(e.target.value)} /></F>
-            <Button className="w-full h-10 shadow-sm font-medium" onClick={handleExpense} disabled={createTxn.isPending || !eAcc || !eAmt}>{createTxn.isPending ? "Saving..." : "Add Expense"}</Button>
+            <F label={t("table.note")}><Textarea placeholder={t("transactions.addNote")} rows={2} className="resize-none" value={eNote} onChange={e => setENote(e.target.value)} /></F>
+            <Button className="w-full h-10 shadow-sm font-medium" onClick={handleExpense} disabled={createTxn.isPending || !eAcc || !eAmt}>{createTxn.isPending ? t("action.saving") : t("action.addExpense")}</Button>
           </TabsContent>
 
           <TabsContent value="transfer" className="px-6 pb-6 pt-5 space-y-5 mt-0">
             <div className="grid grid-cols-2 gap-4">
-              <F label="From Account"><Select value={tFrom} onValueChange={setTFrom}><SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
-              <F label="To Account"><Select value={tTo} onValueChange={setTTo}><SelectTrigger className="h-10"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
+              <F label={t("transactions.fromAccount")}><Select value={tFrom} onValueChange={setTFrom}><SelectTrigger className="h-10"><SelectValue placeholder={t("transactions.selectAccount")} /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
+              <F label={t("accounts.toAccount")}><Select value={tTo} onValueChange={setTTo}><SelectTrigger className="h-10"><SelectValue placeholder={t("transactions.selectAccount")} /></SelectTrigger><SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></F>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <F label="Amount"><Input type="number" placeholder="0.00" className="h-10" value={tAmt} onChange={e => setTAmt(e.target.value)} /></F>
-              <F label="Date"><Input type="date" className="h-10" value={tDate} onChange={e => setTDate(e.target.value)} /></F>
+              <F label={t("table.amount")}><Input type="number" placeholder="0.00" className="h-10" value={tAmt} onChange={e => setTAmt(e.target.value)} /></F>
+              <F label={t("table.date")}><Input type="date" className="h-10" value={tDate} onChange={e => setTDate(e.target.value)} /></F>
             </div>
-            <F label="Transfer Fee"><Input type="number" placeholder="0.00" className="h-10" value={tFee} onChange={e => setTFee(e.target.value)} /></F>
-            <F label="Note"><Textarea placeholder="Add a note..." rows={2} className="resize-none" value={tNote} onChange={e => setTNote(e.target.value)} /></F>
-            <Button className="w-full h-10 shadow-sm font-medium" onClick={handleTransfer} disabled={createTxn.isPending || !tFrom || !tTo || !tAmt}>{createTxn.isPending ? "Transferring..." : "Transfer Money"}</Button>
+            <F label={t("transactions.transferFee")}><Input type="number" placeholder="0.00" className="h-10" value={tFee} onChange={e => setTFee(e.target.value)} /></F>
+            <F label={t("table.note")}><Textarea placeholder={t("transactions.addNote")} rows={2} className="resize-none" value={tNote} onChange={e => setTNote(e.target.value)} /></F>
+            <Button className="w-full h-10 shadow-sm font-medium" onClick={handleTransfer} disabled={createTxn.isPending || !tFrom || !tTo || !tAmt}>{createTxn.isPending ? t("transactions.transferring") : t("transactions.transferMoney")}</Button>
           </TabsContent>
         </Tabs>
       </DialogContent>

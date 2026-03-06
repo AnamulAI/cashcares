@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArrowDownLeft, Paperclip } from "lucide-react";
+import { ArrowDownLeft } from "lucide-react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreateTransaction } from "@/hooks/use-transactions";
+import { useTranslation } from "@/i18n/useTranslation";
 
 interface AddIncomeModalProps { open: boolean; onOpenChange: (open: boolean) => void; }
 
@@ -18,6 +19,7 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const createTxn = useCreateTransaction();
+  const { t } = useTranslation();
 
   const incomeCategories = categories.filter(c => c.group === "income");
 
@@ -55,37 +57,37 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
               <ArrowDownLeft className="h-4 w-4 text-positive" />
             </div>
             <div>
-              <DialogTitle className="font-display text-base">Add Income</DialogTitle>
-              <DialogDescription className="text-xs">Record a new income transaction</DialogDescription>
+              <DialogTitle className="font-display text-base">{t("action.addIncome")}</DialogTitle>
+              <DialogDescription className="text-xs">{t("transactions.recordIncome")}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
         <div className="space-y-4 mt-1">
           <div className="grid grid-cols-2 gap-4">
-            <FieldGroup label="Category">
-              <Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger className="h-9"><SelectValue placeholder="Select category" /></SelectTrigger>
+            <FieldGroup label={t("table.category")}>
+              <Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger className="h-9"><SelectValue placeholder={t("transactions.selectCategory")} /></SelectTrigger>
                 <SelectContent>{incomeCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </FieldGroup>
-            <FieldGroup label="Account">
-              <Select value={accountId} onValueChange={setAccountId}><SelectTrigger className="h-9"><SelectValue placeholder="Select account" /></SelectTrigger>
+            <FieldGroup label={t("table.account")}>
+              <Select value={accountId} onValueChange={setAccountId}><SelectTrigger className="h-9"><SelectValue placeholder={t("transactions.selectAccount")} /></SelectTrigger>
                 <SelectContent>{accounts.filter(a => a.is_active).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
               </Select>
             </FieldGroup>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <FieldGroup label="Amount"><Input type="number" placeholder="0.00" className="h-9" value={amount} onChange={e => setAmount(e.target.value)} /></FieldGroup>
-            <FieldGroup label="Date"><Input type="date" className="h-9" value={date} onChange={e => setDate(e.target.value)} /></FieldGroup>
+            <FieldGroup label={t("table.amount")}><Input type="number" placeholder="0.00" className="h-9" value={amount} onChange={e => setAmount(e.target.value)} /></FieldGroup>
+            <FieldGroup label={t("table.date")}><Input type="date" className="h-9" value={date} onChange={e => setDate(e.target.value)} /></FieldGroup>
           </div>
-          <FieldGroup label="Note"><Textarea placeholder="Add a note..." rows={2} className="resize-none" value={note} onChange={e => setNote(e.target.value)} /></FieldGroup>
-          <FieldGroup label="Tags"><Input placeholder="e.g. march, bonus" className="h-9" value={tags} onChange={e => setTags(e.target.value)} /></FieldGroup>
+          <FieldGroup label={t("table.note")}><Textarea placeholder={t("transactions.addNote")} rows={2} className="resize-none" value={note} onChange={e => setNote(e.target.value)} /></FieldGroup>
+          <FieldGroup label={t("transactions.tags")}><Input placeholder={t("transactions.tagsPlaceholder")} className="h-9" value={tags} onChange={e => setTags(e.target.value)} /></FieldGroup>
           <Separator />
           <div className="flex items-center justify-between">
-            <div><Label className="text-sm">Recurring</Label><p className="text-[11px] text-muted-foreground">Repeat automatically</p></div>
+            <div><Label className="text-sm">{t("transactions.recurring")}</Label><p className="text-[11px] text-muted-foreground">{t("transactions.recurringDesc")}</p></div>
             <Switch />
           </div>
           <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={createTxn.isPending || !accountId || !amount}>
-            {createTxn.isPending ? "Saving..." : "Add Income"}
+            {createTxn.isPending ? t("action.saving") : t("action.addIncome")}
           </Button>
         </div>
       </DialogContent>

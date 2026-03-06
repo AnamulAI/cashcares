@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, MoreHorizontal, Eye, Pencil, Copy, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, MoreHorizontal, Eye, Copy, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useAppContext } from "@/contexts/AppContext";
@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useDeleteTransaction } from "@/hooks/use-transactions";
+import { useDeleteTransaction, useCreateTransaction } from "@/hooks/use-transactions";
+import { toast } from "sonner";
 
 const typeIcons: Record<string, any> = { income: ArrowDownLeft, expense: ArrowUpRight, transfer: ArrowLeftRight };
 const typeColors: Record<string, string> = {
@@ -24,10 +25,27 @@ interface TransactionTableProps {
 
 export function TransactionTable({ transactions, onViewDetails }: TransactionTableProps) {
   const deleteTxn = useDeleteTransaction();
+  const createTxn = useCreateTransaction();
   const { currency, settings } = useAppContext();
   const { t, lang } = useTranslation();
   const fmt = (n: number) => formatAmount(n, currency, lang);
   const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
+
+  const handleDuplicate = async (txn: any) => {
+    await createTxn.mutateAsync({
+      type: txn.type,
+      category_id: txn.category_id || null,
+      account_id: txn.account_id,
+      to_account_id: txn.to_account_id || null,
+      amount: Number(txn.amount),
+      date: new Date().toISOString().split("T")[0],
+      note: txn.note ? `${txn.note} (copy)` : null,
+      tags: txn.tags || null,
+      status: "completed",
+      transfer_fee: txn.transfer_fee ? Number(txn.transfer_fee) : 0,
+    });
+    toast.success(t("transactions.duplicated"));
+  };
 
   return (
     <div className="finance-card-static overflow-hidden">
@@ -55,10 +73,10 @@ export function TransactionTable({ transactions, onViewDetails }: TransactionTab
                     <div className={cn("h-6 w-6 rounded-md flex items-center justify-center", typeColors[txn.type] || "")}>
                       <Icon className="h-3.5 w-3.5" />
                     </div>
-                    <span className="text-[13px] capitalize font-medium">{txn.type}</span>
+                    <span className="text-[13px] font-medium">{t(`transactions.${txn.type}`)}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-[13px] font-medium py-3.5">{txn.category?.name || (txn.type === "transfer" ? "Transfer" : "—")}</TableCell>
+                <TableCell className="text-[13px] font-medium py-3.5">{txn.category?.name || (txn.type === "transfer" ? t("action.transfer") : "—")}</TableCell>
                 <TableCell className="text-[13px] text-muted-foreground hidden md:table-cell py-3.5">{txn.account?.name || "—"}</TableCell>
                 <TableCell className="text-[13px] text-muted-foreground hidden lg:table-cell max-w-[180px] truncate py-3.5">{txn.note || "—"}</TableCell>
                 <TableCell className={cn("text-[13px] text-right font-semibold tabular-nums py-3.5", txn.type === "income" && "text-positive", txn.type === "expense" && "text-negative", txn.type === "transfer" && "text-foreground")}>
@@ -75,6 +93,7 @@ export function TransactionTable({ transactions, onViewDetails }: TransactionTab
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem onClick={() => onViewDetails?.(txn)} className="gap-2 text-[13px]"><Eye className="h-3.5 w-3.5" /> {t("action.view")}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(txn)} className="gap-2 text-[13px]"><Copy className="h-3.5 w-3.5" /> {t("action.duplicate")}</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> {t("action.delete")}</DropdownMenuItem>
@@ -83,8 +102,8 @@ export function TransactionTable({ transactions, onViewDetails }: TransactionTab
                     </DropdownMenu>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
-                        <AlertDialogDescription>This will reverse the balance impact and permanently remove this transaction.</AlertDialogDescription>
+                        <AlertDialogTitle>{t("confirm.deleteTransaction")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("confirm.deleteTransactionDesc")}</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>

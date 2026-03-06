@@ -1,21 +1,24 @@
 import { Layers, TrendingUp, EyeOff, Target } from "lucide-react";
 import type { DbCategory } from "@/hooks/use-categories";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatNumber } from "@/lib/formatters";
 
 interface CategoryInsightsProps {
   categories: DbCategory[];
 }
 
 export function CategoryInsights({ categories }: CategoryInsightsProps) {
+  const { t, lang } = useTranslation();
   const total = categories.length;
   const inactive = categories.filter(c => !c.is_active).length;
   const budgetEnabled = categories.filter(c => c.usable_in_budgets).length;
   const mostUsed = [...categories].sort((a, b) => b.usage_count - a.usage_count)[0];
 
   const items = [
-    { icon: Layers, label: "Total Categories", value: String(total), color: "text-primary bg-primary/10" },
-    { icon: TrendingUp, label: "Most Used", value: mostUsed?.name || "—", color: "text-positive bg-positive/10" },
-    { icon: EyeOff, label: "Inactive", value: String(inactive), color: "text-muted-foreground bg-muted" },
-    { icon: Target, label: "Budget Enabled", value: String(budgetEnabled), color: "text-warning bg-warning/10" },
+    { icon: Layers, label: t("categories.totalCategories"), value: formatNumber(total, lang), color: "text-primary bg-primary/10" },
+    { icon: TrendingUp, label: t("categories.mostUsed"), value: mostUsed?.name || "—", color: "text-positive bg-positive/10" },
+    { icon: EyeOff, label: t("status.inactive"), value: formatNumber(inactive, lang), color: "text-muted-foreground bg-muted" },
+    { icon: Target, label: t("categories.budgetEnabled"), value: formatNumber(budgetEnabled, lang), color: "text-warning bg-warning/10" },
   ];
 
   return (
