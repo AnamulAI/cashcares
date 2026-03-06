@@ -22,16 +22,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 
-function PlaceholderTab({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
+function DataSummaryTab({ icon: Icon, title, items }: { icon: React.ElementType; title: string; items: { label: string; value: string; color?: string }[] }) {
   return (
     <Card className="finance-card-static">
-      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent mb-4">
-          <Icon className="h-7 w-7 text-muted-foreground" />
-        </div>
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">{description}</p>
-        <Badge variant="secondary" className="mt-3 text-[10px]">Coming Soon</Badge>
+      <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Icon className="h-4 w-4" /> {title}</CardTitle></CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Icon className="h-8 w-8 text-muted-foreground/40 mb-2" />
+            <p className="text-sm text-muted-foreground">No data available yet</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                <span className="text-xs">{item.label}</span>
+                <span className={`text-xs font-semibold ${item.color || ""}`}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
