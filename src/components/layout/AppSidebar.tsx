@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, ArrowLeftRight, Landmark, Tag, PieChart, BarChart3,
-  Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock
+  Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock,
+  Users, Bell
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
