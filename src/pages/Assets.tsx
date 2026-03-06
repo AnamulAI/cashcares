@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = { active: "bg-positive/10 text-posi
 
 export default function Assets() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useAssets();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateAsset();
