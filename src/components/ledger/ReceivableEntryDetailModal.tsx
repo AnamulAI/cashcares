@@ -49,6 +49,11 @@ export function ReceivableEntryDetailModal({ entry, open, onOpenChange, formatAm
           {entry.note && <div className="col-span-2"><span className="text-muted-foreground">Note:</span> <span>{entry.note}</span></div>}
         </div>
 
+        {/* Attachments */}
+        <div className="mt-4">
+          <EntryAttachments entryId={entry.id} entryType="receivable" readOnly />
+        </div>
+
         {/* Collection History */}
         <div className="mt-4">
           <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">

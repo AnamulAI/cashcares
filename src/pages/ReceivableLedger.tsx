@@ -293,6 +293,7 @@ export default function ReceivableLedger() {
               <div><Label className="text-xs">Collected</Label><Input type="number" min="0" value={form.collected_amount} onChange={e => setForm(f => ({ ...f, collected_amount: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
             </div>
             <div><Label className="text-xs">{t("table.note")}</Label><Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1 text-sm" rows={2} /></div>
+            {editing && <EntryAttachments entryId={editing.id} entryType="receivable" />}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setEntryModal(false)}>{t("action.cancel")}</Button>
