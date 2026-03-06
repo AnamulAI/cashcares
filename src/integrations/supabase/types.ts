@@ -318,6 +318,95 @@ export type Database = {
           },
         ]
       }
+      partnership_entries: {
+        Row: {
+          amount: number
+          contributor: string | null
+          created_at: string
+          date: string
+          description: string | null
+          entry_type: string
+          id: string
+          note: string | null
+          partnership_id: string
+        }
+        Insert: {
+          amount?: number
+          contributor?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          entry_type?: string
+          id?: string
+          note?: string | null
+          partnership_id: string
+        }
+        Update: {
+          amount?: number
+          contributor?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          entry_type?: string
+          id?: string
+          note?: string | null
+          partnership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_entries_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partnerships: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          partner_contribution: number
+          partner_name: string
+          partnership_name: string
+          settlement_amount: number
+          shared_expense_total: number
+          start_date: string | null
+          status: string
+          updated_at: string
+          your_contribution: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          partner_contribution?: number
+          partner_name: string
+          partnership_name: string
+          settlement_amount?: number
+          shared_expense_total?: number
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          your_contribution?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          partner_contribution?: number
+          partner_name?: string
+          partnership_name?: string
+          settlement_amount?: number
+          shared_expense_total?: number
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          your_contribution?: number
+        }
+        Relationships: []
+      }
       payables: {
         Row: {
           created_at: string
@@ -417,6 +506,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reminders: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          note: string | null
+          priority: string
+          related_entity_id: string | null
+          related_module: string | null
+          reminder_type: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          note?: string | null
+          priority?: string
+          related_entity_id?: string | null
+          related_module?: string | null
+          reminder_type?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          note?: string | null
+          priority?: string
+          related_entity_id?: string | null
+          related_module?: string | null
+          reminder_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {

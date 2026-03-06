@@ -127,7 +127,7 @@ function loadPlan(): PlanType {
   return "free";
 }
 
-export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments"] as const;
+export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments", "partnerships"] as const;
 
 // --- Settings ---
 export interface AppSettings {

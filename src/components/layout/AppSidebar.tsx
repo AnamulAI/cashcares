@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, ArrowLeftRight, Landmark, Tag, PieChart, BarChart3,
-  Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock
+  Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock,
+  Users, Bell
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -36,6 +37,7 @@ const navGroups = [
       { titleKey: "nav.receivables", url: "/receivables", icon: HandCoins, active: true },
       { titleKey: "nav.payables", url: "/payables", icon: CreditCard, active: true },
       { titleKey: "nav.debtLoans", url: "/debt-loans", icon: Scale, active: true },
+      { titleKey: "nav.partnerships", url: "/partnerships", icon: Users, active: true },
     ],
   },
   {
@@ -49,6 +51,7 @@ const navGroups = [
     labelKey: "nav.insights",
     items: [
       { titleKey: "nav.reports", url: "/reports", icon: BarChart3, active: true },
+      { titleKey: "nav.reminders", url: "/reminders", icon: Bell, active: true },
     ],
   },
 ];

@@ -20,6 +20,8 @@ import Payables from "./pages/Payables";
 import DebtLoans from "./pages/DebtLoans";
 import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
+import Partnerships from "./pages/Partnerships";
+import Reminders from "./pages/Reminders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/debt-loans" element={<DebtLoans />} />
             <Route path="/assets" element={<Assets />} />
             <Route path="/investments" element={<Investments />} />
+            <Route path="/partnerships" element={<Partnerships />} />
+            <Route path="/reminders" element={<Reminders />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
