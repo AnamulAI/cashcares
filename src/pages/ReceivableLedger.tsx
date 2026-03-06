@@ -335,6 +335,14 @@ export default function ReceivableLedger() {
         description={t("confirm.deleteDesc")}
         onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}
       />
+
+      <ReceivableEntryDetailModal
+        entry={detailEntry}
+        open={!!detailEntry}
+        onOpenChange={(open) => { if (!open) setDetailEntry(null); }}
+        formatAmount={fmt}
+        formatDate={fmtDate}
+      />
     </div>
   );
 }
