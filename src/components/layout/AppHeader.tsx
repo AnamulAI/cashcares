@@ -204,7 +204,7 @@ export function AppHeader() {
                 )}
               </div>
               <div className="border-t px-4 py-2.5">
-                <button onClick={() => toast.info("Notifications page coming soon")} className="text-xs text-primary hover:underline w-full text-center">
+                <button onClick={() => navigate("/reminders")} className="text-xs text-primary hover:underline w-full text-center">
                   {t("topbar.viewAllNotifications")}
                 </button>
               </div>
