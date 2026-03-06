@@ -105,8 +105,13 @@ export default function PayableLedger() {
   };
 
   const handlePay = () => {
-    if (!payModal || !payAmt) return;
-    payMut.mutate({ id: payModal.id, amount: Number(payAmt), linkedAccountId: payAcct || payModal.linked_account_id }, {
+    if (!payAmt) return;
+    // For book-level payment, find the oldest unpaid entry
+    const targetEntry = payModal?.bookLevel
+      ? processed.find(e => e.status !== "paid")
+      : payModal;
+    if (!targetEntry?.id) return;
+    payMut.mutate({ id: targetEntry.id, amount: Number(payAmt), linkedAccountId: payAcct || targetEntry.linked_account_id }, {
       onSuccess: () => { setPayModal(null); setPayAmt(""); setPayAcct(""); }
     });
   };
