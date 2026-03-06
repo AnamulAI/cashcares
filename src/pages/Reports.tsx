@@ -61,7 +61,7 @@ export default function Reports() {
   const [tab, setTab] = useState("overview");
   const [accountFilter, setAccountFilter] = useState("all");
   const [categoryFilterVal, setCategoryFilterVal] = useState("all");
-  const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   // Filter transactions by date range and filters
   const filteredTxns = useMemo(() => {

@@ -48,7 +48,7 @@ export default function Partnerships() {
     shared_expense_total: "0", settlement_amount: "0", start_date: "", note: "", status: "active"
   });
 
-  const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const filtered = useMemo(() => items.filter(p => {
     if (statusFilter !== "all" && p.status !== statusFilter) return false;
