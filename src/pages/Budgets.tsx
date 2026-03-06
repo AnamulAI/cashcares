@@ -40,7 +40,7 @@ const emptyForm: BudgetFormData = { category_id: "", allocated_amount: "", alert
 
 export default function Budgets() {
   const { currency } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { data: budgetsRaw = [], isLoading } = useBudgets();
   const { data: transactionsRaw = [] } = useTransactions();
