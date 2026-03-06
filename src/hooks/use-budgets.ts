@@ -52,7 +52,7 @@ export function useUpdateBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: BudgetUpdate & { id: string }) => {
-      const { data, error } = await supabase.from("budgets" as any).update(updates).eq("id", id).select().single();
+      const { data, error } = await (supabase as any).from("budgets").update(updates).eq("id", id).select().single();
       if (error) throw error;
       return data;
     },
