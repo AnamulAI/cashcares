@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon } from "lucide-react";
+import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2 } from "lucide-react";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -15,6 +15,9 @@ import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { ImportDataModal } from "@/components/settings/ImportDataModal";
 import { BackupRestoreModal } from "@/components/settings/BackupRestoreModal";
+import { loadDemoData, clearDemoData, isDemoDataLoaded } from "@/lib/demo-data";
+import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
