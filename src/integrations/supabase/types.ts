@@ -457,6 +457,54 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          organization_type: string | null
+          phone: string | null
+          role_title: string | null
+          state_division: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          organization_type?: string | null
+          phone?: string | null
+          role_title?: string | null
+          state_division?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          organization_type?: string | null
+          phone?: string | null
+          role_title?: string | null
+          state_division?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       receivables: {
         Row: {
           created_at: string
@@ -619,11 +667,36 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_balance: {
         Args: { account_uuid: string; amount_val: number }
         Returns: undefined
@@ -631,7 +704,7 @@ export type Database = {
       increment_usage: { Args: { cat_uuid: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -758,6 +831,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
