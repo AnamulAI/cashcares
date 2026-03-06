@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Download, DollarSign, TrendingUp, TrendingDown, PiggyBank, Gauge, BarChart3, FileText, Building2, Scale, HandCoins, CreditCard, Layers } from "lucide-react";
+import { Download, DollarSign, TrendingUp, TrendingDown, PiggyBank, Gauge, BarChart3, FileText, Building2, Scale, HandCoins, CreditCard, Layers, Printer } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { Button } from "@/components/ui/button";
