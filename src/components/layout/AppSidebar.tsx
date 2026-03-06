@@ -5,6 +5,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { APP_CONFIG } from "@/config/app";
+import { useAppContext } from "@/contexts/AppContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -60,6 +61,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { isModuleLocked } = useAppContext();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -87,10 +89,11 @@ export function AppSidebar() {
               <SidebarMenu>
                 {group.items.map((item) => {
                   const isActive = location.pathname === item.url;
+                  const locked = !item.active || isModuleLocked(item.url);
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
-                        {item.active ? (
+                        {!locked ? (
                           <NavLink
                             to={item.url}
                             end

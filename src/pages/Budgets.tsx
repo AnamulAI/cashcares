@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge } from "lucide-react";
+import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FinanceCard } from "@/components/shared/FinanceCard";
@@ -10,48 +10,76 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useCategories, type DbCategory } from "@/hooks/use-categories";
+import { useCategories } from "@/hooks/use-categories";
+import { useBudgets, useCreateBudget, useUpdateBudget, useDeleteBudget, type DbBudget } from "@/hooks/use-budgets";
+import { useTransactions } from "@/hooks/use-transactions";
 import { useAppContext } from "@/contexts/AppContext";
-
-interface Budget {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  categoryIcon: string;
-  categoryColor: string;
-  allocated: number;
-  spent: number;
-  threshold: number;
-  note: string;
-  isActive: boolean;
-}
-
-const MOCK_BUDGETS: Budget[] = [
-  { id: "1", categoryId: "c1", categoryName: "Food & Dining", categoryIcon: "🍕", categoryColor: "hsl(25, 95%, 53%)", allocated: 15000, spent: 13200, threshold: 80, note: "", isActive: true },
-  { id: "2", categoryId: "c2", categoryName: "Transportation", categoryIcon: "🚗", categoryColor: "hsl(217, 91%, 60%)", allocated: 8000, spent: 4500, threshold: 80, note: "", isActive: true },
-  { id: "3", categoryId: "c3", categoryName: "Utilities", categoryIcon: "💡", categoryColor: "hsl(45, 93%, 47%)", allocated: 5000, spent: 5200, threshold: 90, note: "", isActive: true },
-  { id: "4", categoryId: "c4", categoryName: "Entertainment", categoryIcon: "🎬", categoryColor: "hsl(280, 67%, 55%)", allocated: 6000, spent: 2100, threshold: 80, note: "", isActive: true },
-  { id: "5", categoryId: "c5", categoryName: "Healthcare", categoryIcon: "🏥", categoryColor: "hsl(152, 69%, 36%)", allocated: 10000, spent: 3000, threshold: 80, note: "", isActive: true },
-  { id: "6", categoryId: "c6", categoryName: "Shopping", categoryIcon: "🛍️", categoryColor: "hsl(340, 82%, 52%)", allocated: 12000, spent: 9800, threshold: 75, note: "", isActive: true },
-];
+import { startOfMonth, endOfMonth, format, parseISO } from "date-fns";
 
 function getStatus(spent: number, allocated: number, threshold: number) {
-  const pct = (spent / allocated) * 100;
+  const pct = allocated > 0 ? (spent / allocated) * 100 : 0;
   if (pct >= 100) return { label: "Over Limit", variant: "destructive" as const, color: "text-negative" };
   if (pct >= threshold) return { label: "Warning", variant: "secondary" as const, color: "text-warning" };
   return { label: "Safe", variant: "outline" as const, color: "text-positive" };
 }
 
+interface BudgetFormData {
+  category_id: string;
+  allocated_amount: string;
+  alert_threshold: string;
+  note: string;
+  is_active: boolean;
+}
+
+const emptyForm: BudgetFormData = { category_id: "", allocated_amount: "", alert_threshold: "80", note: "", is_active: true };
+
 export default function Budgets() {
   const { currency } = useAppContext();
   const { data: categories = [] } = useCategories();
-  const [budgets] = useState<Budget[]>(MOCK_BUDGETS);
+  const { data: budgetsRaw = [], isLoading } = useBudgets();
+  const { data: transactionsRaw = [] } = useTransactions();
+  const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
+  const deleteBudget = useDeleteBudget();
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState<BudgetFormData>(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  const expenseCategories = categories.filter(c => c.group === "expense" && c.usable_in_budgets);
+
+  // Calculate spent per category for current month
+  const spentByCategory = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    const map: Record<string, number> = {};
+    (transactionsRaw as any[]).forEach((t: any) => {
+      if (t.type === "expense" && t.category_id && t.status === "completed") {
+        const d = parseISO(t.date);
+        if (d >= monthStart && d <= monthEnd) {
+          map[t.category_id] = (map[t.category_id] || 0) + Number(t.amount);
+        }
+      }
+    });
+    return map;
+  }, [transactionsRaw]);
+
+  const budgets = budgetsRaw.map(b => ({
+    ...b,
+    spent: spentByCategory[b.category_id] || 0,
+    categoryName: b.category?.name || "Unknown",
+    categoryIcon: b.category?.icon || "Folder",
+    categoryColor: b.category?.color || "#6366f1",
+  }));
 
   const filtered = useMemo(() => {
     let result = budgets;
@@ -60,34 +88,86 @@ export default function Budgets() {
       result = result.filter(b => b.categoryName.toLowerCase().includes(q));
     }
     if (categoryFilter !== "all") {
-      result = result.filter(b => b.categoryId === categoryFilter);
+      result = result.filter(b => b.category_id === categoryFilter);
     }
     if (statusFilter !== "all") {
       result = result.filter(b => {
-        const s = getStatus(b.spent, b.allocated, b.threshold);
+        const s = getStatus(b.spent, b.allocated_amount, b.alert_threshold);
         return s.label.toLowerCase().replace(" ", "_") === statusFilter;
       });
     }
     return result;
   }, [budgets, search, statusFilter, categoryFilter]);
 
-  const totalBudget = budgets.reduce((s, b) => s + b.allocated, 0);
+  const totalBudget = budgets.reduce((s, b) => s + Number(b.allocated_amount), 0);
   const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
   const remaining = totalBudget - totalSpent;
-  const overLimit = budgets.filter(b => b.spent >= b.allocated).length;
+  const overLimit = budgets.filter(b => b.spent >= Number(b.allocated_amount)).length;
 
   const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
 
   const resetFilters = () => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); };
 
-  const riskyBudgets = [...budgets].sort((a, b) => (b.spent / b.allocated) - (a.spent / a.allocated)).slice(0, 4);
+  const riskyBudgets = [...budgets].sort((a, b) => {
+    const pctA = Number(a.allocated_amount) > 0 ? a.spent / Number(a.allocated_amount) : 0;
+    const pctB = Number(b.allocated_amount) > 0 ? b.spent / Number(b.allocated_amount) : 0;
+    return pctB - pctA;
+  }).slice(0, 4);
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setModalOpen(true);
+  };
+
+  const openEdit = (b: typeof budgets[0]) => {
+    setEditingId(b.id);
+    setForm({
+      category_id: b.category_id,
+      allocated_amount: String(b.allocated_amount),
+      alert_threshold: String(b.alert_threshold),
+      note: b.note || "",
+      is_active: b.is_active,
+    });
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.category_id || !form.allocated_amount) return;
+    setSaving(true);
+    try {
+      const payload = {
+        category_id: form.category_id,
+        allocated_amount: Number(form.allocated_amount),
+        alert_threshold: Number(form.alert_threshold) || 80,
+        note: form.note || null,
+        is_active: form.is_active,
+        period_type: "monthly",
+        start_date: format(startOfMonth(new Date()), "yyyy-MM-dd"),
+      };
+      if (editingId) {
+        await updateBudget.mutateAsync({ id: editingId, ...payload });
+      } else {
+        await createBudget.mutateAsync(payload as any);
+      }
+      setModalOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await deleteBudget.mutateAsync(deleteId);
+    setDeleteId(null);
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Budgets"
         subtitle="Plan spending limits and track category-wise control"
-        actions={<Button size="sm" className="gap-1.5 h-9" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> Create Budget</Button>}
+        actions={<Button size="sm" className="gap-1.5 h-9" onClick={openCreate}><Plus className="h-4 w-4" /> Create Budget</Button>}
       />
 
       {/* Summary cards */}
@@ -95,7 +175,7 @@ export default function Budgets() {
         <FinanceCard icon={<Target className="h-5 w-5 text-primary" />} label="Total Budget" value={fmt(totalBudget)} iconBg="bg-primary/10" />
         <FinanceCard icon={<TrendingDown className="h-5 w-5 text-negative" />} label="Total Spent" value={fmt(totalSpent)} iconBg="bg-negative/10" />
         <FinanceCard icon={<ShieldCheck className="h-5 w-5 text-positive" />} label="Remaining" value={fmt(remaining)} iconBg="bg-positive/10" />
-        <FinanceCard icon={<PieChart className="h-5 w-5 text-primary" />} label="Active Budgets" value={String(budgets.filter(b => b.isActive).length)} iconBg="bg-accent" />
+        <FinanceCard icon={<PieChart className="h-5 w-5 text-primary" />} label="Active Budgets" value={String(budgets.filter(b => b.is_active).length)} iconBg="bg-accent" />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-warning" />} label="Over Limit" value={String(overLimit)} iconBg="bg-warning/10" />
       </div>
 
@@ -109,7 +189,7 @@ export default function Budgets() {
           <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {budgets.map(b => <SelectItem key={b.categoryId} value={b.categoryId}>{b.categoryName}</SelectItem>)}
+            {budgets.map(b => <SelectItem key={b.category_id} value={b.category_id}>{b.categoryName}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -126,45 +206,48 @@ export default function Budgets() {
 
       {/* Main layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Budget cards */}
         <div className="lg:col-span-2 space-y-3">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">Loading budgets...</div>
+          ) : filtered.length === 0 ? (
             <EmptyState
               title="No budgets found"
               description="Create your first budget to start controlling your spending."
               icon={<PieChart className="h-7 w-7 text-muted-foreground" />}
-              action={<Button size="sm" onClick={() => setCreateOpen(true)}>Create Budget</Button>}
+              action={<Button size="sm" onClick={openCreate}>Create Budget</Button>}
             />
           ) : (
             filtered.map(b => {
-              const pct = Math.min(Math.round((b.spent / b.allocated) * 100), 120);
-              const status = getStatus(b.spent, b.allocated, b.threshold);
-              const remainAmt = b.allocated - b.spent;
+              const alloc = Number(b.allocated_amount);
+              const pct = alloc > 0 ? Math.min(Math.round((b.spent / alloc) * 100), 120) : 0;
+              const status = getStatus(b.spent, alloc, b.alert_threshold);
+              const remainAmt = alloc - b.spent;
               return (
                 <div key={b.id} className="finance-card p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: b.categoryColor + "18" }}>
-                        {b.categoryIcon}
+                        <span className="text-sm">{b.categoryIcon?.startsWith?.("") ? b.categoryIcon : "📊"}</span>
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate">{b.categoryName}</p>
-                        <p className="text-xs text-muted-foreground">{fmt(b.spent)} of {fmt(b.allocated)}</p>
+                        <p className="text-xs text-muted-foreground">{fmt(b.spent)} of {fmt(alloc)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant={status.variant} className="text-[10px] px-2 py-0.5">{status.label}</Badge>
                       <span className={`text-sm font-bold ${status.color}`}>{remainAmt >= 0 ? fmt(remainAmt) : `-${fmt(Math.abs(remainAmt))}`}</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(b)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-negative" onClick={() => setDeleteId(b.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
                   <div className="mt-3 relative">
                     <Progress value={Math.min(pct, 100)} className="h-2" />
-                    {/* Threshold marker */}
-                    <div className="absolute top-0 h-2 w-0.5 bg-foreground/30 rounded-full" style={{ left: `${b.threshold}%` }} />
+                    <div className="absolute top-0 h-2 w-0.5 bg-foreground/30 rounded-full" style={{ left: `${b.alert_threshold}%` }} />
                   </div>
                   <div className="flex justify-between mt-1.5">
                     <span className="text-[10px] text-muted-foreground">{pct}% used</span>
-                    <span className="text-[10px] text-muted-foreground">Threshold: {b.threshold}%</span>
+                    <span className="text-[10px] text-muted-foreground">Threshold: {b.alert_threshold}%</span>
                   </div>
                 </div>
               );
@@ -186,11 +269,13 @@ export default function Budgets() {
               <Progress value={totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0} className="h-2" />
               <div className="border-t pt-3 mt-2">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Top Risk Categories</p>
+                {riskyBudgets.length === 0 && <p className="text-xs text-muted-foreground">No budgets yet</p>}
                 {riskyBudgets.map(b => {
-                  const pct = Math.round((b.spent / b.allocated) * 100);
+                  const alloc = Number(b.allocated_amount);
+                  const pct = alloc > 0 ? Math.round((b.spent / alloc) * 100) : 0;
                   return (
                     <div key={b.id} className="flex items-center justify-between py-1.5">
-                      <span className="text-xs truncate">{b.categoryIcon} {b.categoryName}</span>
+                      <span className="text-xs truncate">{b.categoryName}</span>
                       <span className={`text-xs font-semibold ${pct >= 100 ? "text-negative" : pct >= 80 ? "text-warning" : "text-positive"}`}>{pct}%</span>
                     </div>
                   );
@@ -212,22 +297,22 @@ export default function Budgets() {
         </div>
       </div>
 
-      {/* Create Budget Modal */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      {/* Create/Edit Budget Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Budget</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Budget" : "Create Budget"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Category</Label>
-              <Select>
+              <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
-                  {categories.filter(c => c.group === "expense" && c.usable_in_budgets).map(c => (
+                  {expenseCategories.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
-                  {categories.filter(c => c.group === "expense" && c.usable_in_budgets).length === 0 && (
+                  {expenseCategories.length === 0 && (
                     <SelectItem value="_none" disabled>No budget categories</SelectItem>
                   )}
                 </SelectContent>
@@ -236,24 +321,40 @@ export default function Budgets() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Allocated Amount</Label>
-                <Input type="number" placeholder="0" className="h-9 text-sm" />
+                <Input type="number" placeholder="0" className="h-9 text-sm" value={form.allocated_amount} onChange={e => setForm(f => ({ ...f, allocated_amount: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Alert Threshold (%)</Label>
-                <Input type="number" placeholder="80" className="h-9 text-sm" />
+                <Input type="number" placeholder="80" className="h-9 text-sm" value={form.alert_threshold} onChange={e => setForm(f => ({ ...f, alert_threshold: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Note</Label>
-              <Textarea placeholder="Optional note..." className="text-sm resize-none" rows={2} />
+              <Textarea placeholder="Optional note..." className="text-sm resize-none" rows={2} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => setCreateOpen(false)}>Create Budget</Button>
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.category_id || !form.allocated_amount}>
+              {saving ? "Saving..." : editingId ? "Update Budget" : "Create Budget"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Budget</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to delete this budget? This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

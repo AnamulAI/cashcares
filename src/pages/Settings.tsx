@@ -1,29 +1,44 @@
-import { useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon } from "lucide-react";
 import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
+import { useTransactions } from "@/hooks/use-transactions";
+import { useAccounts } from "@/hooks/use-accounts";
+import { useCategories } from "@/hooks/use-categories";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function Settings() {
-  const { currency, setCurrency } = useAppContext();
-  const [theme, setTheme] = useState("light");
-  const [notifications, setNotifications] = useState({
-    email: true,
-    budgetThreshold: true,
-    receivableReminder: false,
-    payableReminder: true,
-    loanDue: false,
-  });
+  const { currency, setCurrency, settings, updateSettings } = useAppContext();
+  const { data: transactions = [] } = useTransactions();
+  const { data: accounts = [] } = useAccounts();
+  const { data: categories = [] } = useCategories();
 
-  const toggleNotif = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleNotif = (key: keyof typeof settings.notifications) => {
+    updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
+  };
+
+  const exportAllData = () => {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      accounts,
+      categories,
+      transactions,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cashcare-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Data exported successfully");
   };
 
   return (
@@ -56,7 +71,7 @@ export default function Settings() {
                 <Label className="text-xs font-medium">Language</Label>
                 <p className="text-[11px] text-muted-foreground">Interface language</p>
               </div>
-              <Select defaultValue="en">
+              <Select value={settings.language} onValueChange={v => updateSettings({ language: v })}>
                 <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
@@ -70,7 +85,7 @@ export default function Settings() {
                 <Label className="text-xs font-medium">Date Format</Label>
                 <p className="text-[11px] text-muted-foreground">How dates appear across the app</p>
               </div>
-              <Select defaultValue="dmy">
+              <Select value={settings.dateFormat} onValueChange={v => updateSettings({ dateFormat: v })}>
                 <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
@@ -85,7 +100,7 @@ export default function Settings() {
                 <Label className="text-xs font-medium">Timezone</Label>
                 <p className="text-[11px] text-muted-foreground">Used for date/time calculations</p>
               </div>
-              <Select defaultValue="dhaka">
+              <Select value={settings.timezone} onValueChange={v => updateSettings({ timezone: v })}>
                 <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dhaka">Asia/Dhaka (GMT+6)</SelectItem>
@@ -117,7 +132,7 @@ export default function Settings() {
                     <Label className="text-xs font-medium">{item.label}</Label>
                     <p className="text-[11px] text-muted-foreground">{item.desc}</p>
                   </div>
-                  <Switch checked={notifications[item.key]} onCheckedChange={() => toggleNotif(item.key)} />
+                  <Switch checked={settings.notifications[item.key]} onCheckedChange={() => toggleNotif(item.key)} />
                 </div>
                 {i < 4 && <Separator className="mt-4" />}
               </div>
@@ -135,17 +150,17 @@ export default function Settings() {
             <div>
               <Label className="text-xs font-medium mb-2 block">Theme</Label>
               <div className="flex gap-2">
-                {[
-                  { value: "light", icon: Sun, label: "Light" },
-                  { value: "dark", icon: Moon, label: "Dark" },
-                  { value: "system", icon: Monitor, label: "System" },
-                ].map(t => (
+                {([
+                  { value: "light" as const, icon: Sun, label: "Light" },
+                  { value: "dark" as const, icon: Moon, label: "Dark" },
+                  { value: "system" as const, icon: Monitor, label: "System" },
+                ]).map(t => (
                   <Button
                     key={t.value}
-                    variant={theme === t.value ? "default" : "outline"}
+                    variant={settings.theme === t.value ? "default" : "outline"}
                     size="sm"
                     className="gap-1.5 text-xs flex-1"
-                    onClick={() => setTheme(t.value)}
+                    onClick={() => updateSettings({ theme: t.value })}
                   >
                     <t.icon className="h-3.5 w-3.5" /> {t.label}
                   </Button>
@@ -167,7 +182,7 @@ export default function Settings() {
                 <Label className="text-xs font-medium">Change Password</Label>
                 <p className="text-[11px] text-muted-foreground">Update your account password</p>
               </div>
-              <Button variant="outline" size="sm" className="text-xs h-8">Change</Button>
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => toast.info("Password change requires authentication to be set up first.")}>Change</Button>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -188,7 +203,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Data & Export — full width */}
+        {/* Data & Export */}
         <Card className="finance-card-static lg:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> Data & Export</CardTitle>
@@ -196,10 +211,10 @@ export default function Settings() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs">
+              <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" onClick={exportAllData}>
                 <Download className="h-5 w-5 text-primary" />
                 <span className="font-medium">Export All Data</span>
-                <span className="text-[10px] text-muted-foreground">Download your data as CSV</span>
+                <span className="text-[10px] text-muted-foreground">Download your data as JSON</span>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-1.5 text-xs" disabled>
                 <Upload className="h-5 w-5 text-muted-foreground" />

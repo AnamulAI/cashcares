@@ -59,6 +59,53 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          alert_threshold: number
+          allocated_amount: number
+          category_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          note: string | null
+          period_type: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          alert_threshold?: number
+          allocated_amount?: number
+          category_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          period_type?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Update: {
+          alert_threshold?: number
+          allocated_amount?: number
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          period_type?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           color: string

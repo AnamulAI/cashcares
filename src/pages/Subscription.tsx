@@ -3,9 +3,10 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Check, X, Crown, Zap, Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppContext, type PlanType } from "@/contexts/AppContext";
+import { toast } from "sonner";
 
 const features = [
   { name: "Income & Expense Tracking", free: true, premium: true },
@@ -24,7 +25,7 @@ const features = [
   { name: "Priority Support", free: false, premium: true },
 ];
 
-const plans = [
+const plans: { id: PlanType; name: string; price: number; period: string; billed: string; popular: boolean }[] = [
   { id: "monthly", name: "Monthly", price: 499, period: "/mo", billed: "Billed monthly", popular: false },
   { id: "yearly", name: "Yearly", price: 3999, period: "/yr", billed: "Billed annually (save 33%)", popular: true },
   { id: "lifetime", name: "Lifetime", price: 9999, period: "", billed: "One-time payment", popular: false },
@@ -43,9 +44,21 @@ function FeatureCell({ value }: { value: boolean | string }) {
   return <span className="text-xs text-muted-foreground">{value}</span>;
 }
 
+const planLabels: Record<PlanType, string> = {
+  free: "Free Plan",
+  monthly: "Monthly Premium",
+  yearly: "Yearly Premium",
+  lifetime: "Lifetime Premium",
+};
+
 export default function Subscription() {
-  const [billing, setBilling] = useState("yearly");
+  const { plan, setPlan, isPremium } = useAppContext();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleSelectPlan = (planId: PlanType) => {
+    setPlan(planId);
+    toast.success(`Plan updated to ${planLabels[planId]}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -59,12 +72,19 @@ export default function Subscription() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold font-display">Free Plan</h3>
-              <Badge variant="secondary" className="text-[10px]">Active</Badge>
+              <h3 className="text-base font-bold font-display">{planLabels[plan]}</h3>
+              <Badge variant={isPremium ? "default" : "secondary"} className="text-[10px]">{isPremium ? "Premium" : "Active"}</Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">Basic financial tracking with limited features</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isPremium ? "Full access to all premium features" : "Basic financial tracking with limited features"}
+            </p>
           </div>
-          <Button size="sm" className="gap-1.5 shrink-0"><Zap className="h-4 w-4" /> Upgrade to Premium</Button>
+          {!isPremium && (
+            <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleSelectPlan("yearly")}><Zap className="h-4 w-4" /> Upgrade to Premium</Button>
+          )}
+          {isPremium && (
+            <Button size="sm" variant="outline" className="shrink-0" onClick={() => { setPlan("free"); toast.info("Downgraded to Free plan"); }}>Downgrade</Button>
+          )}
         </CardContent>
       </Card>
 
@@ -75,39 +95,49 @@ export default function Subscription() {
           <p className="text-sm text-muted-foreground mt-1">Simple pricing, no hidden fees</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-          {plans.map(plan => (
-            <Card
-              key={plan.id}
-              className={cn(
-                "finance-card-static relative transition-shadow",
-                plan.popular && "border-primary shadow-md ring-1 ring-primary/20"
-              )}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground text-[10px] px-3 gap-1"><Star className="h-3 w-3" /> Recommended</Badge>
-                </div>
-              )}
-              <CardContent className="pt-6 text-center space-y-4">
-                <h3 className="text-sm font-semibold">{plan.name}</h3>
-                <div>
-                  <span className="text-3xl font-bold font-display">৳{plan.price.toLocaleString()}</span>
-                  <span className="text-sm text-muted-foreground">{plan.period}</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground">{plan.billed}</p>
-                <Button className="w-full" variant={plan.popular ? "default" : "outline"} size="sm">
-                  {plan.popular ? "Get Started" : "Select Plan"}
-                </Button>
-                <ul className="text-left space-y-1.5 pt-2">
-                  {["All premium features", "Unlimited budgets", "Advanced reports", "Priority support"].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Check className="h-3.5 w-3.5 text-positive shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ))}
+          {plans.map(p => {
+            const isCurrentPlan = plan === p.id;
+            return (
+              <Card
+                key={p.id}
+                className={cn(
+                  "finance-card-static relative transition-shadow",
+                  p.popular && "border-primary shadow-md ring-1 ring-primary/20",
+                  isCurrentPlan && "ring-2 ring-primary"
+                )}
+              >
+                {p.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-primary-foreground text-[10px] px-3 gap-1"><Star className="h-3 w-3" /> Recommended</Badge>
+                  </div>
+                )}
+                <CardContent className="pt-6 text-center space-y-4">
+                  <h3 className="text-sm font-semibold">{p.name}</h3>
+                  <div>
+                    <span className="text-3xl font-bold font-display">৳{p.price.toLocaleString()}</span>
+                    <span className="text-sm text-muted-foreground">{p.period}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{p.billed}</p>
+                  <Button
+                    className="w-full"
+                    variant={isCurrentPlan ? "secondary" : p.popular ? "default" : "outline"}
+                    size="sm"
+                    disabled={isCurrentPlan}
+                    onClick={() => handleSelectPlan(p.id)}
+                  >
+                    {isCurrentPlan ? "Current Plan" : p.popular ? "Get Started" : "Select Plan"}
+                  </Button>
+                  <ul className="text-left space-y-1.5 pt-2">
+                    {["All premium features", "Unlimited budgets", "Advanced reports", "Priority support"].map((f, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Check className="h-3.5 w-3.5 text-positive shrink-0" /> {f}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -161,11 +191,11 @@ export default function Subscription() {
         </CardContent>
       </Card>
 
-      {/* Billing history placeholder */}
+      {/* Billing history */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Billing History</p>
-          <p className="text-[11px] text-muted-foreground">No transactions yet</p>
+          <p className="text-[11px] text-muted-foreground">{isPremium ? `Active ${planLabels[plan]} subscription` : "No transactions yet"}</p>
         </div>
         <Button variant="ghost" size="sm" className="text-xs" disabled>View History</Button>
       </div>
