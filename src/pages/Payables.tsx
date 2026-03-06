@@ -5,10 +5,12 @@ import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -21,6 +23,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO, isAfter, startOfMonth, endOfMonth } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = { open: "bg-primary/10 text-primary", partial: "bg-warning/10 text-warning", paid: "bg-positive/10 text-positive", overdue: "bg-negative/10 text-negative" };
 
@@ -33,6 +38,7 @@ export default function Payables() {
   const updateMut = useUpdatePayable();
   const deleteMut = useDeletePayable();
   const payMut = useRecordPayment();
+  const qc = useQueryClient();
 
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -42,6 +48,9 @@ export default function Payables() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [form, setForm] = useState({ person_name: "", reason: "", total_amount: "", paid_amount: "0", due_date: "", linked_account_id: "", note: "", status: "open" });
   const fmt = (n: number) => formatAmount(n, currency, lang);
@@ -88,6 +97,26 @@ export default function Payables() {
     payMut.mutate({ id: payModal.id, amount: Number(payAmt), linkedAccountId: payAcct || payModal.linked_account_id }, { onSuccess: () => { setPayModal(null); setPayAmt(""); setPayAcct(""); } });
   };
 
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(r => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await supabase.from("payables").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["payables"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
+  };
+
   if (!isPremium) {
     return (
       <div className="space-y-6">
@@ -114,6 +143,8 @@ export default function Payables() {
         {(search || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>}
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       {isLoading ? (
         <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
       ) : filtered.length === 0 ? (
@@ -122,6 +153,7 @@ export default function Payables() {
         <Card className="finance-card-static overflow-hidden">
           <Table>
             <TableHeader><TableRow>
+              <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && selected.size === filtered.length} onCheckedChange={toggleAll} /></TableHead>
               <TableHead className="text-xs">{t("module.personVendor")}</TableHead><TableHead className="text-xs">{t("table.reason")}</TableHead>
               <TableHead className="text-xs text-right">{t("module.total")}</TableHead><TableHead className="text-xs text-right">{t("table.paid")}</TableHead>
               <TableHead className="text-xs text-right">{t("table.remaining")}</TableHead><TableHead className="text-xs">{t("table.dueDate")}</TableHead>
@@ -129,7 +161,8 @@ export default function Payables() {
             </TableRow></TableHeader>
             <TableBody>{filtered.map(p => {
               const remaining = Number(p.total_amount) - Number(p.paid_amount);
-              return (<TableRow key={p.id} className="group">
+              return (<TableRow key={p.id} className={`group ${selected.has(p.id) ? "bg-primary/5" : ""}`}>
+                <TableCell><Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleOne(p.id)} /></TableCell>
                 <TableCell className="text-xs font-medium">{p.person_name}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{p.reason || "—"}</TableCell>
                 <TableCell className="text-xs text-right font-semibold">{fmt(Number(p.total_amount))}</TableCell>
@@ -175,6 +208,15 @@ export default function Payables() {
       </DialogContent></Dialog>
 
       <ConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} title={t("confirm.deletePayable")} description={t("confirm.deleteDesc")} onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }} />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount } from "@/lib/formatters";
 import { startOfMonth, endOfMonth, format, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 function getStatus(spent: number, allocated: number, threshold: number) {
   const pct = allocated > 0 ? (spent / allocated) * 100 : 0;
@@ -47,6 +53,7 @@ export default function Budgets() {
   const createBudget = useCreateBudget();
   const updateBudget = useUpdateBudget();
   const deleteBudget = useDeleteBudget();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -56,6 +63,9 @@ export default function Budgets() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<BudgetFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const expenseCategories = categories.filter(c => c.group === "expense" && c.usable_in_budgets);
 
@@ -109,6 +119,26 @@ export default function Budgets() {
   const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const resetFilters = () => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); };
+
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(b => b.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await supabase.from("budgets").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
+  };
 
   const riskyBudgets = [...budgets].sort((a, b) => {
     const pctA = Number(a.allocated_amount) > 0 ? a.spent / Number(a.allocated_amount) : 0;
@@ -204,6 +234,8 @@ export default function Budgets() {
         <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={resetFilters}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-3">
           {isLoading ? (
@@ -222,9 +254,10 @@ export default function Budgets() {
               const status = getStatus(b.spent, alloc, b.alert_threshold);
               const remainAmt = alloc - b.spent;
               return (
-                <div key={b.id} className="finance-card p-4">
+                <div key={b.id} className={`finance-card p-4 ${selected.has(b.id) ? "ring-2 ring-primary/40" : ""}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
+                      <Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleOne(b.id)} />
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: b.categoryColor + "18" }}>
                         <span className="text-sm">{b.categoryIcon?.startsWith?.("") ? b.categoryIcon : "📊"}</span>
                       </div>
@@ -351,6 +384,15 @@ export default function Budgets() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }

@@ -5,10 +5,12 @@ import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -20,6 +22,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const ASSET_TYPES = ["cash_reserve", "property", "land", "vehicle", "equipment", "business_asset", "digital_asset", "other"];
 const statusColors: Record<string, string> = { active: "bg-positive/10 text-positive", sold: "bg-warning/10 text-warning", archived: "bg-muted text-muted-foreground" };
@@ -32,6 +37,7 @@ export default function Assets() {
   const createMut = useCreateAsset();
   const updateMut = useUpdateAsset();
   const deleteMut = useDeleteAsset();
+  const qc = useQueryClient();
 
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -39,6 +45,9 @@ export default function Assets() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [form, setForm] = useState({ asset_name: "", asset_type: "other", purchase_value: "", current_value: "", acquisition_date: "", linked_account_id: "", note: "", status: "active" });
   const fmt = (n: number) => formatAmount(n, currency, lang);
@@ -76,6 +85,26 @@ export default function Assets() {
     else createMut.mutate(payload, { onSuccess: () => setModal(false) });
   };
 
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(r => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await (supabase as any).from("assets").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
+  };
+
   if (!isPremium) {
     return (
       <div className="space-y-6">
@@ -103,6 +132,8 @@ export default function Assets() {
         {(search || typeFilter !== "all" || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setTypeFilter("all"); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>}
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">{[1,2,3].map(i => <Skeleton key={i} className="h-44 rounded-xl" />)}</div>
       ) : filtered.length === 0 ? (
@@ -112,13 +143,17 @@ export default function Assets() {
           {filtered.map(a => {
             const appreciation = Number(a.current_value) - Number(a.purchase_value);
             const pct = Number(a.purchase_value) > 0 ? ((appreciation / Number(a.purchase_value)) * 100).toFixed(1) : "0";
+            const isSelected = selected.has(a.id);
             return (
-              <Card key={a.id} className="finance-card group">
+              <Card key={a.id} className={`finance-card group ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">{a.asset_name}</p>
-                      <p className="text-[10px] text-muted-foreground capitalize">{a.asset_type.replace(/_/g, " ")}</p>
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(a.id)} />
+                      <div>
+                        <p className="text-sm font-semibold">{a.asset_name}</p>
+                        <p className="text-[10px] text-muted-foreground capitalize">{a.asset_type.replace(/_/g, " ")}</p>
+                      </div>
                     </div>
                     <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[a.status] || ""}`}>{a.status}</Badge>
                   </div>
@@ -162,6 +197,15 @@ export default function Assets() {
       </DialogContent></Dialog>
 
       <ConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} title={t("confirm.deleteAsset")} description={t("confirm.deleteDesc")} onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }} />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }

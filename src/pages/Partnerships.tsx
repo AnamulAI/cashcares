@@ -3,13 +3,15 @@ import { Plus, Users, DollarSign, Scale, ArrowRightLeft, Search, RotateCcw, Tras
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +19,9 @@ import { usePartnerships, useCreatePartnership, useUpdatePartnership, useDeleteP
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount } from "@/lib/formatters";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   active: "bg-positive/10 text-positive",
@@ -33,14 +38,17 @@ export default function Partnerships() {
   const updateMut = useUpdatePartnership();
   const deleteMut = useDeletePartnership();
   const entryMut = useCreatePartnershipEntry();
+  const qc = useQueryClient();
 
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // Entry modals
   const [entryModal, setEntryModal] = useState<{ type: "contribution" | "shared_expense" | "settlement"; partnership: any } | null>(null);
   const [entryForm, setEntryForm] = useState({ contributor: "you", description: "", amount: "", date: new Date().toISOString().slice(0, 10), note: "" });
 
@@ -83,21 +91,13 @@ export default function Partnerships() {
 
   const handleSave = () => {
     const payload: PartnershipInsert = {
-      partnership_name: form.partnership_name,
-      partner_name: form.partner_name,
-      your_contribution: Number(form.your_contribution),
-      partner_contribution: Number(form.partner_contribution),
-      shared_expense_total: Number(form.shared_expense_total),
-      settlement_amount: Number(form.settlement_amount),
-      start_date: form.start_date || null,
-      note: form.note || null,
-      status: form.status,
+      partnership_name: form.partnership_name, partner_name: form.partner_name,
+      your_contribution: Number(form.your_contribution), partner_contribution: Number(form.partner_contribution),
+      shared_expense_total: Number(form.shared_expense_total), settlement_amount: Number(form.settlement_amount),
+      start_date: form.start_date || null, note: form.note || null, status: form.status,
     };
-    if (editing) {
-      updateMut.mutate({ id: editing.id, ...payload }, { onSuccess: () => setModal(false) });
-    } else {
-      createMut.mutate(payload, { onSuccess: () => setModal(false) });
-    }
+    if (editing) updateMut.mutate({ id: editing.id, ...payload }, { onSuccess: () => setModal(false) });
+    else createMut.mutate(payload, { onSuccess: () => setModal(false) });
   };
 
   const handleEntrySubmit = () => {
@@ -114,23 +114,34 @@ export default function Partnerships() {
     }
     entryMut.mutate({
       partnershipId: p.id,
-      entry: {
-        partnership_id: p.id,
-        entry_type: entryModal.type,
-        contributor: entryForm.contributor,
-        description: entryForm.description || null,
-        amount,
-        date: entryForm.date,
-        note: entryForm.note || null,
-      },
-      field,
-      amount,
+      entry: { partnership_id: p.id, entry_type: entryModal.type, contributor: entryForm.contributor, description: entryForm.description || null, amount, date: entryForm.date, note: entryForm.note || null },
+      field, amount,
     }, {
       onSuccess: () => {
         setEntryModal(null);
         setEntryForm({ contributor: "you", description: "", amount: "", date: new Date().toISOString().slice(0, 10), note: "" });
       }
     });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(r => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await (supabase as any).from("partnerships").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["partnerships"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
   };
 
   if (!isPremium) {
@@ -182,6 +193,8 @@ export default function Partnerships() {
         {(search || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>}
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       {isLoading ? (
         <Card className="finance-card-static"><CardContent className="py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</CardContent></Card>
       ) : filtered.length === 0 ? (
@@ -191,6 +204,7 @@ export default function Partnerships() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && selected.size === filtered.length} onCheckedChange={toggleAll} /></TableHead>
                 <TableHead className="text-xs">Partnership</TableHead>
                 <TableHead className="text-xs">Partner</TableHead>
                 <TableHead className="text-xs text-right">Your Contrib.</TableHead>
@@ -205,7 +219,8 @@ export default function Partnerships() {
               {filtered.map(p => {
                 const net = Number(p.your_contribution) - Number(p.partner_contribution);
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className={selected.has(p.id) ? "bg-primary/5" : ""}>
+                    <TableCell><Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleOne(p.id)} /></TableCell>
                     <TableCell className="text-xs font-medium">{p.partnership_name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{p.partner_name}</TableCell>
                     <TableCell className="text-xs text-right">{fmt(Number(p.your_contribution))}</TableCell>
@@ -263,7 +278,7 @@ export default function Partnerships() {
         </DialogContent>
       </Dialog>
 
-      {/* Entry Modal (Contribution / Shared Expense / Settlement) */}
+      {/* Entry Modal */}
       <Dialog open={!!entryModal} onOpenChange={() => setEntryModal(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -298,16 +313,16 @@ export default function Partnerships() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Partnership?</AlertDialogTitle><AlertDialogDescription>This will remove the partnership and all its ledger entries. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}>{t("action.delete")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} title="Delete Partnership?" description="This will also delete all related entries. This action cannot be undone." onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }} />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }
