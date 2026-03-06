@@ -118,6 +118,26 @@ export default function Receivables() {
     });
   };
 
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(r => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await supabase.from("receivables").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["receivables"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
+  };
+
   if (!isPremium) {
     return (
       <div className="space-y-6">
