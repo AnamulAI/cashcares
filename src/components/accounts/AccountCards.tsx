@@ -2,13 +2,15 @@ import { MoreHorizontal, Eye, Pencil, Star, Archive, Trash2 } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/config/app";
 import { cn } from "@/lib/utils";
-import type { Account } from "@/types/finance";
+import { useUpdateAccount, useDeleteAccount, type DbAccount } from "@/hooks/use-accounts";
 
 interface AccountCardsProps {
-  accounts: Account[];
-  onViewDetails?: (account: Account) => void;
+  accounts: DbAccount[];
+  onViewDetails?: (account: DbAccount) => void;
+  onEdit?: (account: DbAccount) => void;
   viewMode?: "grid" | "list";
 }
 
@@ -17,7 +19,7 @@ const typeLabels: Record<string, string> = {
   card: "Card", savings: "Savings", business: "Business", shared: "Shared",
 };
 
-export function AccountCards({ accounts, onViewDetails, viewMode = "grid" }: AccountCardsProps) {
+export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid" }: AccountCardsProps) {
   if (viewMode === "list") {
     return (
       <div className="finance-card-static overflow-hidden">
@@ -30,15 +32,17 @@ export function AccountCards({ accounts, onViewDetails, viewMode = "grid" }: Acc
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold truncate">{account.name}</p>
-                  {account.isPrimary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0 shrink-0">Primary</Badge>}
+                  {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0 shrink-0">Primary</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground">{typeLabels[account.type]} · {account.currency}</p>
               </div>
               <div className="text-right">
                 <p className="text-base font-bold font-display tabular-nums">{formatCurrency(account.balance)}</p>
-                <p className="text-[11px] text-muted-foreground">Updated {account.lastUpdated}</p>
+                <p className="text-[11px] text-muted-foreground">Updated {new Date(account.updated_at).toLocaleDateString()}</p>
               </div>
-              <AccountActions account={account} onViewDetails={onViewDetails} />
+              <div onClick={e => e.stopPropagation()}>
+                <AccountActions account={account} onViewDetails={onViewDetails} onEdit={onEdit} />
+              </div>
             </div>
           ))}
         </div>
@@ -60,8 +64,8 @@ export function AccountCards({ accounts, onViewDetails, viewMode = "grid" }: Acc
                 <p className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type}</p>
               </div>
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
-              <AccountActions account={account} onViewDetails={onViewDetails} />
+            <div onClick={e => e.stopPropagation()}>
+              <AccountActions account={account} onViewDetails={onViewDetails} onEdit={onEdit} />
             </div>
           </div>
 
@@ -71,9 +75,9 @@ export function AccountCards({ accounts, onViewDetails, viewMode = "grid" }: Acc
           </div>
 
           <div className="mt-3 flex items-center gap-2">
-            {account.isPrimary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">Primary</Badge>}
-            <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.isActive ? "bg-positive/10 text-positive border-0" : "")}>{account.isActive ? "Active" : "Inactive"}</Badge>
-            <span className="text-[10px] text-muted-foreground ml-auto">Updated {account.lastUpdated}</span>
+            {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">Primary</Badge>}
+            <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? "Active" : "Inactive"}</Badge>
+            <span className="text-[10px] text-muted-foreground ml-auto">Updated {new Date(account.updated_at).toLocaleDateString()}</span>
           </div>
         </div>
       ))}
@@ -81,22 +85,39 @@ export function AccountCards({ accounts, onViewDetails, viewMode = "grid" }: Acc
   );
 }
 
-function AccountActions({ account, onViewDetails }: { account: Account; onViewDetails?: (a: Account) => void }) {
+function AccountActions({ account, onViewDetails, onEdit }: { account: DbAccount; onViewDetails?: (a: DbAccount) => void; onEdit?: (a: DbAccount) => void }) {
+  const updateAccount = useUpdateAccount();
+  const deleteAccount = useDeleteAccount();
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem onClick={() => onViewDetails?.(account)} className="gap-2 text-[13px]"><Eye className="h-3.5 w-3.5" /> View</DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-[13px]"><Star className="h-3.5 w-3.5" /> Set Primary</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 text-[13px]"><Archive className="h-3.5 w-3.5" /> Archive</DropdownMenuItem>
-        <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> Delete</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <AlertDialog>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={() => onViewDetails?.(account)} className="gap-2 text-[13px]"><Eye className="h-3.5 w-3.5" /> View</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onEdit?.(account)} className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => updateAccount.mutate({ id: account.id, is_primary: true })} className="gap-2 text-[13px]"><Star className="h-3.5 w-3.5" /> Set Primary</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => updateAccount.mutate({ id: account.id, is_active: !account.is_active })} className="gap-2 text-[13px]"><Archive className="h-3.5 w-3.5" /> {account.is_active ? "Archive" : "Activate"}</DropdownMenuItem>
+          <AlertDialogTrigger asChild>
+            <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+          </AlertDialogTrigger>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete "{account.name}"?</AlertDialogTitle>
+          <AlertDialogDescription>This will permanently delete this account and all associated transactions. This action cannot be undone.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => deleteAccount.mutate(account.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

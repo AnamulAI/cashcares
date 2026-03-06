@@ -10,24 +10,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockAccounts } from "@/data/mock-data";
-import type { Account } from "@/types/finance";
+import { useAccounts, type DbAccount } from "@/hooks/use-accounts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Accounts() {
   const [addOpen, setAddOpen] = useState(false);
+  const [editAccount, setEditAccount] = useState<DbAccount | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<DbAccount | null>(null);
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const filtered = mockAccounts
+  const { data: accounts = [], isLoading } = useAccounts();
+
+  const filtered = accounts
     .filter(a => tab === "all" || a.type === tab)
     .filter(a => !search || a.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleViewDetails = (account: Account) => {
+  const handleViewDetails = (account: DbAccount) => {
     setSelectedAccount(account);
     setDetailsOpen(true);
+  };
+
+  const handleEdit = (account: DbAccount) => {
+    setEditAccount(account);
+    setAddOpen(true);
   };
 
   return (
@@ -36,13 +44,13 @@ export default function Accounts() {
         title="Accounts"
         subtitle="Manage cash, bank, wallet and business accounts"
         actions={
-          <Button size="sm" className="gap-1.5 h-9" onClick={() => setAddOpen(true)}>
+          <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditAccount(null); setAddOpen(true); }}>
             <Plus className="h-4 w-4" /> Add Account
           </Button>
         }
       />
 
-      <AccountSummary />
+      <AccountSummary accounts={accounts} />
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -79,21 +87,25 @@ export default function Accounts() {
           </div>
         </div>
         <TabsContent value={tab} className="mt-4">
-          {filtered.length > 0 ? (
-            <AccountCards accounts={filtered} onViewDetails={handleViewDetails} viewMode={viewMode} />
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
+            </div>
+          ) : filtered.length > 0 ? (
+            <AccountCards accounts={filtered} onViewDetails={handleViewDetails} onEdit={handleEdit} viewMode={viewMode} />
           ) : (
             <EmptyState
               title="No accounts found"
               description="Add your first account to start tracking your finances."
               icon={<Wallet2 className="h-7 w-7 text-muted-foreground" />}
-              action={<Button size="sm" onClick={() => setAddOpen(true)}>Add Account</Button>}
+              action={<Button size="sm" onClick={() => { setEditAccount(null); setAddOpen(true); }}>Add Account</Button>}
             />
           )}
         </TabsContent>
       </Tabs>
 
-      <AddAccountModal open={addOpen} onOpenChange={setAddOpen} />
-      <AccountDetails account={selectedAccount} open={detailsOpen} onOpenChange={setDetailsOpen} />
+      <AddAccountModal open={addOpen} onOpenChange={setAddOpen} editAccount={editAccount} />
+      <AccountDetails account={selectedAccount} open={detailsOpen} onOpenChange={setDetailsOpen} onEdit={handleEdit} />
     </div>
   );
 }

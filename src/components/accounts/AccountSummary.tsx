@@ -1,15 +1,19 @@
 import { Wallet, Building2, Smartphone, Briefcase } from "lucide-react";
 import { formatCurrency } from "@/config/app";
-import { mockAccounts } from "@/data/mock-data";
+import type { DbAccount } from "@/hooks/use-accounts";
 
-export function AccountSummary() {
-  const active = mockAccounts.filter(a => a.isActive);
-  const cash = mockAccounts.filter(a => a.type === "cash").reduce((s, a) => s + a.balance, 0);
-  const bank = mockAccounts.filter(a => a.type === "bank" || a.type === "savings").reduce((s, a) => s + a.balance, 0);
-  const wallet = mockAccounts.filter(a => a.type === "mobile_wallet").reduce((s, a) => s + a.balance, 0);
+interface AccountSummaryProps {
+  accounts: DbAccount[];
+}
+
+export function AccountSummary({ accounts }: AccountSummaryProps) {
+  const active = accounts.filter(a => a.is_active);
+  const cash = accounts.filter(a => a.type === "cash").reduce((s, a) => s + Number(a.balance), 0);
+  const bank = accounts.filter(a => a.type === "bank" || a.type === "savings").reduce((s, a) => s + Number(a.balance), 0);
+  const wallet = accounts.filter(a => a.type === "mobile_wallet").reduce((s, a) => s + Number(a.balance), 0);
 
   const items = [
-    { icon: Briefcase, label: "Active Accounts", value: String(active.length), sub: "All accounts healthy", color: "text-primary bg-primary/10" },
+    { icon: Briefcase, label: "Active Accounts", value: String(active.length), sub: active.length > 0 ? "All accounts healthy" : undefined, color: "text-primary bg-primary/10" },
     { icon: Wallet, label: "Total Cash", value: formatCurrency(cash), color: "text-positive bg-positive/10" },
     { icon: Building2, label: "Bank Balance", value: formatCurrency(bank), color: "text-primary bg-primary/10" },
     { icon: Smartphone, label: "Wallet Balance", value: formatCurrency(wallet), color: "text-warning bg-warning/10" },
