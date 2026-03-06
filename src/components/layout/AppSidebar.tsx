@@ -93,7 +93,7 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
-                        {item.active ? (
+                        {!locked ? (
                           <NavLink
                             to={item.url}
                             end

@@ -68,7 +68,7 @@ export function useDeleteBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("budgets" as any).delete().eq("id", id);
+      const { error } = await (supabase as any).from("budgets").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
