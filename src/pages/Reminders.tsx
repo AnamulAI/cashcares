@@ -3,13 +3,15 @@ import { Plus, Bell, AlertTriangle, CheckCircle2, Clock, CalendarClock, Search, 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,6 +21,9 @@ import { usePayables } from "@/hooks/use-payables";
 import { useLoans } from "@/hooks/use-loans";
 import { useTranslation } from "@/i18n/useTranslation";
 import { parseISO, isToday, isBefore, addDays, isWithinInterval, startOfDay, endOfDay, format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   upcoming: "bg-primary/10 text-primary",
@@ -45,6 +50,7 @@ export default function Reminders() {
   const createMut = useCreateReminder();
   const updateMut = useUpdateReminder();
   const deleteMut = useDeleteReminder();
+  const qc = useQueryClient();
 
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -52,13 +58,15 @@ export default function Reminders() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [form, setForm] = useState({ title: "", reminder_type: "custom", due_date: "", related_entity_id: "", related_module: "", priority: "medium", note: "", status: "upcoming" });
 
   const now = new Date();
   const weekEnd = addDays(now, 7);
 
-  // Auto-generate reminders from receivables/payables/loans due dates
   const autoReminders = useMemo(() => {
     const auto: Array<{ title: string; type: string; due_date: string; module: string; status: string; priority: string; id: string }> = [];
     (receivables as any[]).filter(r => r.status !== "collected" && r.due_date).forEach(r => {
@@ -79,7 +87,6 @@ export default function Reminders() {
     return auto;
   }, [receivables, payables, loans]);
 
-  // Process manual reminders with auto-status
   const processedReminders = useMemo(() => {
     return reminders.map(r => {
       if (r.status === "completed" || r.status === "snoozed") return r;
@@ -90,7 +97,6 @@ export default function Reminders() {
     });
   }, [reminders]);
 
-  // Combine all
   const allItems = useMemo(() => {
     const combined = [
       ...processedReminders.map(r => ({ ...r, isAuto: false })),
@@ -103,6 +109,9 @@ export default function Reminders() {
       return true;
     });
   }, [processedReminders, autoReminders, typeFilter, statusFilter, search]);
+
+  // Only manual (non-auto) reminders can be bulk-selected
+  const manualItems = allItems.filter(r => !r.isAuto);
 
   const activeCount = allItems.filter(r => r.status !== "completed").length;
   const dueTodayCount = allItems.filter(r => r.status === "due today").length;
@@ -126,26 +135,38 @@ export default function Reminders() {
 
   const handleSave = () => {
     const payload: ReminderInsert = {
-      title: form.title,
-      reminder_type: form.reminder_type,
-      due_date: form.due_date,
-      related_entity_id: form.related_entity_id || null,
-      related_module: form.related_module || null,
-      priority: form.priority,
-      note: form.note || null,
-      status: form.status,
+      title: form.title, reminder_type: form.reminder_type, due_date: form.due_date,
+      related_entity_id: form.related_entity_id || null, related_module: form.related_module || null,
+      priority: form.priority, note: form.note || null, status: form.status,
     };
-    if (editing) {
-      updateMut.mutate({ id: editing.id, ...payload }, { onSuccess: () => setModal(false) });
-    } else {
-      createMut.mutate(payload, { onSuccess: () => setModal(false) });
-    }
+    if (editing) updateMut.mutate({ id: editing.id, ...payload }, { onSuccess: () => setModal(false) });
+    else createMut.mutate(payload, { onSuccess: () => setModal(false) });
   };
 
   const markComplete = (id: string) => updateMut.mutate({ id, status: "completed" });
   const snoozeReminder = (id: string) => {
     const newDate = addDays(now, 1).toISOString().slice(0, 10);
     updateMut.mutate({ id, due_date: newDate, status: "snoozed" });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === manualItems.length) setSelected(new Set());
+    else setSelected(new Set(manualItems.map(r => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await (supabase as any).from("reminders").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["reminders"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
   };
 
   return (
@@ -189,6 +210,8 @@ export default function Reminders() {
         {(search || typeFilter !== "all" || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setTypeFilter("all"); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> Reset</Button>}
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       {isLoading ? (
         <Card className="finance-card-static"><CardContent className="py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</CardContent></Card>
       ) : allItems.length === 0 ? (
@@ -198,6 +221,7 @@ export default function Reminders() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"><Checkbox checked={manualItems.length > 0 && selected.size === manualItems.length} onCheckedChange={toggleAll} /></TableHead>
                 <TableHead className="text-xs">Title</TableHead>
                 <TableHead className="text-xs">Type</TableHead>
                 <TableHead className="text-xs">Due Date</TableHead>
@@ -208,7 +232,10 @@ export default function Reminders() {
             </TableHeader>
             <TableBody>
               {allItems.map(r => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className={selected.has(r.id) ? "bg-primary/5" : ""}>
+                  <TableCell>
+                    {!r.isAuto ? <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleOne(r.id)} /> : <span className="w-4" />}
+                  </TableCell>
                   <TableCell className="text-xs font-medium">{r.title}{r.isAuto && <Badge variant="outline" className="ml-2 text-[9px] py-0">Auto</Badge>}</TableCell>
                   <TableCell className="text-xs text-muted-foreground capitalize">{r.reminder_type.replace(/_/g, " ")}</TableCell>
                   <TableCell className="text-xs">{r.due_date ? format(parseISO(r.due_date), "dd MMM yyyy") : "—"}</TableCell>
@@ -237,7 +264,6 @@ export default function Reminders() {
         </Card>
       )}
 
-      {/* Create/Edit Modal */}
       <Dialog open={modal} onOpenChange={setModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>{editing ? "Edit Reminder" : "Add Reminder"}</DialogTitle></DialogHeader>
@@ -275,16 +301,16 @@ export default function Reminders() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Reminder?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}>{t("action.delete")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} title="Delete Reminder?" description="This action cannot be undone." onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }} />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }

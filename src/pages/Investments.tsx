@@ -5,10 +5,12 @@ import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -21,6 +23,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const INVESTMENT_TYPES = ["stocks", "mutual_funds", "dps_fdr", "crypto", "business_investment", "private_investment", "other"];
 const statusColors: Record<string, string> = { active: "bg-positive/10 text-positive", closed: "bg-muted text-muted-foreground", on_hold: "bg-warning/10 text-warning" };
@@ -33,6 +38,7 @@ export default function Investments() {
   const createMut = useCreateInvestment();
   const updateMut = useUpdateInvestment();
   const deleteMut = useDeleteInvestment();
+  const qc = useQueryClient();
 
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -40,6 +46,9 @@ export default function Investments() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [form, setForm] = useState({ investment_name: "", investment_type: "other", invested_amount: "", current_value: "", start_date: "", linked_account_id: "", note: "", status: "active" });
   const fmt = (n: number) => formatAmount(n, currency, lang);
@@ -75,6 +84,26 @@ export default function Investments() {
     else createMut.mutate(payload, { onSuccess: () => setModal(false) });
   };
 
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(r => r.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selected) { await (supabase as any).from("investments").delete().eq("id", id); }
+      qc.invalidateQueries({ queryKey: ["investments"] });
+      toast.success(t("bulk.deleteSuccess").replace("{count}", String(selected.size)));
+      setSelected(new Set());
+      setBulkDeleteOpen(false);
+    } finally { setBulkDeleting(false); }
+  };
+
   if (!isPremium) {
     return (
       <div className="space-y-6">
@@ -102,6 +131,8 @@ export default function Investments() {
         {(search || typeFilter !== "all" || statusFilter !== "all") && <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => { setSearch(""); setTypeFilter("all"); setStatusFilter("all"); }}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>}
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       {isLoading ? (
         <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
       ) : filtered.length === 0 ? (
@@ -110,6 +141,7 @@ export default function Investments() {
         <Card className="finance-card-static overflow-hidden">
           <Table>
             <TableHeader><TableRow>
+              <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && selected.size === filtered.length} onCheckedChange={toggleAll} /></TableHead>
               <TableHead className="text-xs">{t("table.name")}</TableHead><TableHead className="text-xs">{t("module.investmentType")}</TableHead>
               <TableHead className="text-xs text-right">{t("module.invested")}</TableHead><TableHead className="text-xs text-right">{t("module.current")}</TableHead>
               <TableHead className="text-xs text-right">{t("module.profitLoss")}</TableHead><TableHead className="text-xs text-right">{t("module.roi")}</TableHead>
@@ -119,7 +151,8 @@ export default function Investments() {
             <TableBody>{filtered.map(inv => {
               const pl = Number(inv.current_value) - Number(inv.invested_amount);
               const roi = Number(inv.invested_amount) > 0 ? ((pl / Number(inv.invested_amount)) * 100).toFixed(1) : "0";
-              return (<TableRow key={inv.id} className="group">
+              return (<TableRow key={inv.id} className={`group ${selected.has(inv.id) ? "bg-primary/5" : ""}`}>
+                <TableCell><Checkbox checked={selected.has(inv.id)} onCheckedChange={() => toggleOne(inv.id)} /></TableCell>
                 <TableCell className="text-xs font-medium">{inv.investment_name}</TableCell>
                 <TableCell className="text-xs text-muted-foreground capitalize">{inv.investment_type.replace(/_/g, " ")}</TableCell>
                 <TableCell className="text-xs text-right">{fmt(Number(inv.invested_amount))}</TableCell>
@@ -159,6 +192,15 @@ export default function Investments() {
       </DialogContent></Dialog>
 
       <ConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} title={t("confirm.deleteInvestment")} description={t("confirm.deleteDesc")} onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }} />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={t("bulk.deleteTitle")}
+        description={t("bulk.deleteDesc").replace("{count}", String(selected.size))}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleting}
+        confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
+      />
     </div>
   );
 }
