@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Download, FileText } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Download, FileText, SearchX } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { TransactionFilters } from "@/components/transactions/TransactionFilters";
+import { TransactionFilters, TransactionFilterValues, emptyFilters } from "@/components/transactions/TransactionFilters";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { TransactionDetails } from "@/components/transactions/TransactionDetails";
 import { AddIncomeModal } from "@/components/transactions/AddIncomeModal";
@@ -20,12 +20,58 @@ export default function Transactions() {
   const [activeTab, setActiveTab] = useState("all");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
+  const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
 
   const { data: transactions = [], isLoading } = useTransactions();
 
-  const filtered = activeTab === "all"
-    ? transactions
-    : transactions.filter((t: any) => t.type === activeTab || (activeTab === "transfers" && t.type === "transfer"));
+  const filtered = useMemo(() => {
+    let result = transactions;
+
+    // Tab filter
+    if (activeTab !== "all") {
+      result = result.filter((t: any) =>
+        activeTab === "transfers" ? t.type === "transfer" : t.type === activeTab
+      );
+    }
+
+    // Type filter
+    if (filters.type !== "all") {
+      result = result.filter((t: any) => t.type === filters.type);
+    }
+
+    // Category filter
+    if (filters.categoryId !== "all") {
+      result = result.filter((t: any) => t.category_id === filters.categoryId);
+    }
+
+    // Account filter
+    if (filters.accountId !== "all") {
+      result = result.filter((t: any) =>
+        t.account_id === filters.accountId || t.to_account_id === filters.accountId
+      );
+    }
+
+    // Status filter
+    if (filters.status !== "all") {
+      result = result.filter((t: any) => t.status === filters.status);
+    }
+
+    // Search filter
+    if (filters.search.trim()) {
+      const q = filters.search.toLowerCase();
+      result = result.filter((t: any) => {
+        const note = (t.note || "").toLowerCase();
+        const catName = (t.category?.name || "").toLowerCase();
+        const accName = (t.account?.name || "").toLowerCase();
+        const type = (t.type || "").toLowerCase();
+        return note.includes(q) || catName.includes(q) || accName.includes(q) || type.includes(q);
+      });
+    }
+
+    return result;
+  }, [transactions, activeTab, filters]);
+
+  const hasActiveFilters = filters.search || filters.type !== "all" || filters.categoryId !== "all" || filters.accountId !== "all" || filters.status !== "all";
 
   const handleViewDetails = (txn: any) => {
     setSelectedTxn(txn);
@@ -56,7 +102,7 @@ export default function Transactions() {
         }
       />
 
-      <TransactionFilters />
+      <TransactionFilters filters={filters} onChange={setFilters} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-1">
@@ -74,10 +120,14 @@ export default function Transactions() {
             <TransactionTable transactions={filtered} onViewDetails={handleViewDetails} />
           ) : (
             <EmptyState
-              title="No transactions found"
-              description="Try adjusting your filters or add a new transaction to get started."
-              icon={<FileText className="h-7 w-7 text-muted-foreground" />}
-              action={<Button size="sm" onClick={() => setIncomeOpen(true)}>Add Transaction</Button>}
+              title={hasActiveFilters ? "No transactions match your filters" : "No transactions found"}
+              description={hasActiveFilters ? "Try adjusting or clearing your filters." : "Add a new transaction to get started."}
+              icon={hasActiveFilters ? <SearchX className="h-7 w-7 text-muted-foreground" /> : <FileText className="h-7 w-7 text-muted-foreground" />}
+              action={
+                hasActiveFilters
+                  ? <Button size="sm" variant="outline" onClick={() => setFilters(emptyFilters)}>Clear Filters</Button>
+                  : <Button size="sm" onClick={() => setIncomeOpen(true)}>Add Transaction</Button>
+              }
             />
           )}
         </TabsContent>
