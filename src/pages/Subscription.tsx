@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAppContext, type PlanType } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 const features = [
   { name: "Income & Expense Tracking", free: true, premium: true },
@@ -49,6 +50,9 @@ export default function Subscription() {
   const { plan, setPlan, isPremium, currency } = useAppContext();
   const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<PlanType | null>(null);
 
   const planLabels: Record<PlanType, string> = {
     free: t("subscription.freePlan"),
@@ -57,10 +61,33 @@ export default function Subscription() {
     lifetime: t("subscription.lifetimePremium"),
   };
 
-  const handleSelectPlan = (planId: PlanType) => {
-    setPlan(planId);
-    toast.success(`Plan updated to ${planLabels[planId]}`);
+  const handleCardClick = (planId: PlanType) => {
+    if (planId === plan) return;
+    setSelectedPlan(planId);
   };
+
+  const handleUpgradeClick = (planId: PlanType) => {
+    if (planId === plan) return;
+    setPendingPlan(planId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmUpgrade = () => {
+    if (!pendingPlan) return;
+    setPlan(pendingPlan);
+    toast.success(`Plan upgraded to ${planLabels[pendingPlan]}`);
+    setConfirmOpen(false);
+    setPendingPlan(null);
+    setSelectedPlan(null);
+  };
+
+  const handleDowngrade = () => {
+    setPendingPlan("free");
+    setConfirmOpen(true);
+  };
+
+  const pendingPlanData = pendingPlan ? plans.find(p => p.id === pendingPlan) : null;
+  const isDowngrade = pendingPlan === "free";
 
   return (
     <div className="space-y-6">
@@ -81,10 +108,10 @@ export default function Subscription() {
             </p>
           </div>
           {!isPremium && (
-            <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleSelectPlan("yearly")}><Zap className="h-4 w-4" /> {t("subscription.upgradeToPremium")}</Button>
+            <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleUpgradeClick(selectedPlan || "yearly")}><Zap className="h-4 w-4" /> {t("subscription.upgradeToPremium")}</Button>
           )}
           {isPremium && (
-            <Button size="sm" variant="outline" className="shrink-0" onClick={() => { setPlan("free"); toast.info("Downgraded to Free plan"); }}>{t("action.downgrade")}</Button>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={handleDowngrade}>{t("action.downgrade")}</Button>
           )}
         </CardContent>
       </Card>
@@ -97,18 +124,26 @@ export default function Subscription() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
           {plans.map(p => {
             const isCurrentPlan = plan === p.id;
+            const isSelected = selectedPlan === p.id;
             return (
               <Card
                 key={p.id}
+                onClick={() => handleCardClick(p.id)}
                 className={cn(
-                  "finance-card-static relative transition-shadow",
-                  p.popular && "border-primary shadow-md ring-1 ring-primary/20",
-                  isCurrentPlan && "ring-2 ring-primary"
+                  "finance-card-static relative transition-all cursor-pointer",
+                  p.popular && !isSelected && !isCurrentPlan && "border-primary/40 shadow-md",
+                  isCurrentPlan && "ring-2 ring-primary border-primary cursor-default",
+                  isSelected && !isCurrentPlan && "ring-2 ring-accent-foreground border-accent-foreground shadow-lg",
                 )}
               >
                 {p.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <Badge className="bg-primary text-primary-foreground text-[10px] px-3 gap-1"><Star className="h-3 w-3" /> {t("subscription.recommended")}</Badge>
+                  </div>
+                )}
+                {isCurrentPlan && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge variant="secondary" className="text-[10px] px-3">{t("subscription.currentPlanBadge")}</Badge>
                   </div>
                 )}
                 <CardContent className="pt-6 text-center space-y-4">
@@ -120,12 +155,12 @@ export default function Subscription() {
                   <p className="text-[11px] text-muted-foreground">{p.billed}</p>
                   <Button
                     className="w-full"
-                    variant={isCurrentPlan ? "secondary" : p.popular ? "default" : "outline"}
+                    variant={isCurrentPlan ? "secondary" : isSelected ? "default" : p.popular ? "default" : "outline"}
                     size="sm"
                     disabled={isCurrentPlan}
-                    onClick={() => handleSelectPlan(p.id)}
+                    onClick={(e) => { e.stopPropagation(); handleUpgradeClick(p.id); }}
                   >
-                    {isCurrentPlan ? t("subscription.currentPlanBadge") : p.popular ? t("subscription.getStarted") : t("subscription.selectPlan")}
+                    {isCurrentPlan ? t("subscription.currentPlanBadge") : isSelected ? "Confirm & Upgrade" : p.popular ? t("subscription.getStarted") : t("subscription.selectPlan")}
                   </Button>
                   <ul className="text-left space-y-1.5 pt-2">
                     {["All premium features", "Unlimited budgets", "Advanced reports", "Priority support"].map((f, i) => (
@@ -196,6 +231,22 @@ export default function Subscription() {
         </div>
         <Button variant="ghost" size="sm" className="text-xs" disabled>{t("subscription.viewHistory")}</Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={isDowngrade ? "Downgrade to Free Plan?" : `Upgrade to ${pendingPlan ? planLabels[pendingPlan] : ""}?`}
+        description={
+          isDowngrade
+            ? "Premium features will become read-only. Your data will be preserved."
+            : pendingPlanData
+              ? `You're about to upgrade to the ${pendingPlanData.name} plan at ${currency.symbol}${pendingPlanData.price.toLocaleString()}${pendingPlanData.period}. ${pendingPlanData.billed}. Payment integration coming soon — this is a demo upgrade.`
+              : ""
+        }
+        onConfirm={handleConfirmUpgrade}
+        confirmLabel={isDowngrade ? "Confirm Downgrade" : "Confirm Upgrade"}
+        destructive={isDowngrade}
+      />
     </div>
   );
 }
