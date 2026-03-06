@@ -14,7 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          balance: number
+          color: string
+          created_at: string
+          currency: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_primary: boolean
+          name: string
+          notes: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          color?: string
+          created_at?: string
+          currency?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          name: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          color?: string
+          created_at?: string
+          currency?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          name?: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          group: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_subcategory: boolean
+          name: string
+          parent_id: string | null
+          updated_at: string
+          usable_in_budgets: boolean
+          usage_count: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          group?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_subcategory?: boolean
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+          usable_in_budgets?: boolean
+          usage_count?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          group?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_subcategory?: boolean
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+          usable_in_budgets?: boolean
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          status: string
+          tags: string[] | null
+          to_account_id: string | null
+          transfer_fee: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          status?: string
+          tags?: string[] | null
+          to_account_id?: string | null
+          transfer_fee?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          status?: string
+          tags?: string[] | null
+          to_account_id?: string | null
+          transfer_fee?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
