@@ -279,7 +279,7 @@ export default function ReceivableLedger() {
             </div>
             <div><Label className="text-xs">Description</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <CategoryCombobox value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))} entries={entries} />
+              <CategoryCombobox value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))} entries={entries} group="receivable" />
               <div>
                 <Label className="text-xs">Account</Label>
                 <Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}>
