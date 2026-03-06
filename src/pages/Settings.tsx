@@ -63,7 +63,8 @@ export default function Settings() {
       }
       const { total } = await loadDemoData();
       qc.invalidateQueries();
-      toast.success(`Demo data loaded — ${total} records added`);
+      toast.success(`Demo data loaded — ${total} records added. Reloading...`);
+      setTimeout(() => window.location.reload(), 800);
     } catch (e: any) {
       toast.error(e.message || "Failed to load demo data");
     } finally {
@@ -76,7 +77,8 @@ export default function Settings() {
     try {
       const { total } = await clearDemoData();
       qc.invalidateQueries();
-      toast.success(`Cleared ${total} demo records`);
+      toast.success(`Cleared ${total} demo records. Reloading...`);
+      setTimeout(() => window.location.reload(), 800);
     } catch (e: any) {
       toast.error(e.message || "Failed to clear demo data");
     } finally {
