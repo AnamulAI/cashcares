@@ -23,6 +23,8 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
 import { parseISO, isAfter, format } from "date-fns";
 import { ReceivableEntryDetailModal } from "@/components/ledger/ReceivableEntryDetailModal";
+import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
