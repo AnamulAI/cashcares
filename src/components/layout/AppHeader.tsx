@@ -1,18 +1,62 @@
 import { useState } from "react";
-import { Bell, Search, Plus, ChevronDown, User, CreditCard, LogOut, Settings2, UserCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import {
+  Bell, Search, Plus, ChevronDown, User, CreditCard, LogOut,
+  Settings2, UserCircle, Check, Calendar as CalendarIcon,
+  AlertTriangle, Clock, DollarSign, ArrowUpRight, CheckCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { APP_CONFIG } from "@/config/app";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { QuickAddModal } from "./QuickAddModal";
+import { useAppContext, CURRENCIES, type DatePreset, presetLabel } from "@/contexts/AppContext";
+import { toast } from "sonner";
+
+const MOCK_NOTIFICATIONS = [
+  { id: "1", icon: AlertTriangle, color: "text-warning", title: "Budget threshold reached", desc: "Food & Dining is at 90% of limit", time: "2 min ago", read: false },
+  { id: "2", icon: Clock, color: "text-negative", title: "Receivable overdue", desc: "Invoice #1042 — ৳12,000 past due", time: "1 hour ago", read: false },
+  { id: "3", icon: DollarSign, color: "text-primary", title: "Payable due soon", desc: "Rent payment due in 3 days", time: "3 hours ago", read: false },
+  { id: "4", icon: ArrowUpRight, color: "text-positive", title: "New transaction added", desc: "Salary credited — ৳85,000", time: "Yesterday", read: true },
+];
+
+const DATE_PRESETS: DatePreset[] = ["this_month", "last_month", "last_3_months", "this_year", "custom"];
 
 export function AppHeader() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+  const [showCustomCalendar, setShowCustomCalendar] = useState(false);
+  const navigate = useNavigate();
+  const { currency, setCurrency, datePreset, dateRange, setDatePreset, setCustomRange, datePresetLabel } = useAppContext();
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const markRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const handleDatePreset = (p: DatePreset) => {
+    if (p === "custom") {
+      setShowCustomCalendar(true);
+    } else {
+      setDatePreset(p);
+      setShowCustomCalendar(false);
+      setDatePopoverOpen(false);
+    }
+  };
 
   return (
     <>
@@ -26,23 +70,134 @@ export function AppHeader() {
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
-          {/* Currency */}
-          <Badge variant="secondary" className="hidden md:flex gap-1 font-mono text-[11px] px-2.5 py-1 bg-muted/60 text-muted-foreground border-0">
-            {APP_CONFIG.currency.code} {APP_CONFIG.currency.symbol}
-          </Badge>
+          {/* Currency Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="hidden md:flex items-center gap-1 font-mono text-[11px] px-2.5 py-1 bg-muted/60 text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer">
+                {currency.code} {currency.symbol}
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36 p-1">
+              {CURRENCIES.map(c => (
+                <DropdownMenuItem
+                  key={c.code}
+                  className="gap-2.5 px-3 py-2 cursor-pointer justify-between"
+                  onClick={() => setCurrency(c)}
+                >
+                  <span className="font-mono text-xs">{c.code} {c.symbol}</span>
+                  {currency.code === c.code && <Check className="h-3.5 w-3.5 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          {/* Date range */}
-          <Button variant="ghost" size="sm" className="hidden lg:flex gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground">
-            This Month <ChevronDown className="h-3 w-3 opacity-60" />
-          </Button>
+          {/* Date Range Selector */}
+          <Popover open={datePopoverOpen} onOpenChange={(o) => { setDatePopoverOpen(o); if (!o) setShowCustomCalendar(false); }}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="hidden lg:flex gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground">
+                {datePresetLabel} <ChevronDown className="h-3 w-3 opacity-60" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto p-0">
+              {!showCustomCalendar ? (
+                <div className="p-1.5 min-w-[180px]">
+                  {DATE_PRESETS.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => handleDatePreset(p)}
+                      className={cn(
+                        "w-full flex items-center justify-between gap-3 px-3 py-2 text-xs rounded-md hover:bg-accent transition-colors",
+                        datePreset === p && "bg-accent font-medium"
+                      )}
+                    >
+                      {presetLabel[p]}
+                      {datePreset === p && p !== "custom" && <Check className="h-3.5 w-3.5 text-primary" />}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground px-1">Select date range</p>
+                  <Calendar
+                    mode="range"
+                    selected={{ from: dateRange.from, to: dateRange.to }}
+                    onSelect={(range) => {
+                      if (range?.from && range?.to) {
+                        setCustomRange({ from: range.from, to: range.to });
+                      }
+                    }}
+                    numberOfMonths={1}
+                    className="p-3 pointer-events-auto"
+                  />
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      {format(dateRange.from, "MMM d")} — {format(dateRange.to, "MMM d, yyyy")}
+                    </span>
+                    <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => { setDatePopoverOpen(false); setShowCustomCalendar(false); }}>
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
 
-          {/* Notification */}
-          <Button variant="ghost" size="icon" className="h-9 w-9 relative text-muted-foreground hover:text-foreground">
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-negative ring-2 ring-card" />
-          </Button>
+          {/* Notifications */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 relative text-muted-foreground hover:text-foreground">
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-negative ring-2 ring-card" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+              <div className="flex items-center justify-between px-4 py-3 border-b">
+                <span className="text-sm font-semibold">Notifications</span>
+                {unreadCount > 0 && (
+                  <button onClick={markAllRead} className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                    <CheckCheck className="h-3 w-3" /> Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-72 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">No notifications</div>
+                ) : (
+                  notifications.map(n => {
+                    const Icon = n.icon;
+                    return (
+                      <button
+                        key={n.id}
+                        onClick={() => markRead(n.id)}
+                        className={cn(
+                          "w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-accent/50 transition-colors border-b border-border/40 last:border-0",
+                          !n.read && "bg-primary/[0.03]"
+                        )}
+                      >
+                        <div className={cn("mt-0.5 h-7 w-7 rounded-lg flex items-center justify-center shrink-0", n.color, "bg-current/10")}>
+                          <Icon className={cn("h-3.5 w-3.5", n.color)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-xs", !n.read ? "font-medium" : "text-muted-foreground")}>{n.title}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{n.desc}</p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground/60 shrink-0 mt-0.5">{n.time}</span>
+                        {!n.read && <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0 mt-1.5" />}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              <div className="border-t px-4 py-2.5">
+                <button className="text-xs text-primary hover:underline w-full text-center">View all notifications</button>
+              </div>
+            </PopoverContent>
+          </Popover>
 
-          {/* User */}
+          {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
@@ -57,17 +212,17 @@ export function AppHeader() {
                 <p className="text-xs text-muted-foreground">user@email.com</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer">
+              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/settings")}>
                 <UserCircle className="h-4 w-4 text-muted-foreground" /> Profile
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer">
+              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/settings")}>
                 <Settings2 className="h-4 w-4 text-muted-foreground" /> Preferences
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer">
+              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/subscription")}>
                 <CreditCard className="h-4 w-4 text-muted-foreground" /> Billing
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer text-negative">
+              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer text-negative" onClick={() => toast.info("Sign out flow not yet connected")}>
                 <LogOut className="h-4 w-4" /> Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
