@@ -28,7 +28,7 @@ const statusColors: Record<string, string> = { active: "bg-primary/10 text-prima
 
 export default function DebtLoans() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useLoans();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateLoan();
