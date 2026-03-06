@@ -4,13 +4,13 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount } from "@/lib/formatters";
+import { formatAmount, formatPercent } from "@/lib/formatters";
 
 export function SummaryCards() {
   const { currency } = useAppContext();
   const { data: accounts = [] } = useAccounts();
   const { data: transactions = [] } = useTransactions();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
   const now = new Date();

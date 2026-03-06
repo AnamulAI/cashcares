@@ -27,7 +27,7 @@ export function TrendChart() {
                 boxShadow: "0 4px 12px hsl(var(--foreground) / 0.06)",
                 padding: "8px 12px",
               }}
-              formatter={(value: number) => [formatAmount(value, currency), undefined]}
+              formatter={(value: number) => [formatAmount(value, currency, lang), undefined]}
             />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: 12 }} />
             <Line type="monotone" dataKey="income" stroke="hsl(var(--positive))" strokeWidth={2.5} dot={false} activeDot={{ r: 4, strokeWidth: 2 }} name={t("transactions.income")} />

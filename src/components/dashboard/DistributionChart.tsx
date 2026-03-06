@@ -39,7 +39,7 @@ export function DistributionChart() {
                   boxShadow: "0 4px 12px hsl(var(--foreground) / 0.06)",
                   padding: "8px 12px",
                 }}
-                formatter={(value: number) => [formatAmount(value, currency), undefined]}
+                formatter={(value: number) => [formatAmount(value, currency, lang), undefined]}
               />
             </PieChart>
           </ResponsiveContainer>

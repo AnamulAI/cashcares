@@ -12,8 +12,8 @@ import { formatAmount } from "@/lib/formatters";
 
 export function SecondaryCards() {
   const { currency } = useAppContext();
-  const fmt = (n: number) => formatAmount(n, currency);
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const { data: accounts = [] } = useAccounts();
   const { data: receivables = [] } = useReceivables();

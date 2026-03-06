@@ -8,8 +8,8 @@ import { formatAmount } from "@/lib/formatters";
 
 export function BudgetProgress() {
   const { currency } = useAppContext();
-  const { t } = useTranslation();
-  const fmt = (n: number) => formatAmount(n, currency);
+  const { t, lang } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   return (
     <div className="finance-card-static p-5">
