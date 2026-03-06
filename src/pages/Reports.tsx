@@ -53,6 +53,11 @@ export default function Reports() {
   const { data: accounts = [] } = useAccounts();
   const { data: categoriesRaw = [] } = useCategories();
   const { data: budgetsRaw = [] } = useBudgets();
+  const { data: receivablesRaw = [] } = useReceivables();
+  const { data: payablesRaw = [] } = usePayables();
+  const { data: loansRaw = [] } = useLoans();
+  const { data: assetsRaw = [] } = useAssets();
+  const { data: investmentsRaw = [] } = useInvestments();
   const [tab, setTab] = useState("overview");
   const [accountFilter, setAccountFilter] = useState("all");
   const [categoryFilterVal, setCategoryFilterVal] = useState("all");
