@@ -596,6 +596,15 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Investments
     "investments.title": "বিনিয়োগ",
     "investments.subtitle": "বরাদ্দ মূলধন ও বৃদ্ধি ট্র্যাক করুন",
+    // Partnerships
+    "nav.partnerships": "অংশীদারিত্ব",
+    "partnerships.title": "অংশীদারিত্ব খাতা",
+    "partnerships.subtitle": "ভাগাভাগি অবদান, ব্যয় ও নিষ্পত্তি ট্র্যাক করুন",
+    "action.addPartnership": "অংশীদারিত্ব যোগ করুন",
+    // Reminders
+    "nav.reminders": "রিমাইন্ডার",
+    "reminders.title": "রিমাইন্ডার কেন্দ্র",
+    "reminders.subtitle": "বকেয়া, সতর্কতা ও ফলো-আপে থাকুন",
     // Topbar
     "topbar.searchPlaceholder": "লেনদেন, অ্যাকাউন্ট খুঁজুন...",
     "topbar.notifications": "বিজ্ঞপ্তি",
