@@ -51,6 +51,7 @@ export default function ReceivableLedger() {
   const [collectAcct, setCollectAcct] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [detailEntry, setDetailEntry] = useState<any>(null);
 
   const [form, setForm] = useState({ date: format(new Date(), "yyyy-MM-dd"), description: "", category: "", linked_account_id: "", amount: "", collected_amount: "0", due_date: "", note: "", status: "open" });
 
