@@ -174,3 +174,54 @@
     box-shadow: var(--shadow-card);
   }
 }
+
+/* Print styles */
+@media print {
+  /* Hide app shell */
+  [data-sidebar],
+  header,
+  nav,
+  .sidebar-trigger,
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  /* Reset layout */
+  body, html {
+    background: white !important;
+    color: black !important;
+    font-size: 12px !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Cards print clean */
+  .finance-card,
+  .finance-card-static {
+    box-shadow: none !important;
+    border: 1px solid #e5e5e5 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Hide non-printable UI */
+  .no-print,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* Print header section */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Recharts print fix */
+  .recharts-wrapper {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

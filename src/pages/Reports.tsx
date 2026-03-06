@@ -159,22 +159,40 @@ export default function Reports() {
 
   const noData = t("common.noDataAvailable");
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
+      {/* Print-only header */}
+      <div className="print-only hidden mb-4">
+        <h1 className="text-xl font-bold">Cash Care — Financial Report</h1>
+        <p className="text-sm text-muted-foreground">
+          {format(dateRange.from, "MMM d, yyyy")} — {format(dateRange.to, "MMM d, yyyy")}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">Generated: {format(new Date(), "PPpp")}</p>
+      </div>
+
       <PageHeader
         title={t("reports.title")}
         subtitle={t("reports.subtitle")}
         actions={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1.5 h-9"><Download className="h-4 w-4" /> {t("action.exportReport")}</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled><FileText className="h-4 w-4 mr-2" /> {t("reports.exportPDF")}</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCSV}><Layers className="h-4 w-4 mr-2" /> {t("reports.exportCSV")}</DropdownMenuItem>
-              <DropdownMenuItem disabled><BarChart3 className="h-4 w-4 mr-2" /> {t("reports.monthlySummary")}</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={handlePrint}>
+              <Printer className="h-4 w-4" /> Print
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1.5 h-9"><Download className="h-4 w-4" /> {t("action.exportReport")}</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled><FileText className="h-4 w-4 mr-2" /> {t("reports.exportPDF")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportCSV}><Layers className="h-4 w-4 mr-2" /> {t("reports.exportCSV")}</DropdownMenuItem>
+                <DropdownMenuItem disabled><BarChart3 className="h-4 w-4 mr-2" /> {t("reports.monthlySummary")}</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         }
       />
 
