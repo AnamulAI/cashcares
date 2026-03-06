@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = { open: "bg-primary/10 text-primary
 
 export default function Payables() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = usePayables();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreatePayable();
@@ -44,8 +44,8 @@ export default function Payables() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [form, setForm] = useState({ person_name: "", reason: "", total_amount: "", paid_amount: "0", due_date: "", linked_account_id: "", note: "", status: "open" });
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const now = new Date();
   const mStart = startOfMonth(now);
   const mEnd = endOfMonth(now);

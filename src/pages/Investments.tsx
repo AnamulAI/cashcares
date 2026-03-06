@@ -27,7 +27,7 @@ const statusColors: Record<string, string> = { active: "bg-positive/10 text-posi
 
 export default function Investments() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useInvestments();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateInvestment();
@@ -42,8 +42,8 @@ export default function Investments() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [form, setForm] = useState({ investment_name: "", investment_type: "other", invested_amount: "", current_value: "", start_date: "", linked_account_id: "", note: "", status: "active" });
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   const filtered = useMemo(() => items.filter(inv => {
     if (statusFilter !== "all" && inv.status !== statusFilter) return false;

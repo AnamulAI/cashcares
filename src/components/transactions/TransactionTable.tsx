@@ -25,9 +25,9 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, onViewDetails }: TransactionTableProps) {
   const deleteTxn = useDeleteTransaction();
   const { currency, settings } = useAppContext();
-  const { t } = useTranslation();
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const { t, lang } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   return (
     <div className="finance-card-static overflow-hidden">

@@ -16,11 +16,11 @@ export function RecentTransactions() {
   const navigate = useNavigate();
   const { data: transactions = [], isLoading } = useTransactions();
   const { currency, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const recent = transactions.slice(0, 7);
 
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   return (
     <div className="finance-card-static overflow-hidden">

@@ -31,7 +31,7 @@ const statusColors: Record<string, string> = {
 
 export default function Receivables() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useReceivables();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateReceivable();
@@ -50,8 +50,8 @@ export default function Receivables() {
 
   const [form, setForm] = useState({ person_name: "", reason: "", total_amount: "", received_amount: "0", due_date: "", linked_account_id: "", note: "", status: "open" });
 
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   const now = new Date();
   const mStart = startOfMonth(now);

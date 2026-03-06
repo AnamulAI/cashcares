@@ -40,7 +40,7 @@ const emptyForm: BudgetFormData = { category_id: "", allocated_amount: "", alert
 
 export default function Budgets() {
   const { currency } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { data: budgetsRaw = [], isLoading } = useBudgets();
   const { data: transactionsRaw = [] } = useTransactions();
@@ -106,7 +106,7 @@ export default function Budgets() {
   const remaining = totalBudget - totalSpent;
   const overLimit = budgets.filter(b => b.spent >= Number(b.allocated_amount)).length;
 
-  const fmt = (n: number) => formatAmount(n, currency);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const resetFilters = () => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); };
 

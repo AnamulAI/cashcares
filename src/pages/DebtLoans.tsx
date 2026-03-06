@@ -28,7 +28,7 @@ const statusColors: Record<string, string> = { active: "bg-primary/10 text-prima
 
 export default function DebtLoans() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useLoans();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateLoan();
@@ -47,8 +47,8 @@ export default function DebtLoans() {
   const [typeFilter, setTypeFilter] = useState("all");
 
   const [form, setForm] = useState({ lender_name: "", loan_type: "borrowed", principal_amount: "", paid_amount: "0", due_date: "", installment_amount: "", interest_rate: "", linked_account_id: "", note: "", status: "active" });
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const now = new Date();
   const mStart = startOfMonth(now);
   const mEnd = endOfMonth(now);

@@ -3,11 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/config/app";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { Pencil, TrendingUp, TrendingDown, ArrowRightLeft, BarChart3 } from "lucide-react";
+import { Pencil, TrendingUp, TrendingDown, ArrowRightLeft } from "lucide-react";
 import { useTransactions } from "@/hooks/use-transactions";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { DbAccount } from "@/hooks/use-accounts";
 
 interface AccountDetailsProps {
@@ -19,6 +21,10 @@ interface AccountDetailsProps {
 
 export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountDetailsProps) {
   const { data: allTxns = [] } = useTransactions();
+  const { currency, settings } = useAppContext();
+  const { t, lang } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   if (!account) return null;
 
@@ -34,55 +40,55 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
           <div className="flex items-center justify-between">
             <SheetTitle className="font-display text-lg">{account.name}</SheetTitle>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => { onEdit?.(account); onOpenChange(false); }}>
-              <Pencil className="h-3 w-3" /> Edit
+              <Pencil className="h-3 w-3" /> {t("action.edit")}
             </Button>
           </div>
         </SheetHeader>
 
         <div className="rounded-xl bg-accent/60 p-5 mt-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Current Balance</p>
-          <p className="text-3xl font-bold font-display mt-1 tracking-tight tabular-nums">{formatCurrency(account.balance)}</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{t("accounts.currentBalance")}</p>
+          <p className="text-3xl font-bold font-display mt-1 tracking-tight tabular-nums">{fmt(account.balance)}</p>
           <div className="flex gap-2 mt-3">
-            {account.is_primary && <Badge className="bg-primary/10 text-primary border-0 text-xs">Primary</Badge>}
-            <Badge variant="secondary" className={cn("text-xs", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? "Active" : "Inactive"}</Badge>
+            {account.is_primary && <Badge className="bg-primary/10 text-primary border-0 text-xs">{t("accounts.primary")}</Badge>}
+            <Badge variant="secondary" className={cn("text-xs", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-4">
           <div className="rounded-lg bg-positive/5 p-3 text-center">
             <TrendingUp className="h-4 w-4 text-positive mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Inflow</p>
-            <p className="text-sm font-bold font-display text-positive tabular-nums">{formatCurrency(totalInflow)}</p>
+            <p className="text-xs text-muted-foreground">{t("accounts.inflow")}</p>
+            <p className="text-sm font-bold font-display text-positive tabular-nums">{fmt(totalInflow)}</p>
           </div>
           <div className="rounded-lg bg-negative/5 p-3 text-center">
             <TrendingDown className="h-4 w-4 text-negative mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Outflow</p>
-            <p className="text-sm font-bold font-display text-negative tabular-nums">{formatCurrency(totalOutflow)}</p>
+            <p className="text-xs text-muted-foreground">{t("accounts.outflow")}</p>
+            <p className="text-sm font-bold font-display text-negative tabular-nums">{fmt(totalOutflow)}</p>
           </div>
           <div className="rounded-lg bg-primary/5 p-3 text-center">
             <ArrowRightLeft className="h-4 w-4 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Net</p>
-            <p className="text-sm font-bold font-display tabular-nums">{formatCurrency(totalInflow - totalOutflow)}</p>
+            <p className="text-xs text-muted-foreground">{t("accounts.net")}</p>
+            <p className="text-sm font-bold font-display tabular-nums">{fmt(totalInflow - totalOutflow)}</p>
           </div>
         </div>
 
         <Tabs defaultValue="overview" className="mt-5">
           <TabsList className="w-full bg-muted/60 p-1 h-auto">
-            <TabsTrigger value="overview" className="flex-1 text-xs py-1.5">Overview</TabsTrigger>
-            <TabsTrigger value="transactions" className="flex-1 text-xs py-1.5">Transactions</TabsTrigger>
-            <TabsTrigger value="transfers" className="flex-1 text-xs py-1.5">Transfers</TabsTrigger>
+            <TabsTrigger value="overview" className="flex-1 text-xs py-1.5">{t("accounts.overview")}</TabsTrigger>
+            <TabsTrigger value="transactions" className="flex-1 text-xs py-1.5">{t("nav.transactions")}</TabsTrigger>
+            <TabsTrigger value="transfers" className="flex-1 text-xs py-1.5">{t("transactions.transfers")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4 space-y-3">
-            <DetailRow label="Account Type" value={account.type.replace('_', ' ')} />
-            <DetailRow label="Currency" value={account.currency} />
-            <DetailRow label="Last Updated" value={new Date(account.updated_at).toLocaleDateString()} />
-            <DetailRow label="Total Transactions" value={String(transactions.length)} />
+            <DetailRow label={t("accounts.accountType")} value={account.type.replace('_', ' ')} />
+            <DetailRow label={t("settings.currency")} value={account.currency} />
+            <DetailRow label={t("accounts.lastUpdated")} value={fmtDate(account.updated_at)} />
+            <DetailRow label={t("accounts.totalTransactions")} value={String(transactions.length)} />
             {account.notes && (
               <>
                 <Separator />
                 <div>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Notes</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{t("table.note")}</p>
                   <p className="text-sm">{account.notes}</p>
                 </div>
               </>
@@ -94,25 +100,25 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">Date</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">Category</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8 text-right">Amount</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">{t("table.date")}</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">{t("table.category")}</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8 text-right">{t("table.amount")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transactions.slice(0, 10).map((t: any) => (
                     <TableRow key={t.id} className="border-border/40">
-                      <TableCell className="text-xs py-2.5">{t.date}</TableCell>
+                      <TableCell className="text-xs py-2.5">{fmtDate(t.date)}</TableCell>
                       <TableCell className="text-xs py-2.5">{t.category?.name || "Transfer"}</TableCell>
                       <TableCell className={cn("text-xs text-right font-semibold tabular-nums py-2.5", t.type === "income" ? "text-positive" : t.type === "expense" ? "text-negative" : "")}>
-                        {t.type === "income" ? "+" : "−"}{formatCurrency(t.amount)}
+                        {t.type === "income" ? "+" : "−"}{fmt(t.amount)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No transactions yet.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("transactions.noFound")}</p>
             )}
           </TabsContent>
 
@@ -121,23 +127,23 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">Date</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">Details</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8 text-right">Amount</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">{t("table.date")}</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8">{t("accounts.details")}</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider font-semibold h-8 text-right">{t("table.amount")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transfers.map((t: any) => (
                     <TableRow key={t.id} className="border-border/40">
-                      <TableCell className="text-xs py-2.5">{t.date}</TableCell>
+                      <TableCell className="text-xs py-2.5">{fmtDate(t.date)}</TableCell>
                       <TableCell className="text-xs py-2.5">{t.account?.name} → {t.to_account?.name}</TableCell>
-                      <TableCell className="text-xs text-right font-semibold tabular-nums py-2.5">{formatCurrency(t.amount)}</TableCell>
+                      <TableCell className="text-xs text-right font-semibold tabular-nums py-2.5">{fmt(t.amount)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No transfers.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("accounts.noTransfers")}</p>
             )}
           </TabsContent>
         </Tabs>

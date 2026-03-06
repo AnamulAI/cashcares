@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { formatCurrency } from "@/config/app";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { useUpdateAccount, useDeleteAccount, type DbAccount } from "@/hooks/use-accounts";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 
 interface AccountCardsProps {
   accounts: DbAccount[];
@@ -14,12 +16,17 @@ interface AccountCardsProps {
   viewMode?: "grid" | "list";
 }
 
-const typeLabels: Record<string, string> = {
-  cash: "Cash", bank: "Bank", mobile_wallet: "Mobile Wallet",
-  card: "Card", savings: "Savings", business: "Business", shared: "Shared",
-};
-
 export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid" }: AccountCardsProps) {
+  const { currency, settings } = useAppContext();
+  const { t, lang } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
+
+  const typeLabels: Record<string, string> = {
+    cash: t("accounts.cash"), bank: t("accounts.bank"), mobile_wallet: t("accounts.mobileWallet"),
+    card: t("accounts.card"), savings: t("accounts.savingsType"), business: t("accounts.business"), shared: t("accounts.shared"),
+  };
+
   if (viewMode === "list") {
     return (
       <div className="finance-card-static overflow-hidden">
@@ -32,13 +39,13 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold truncate">{account.name}</p>
-                  {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0 shrink-0">Primary</Badge>}
+                  {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0 shrink-0">{t("accounts.primary")}</Badge>}
                 </div>
-                <p className="text-xs text-muted-foreground">{typeLabels[account.type]} · {account.currency}</p>
+                <p className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type} · {account.currency}</p>
               </div>
               <div className="text-right">
-                <p className="text-base font-bold font-display tabular-nums">{formatCurrency(account.balance)}</p>
-                <p className="text-[11px] text-muted-foreground">Updated {new Date(account.updated_at).toLocaleDateString()}</p>
+                <p className="text-base font-bold font-display tabular-nums">{fmt(account.balance)}</p>
+                <p className="text-[11px] text-muted-foreground">{t("accounts.updated")} {fmtDate(account.updated_at)}</p>
               </div>
               <div onClick={e => e.stopPropagation()}>
                 <AccountActions account={account} onViewDetails={onViewDetails} onEdit={onEdit} />
@@ -70,14 +77,14 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
           </div>
 
           <div className="mt-5">
-            <p className="text-2xl font-bold font-display tabular-nums tracking-tight">{formatCurrency(account.balance)}</p>
+            <p className="text-2xl font-bold font-display tabular-nums tracking-tight">{fmt(account.balance)}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">{account.currency}</p>
           </div>
 
           <div className="mt-3 flex items-center gap-2">
-            {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">Primary</Badge>}
-            <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? "Active" : "Inactive"}</Badge>
-            <span className="text-[10px] text-muted-foreground ml-auto">Updated {new Date(account.updated_at).toLocaleDateString()}</span>
+            {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">{t("accounts.primary")}</Badge>}
+            <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
+            <span className="text-[10px] text-muted-foreground ml-auto">{t("accounts.updated")} {fmtDate(account.updated_at)}</span>
           </div>
         </div>
       ))}
@@ -88,6 +95,7 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
 function AccountActions({ account, onViewDetails, onEdit }: { account: DbAccount; onViewDetails?: (a: DbAccount) => void; onEdit?: (a: DbAccount) => void }) {
   const updateAccount = useUpdateAccount();
   const deleteAccount = useDeleteAccount();
+  const { t } = useTranslation();
 
   return (
     <AlertDialog>
@@ -98,24 +106,24 @@ function AccountActions({ account, onViewDetails, onEdit }: { account: DbAccount
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={() => onViewDetails?.(account)} className="gap-2 text-[13px]"><Eye className="h-3.5 w-3.5" /> View</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onEdit?.(account)} className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => updateAccount.mutate({ id: account.id, is_primary: true })} className="gap-2 text-[13px]"><Star className="h-3.5 w-3.5" /> Set Primary</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onViewDetails?.(account)} className="gap-2 text-[13px]"><Eye className="h-3.5 w-3.5" /> {t("action.view")}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onEdit?.(account)} className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> {t("action.edit")}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => updateAccount.mutate({ id: account.id, is_primary: true })} className="gap-2 text-[13px]"><Star className="h-3.5 w-3.5" /> {t("accounts.setPrimary")}</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => updateAccount.mutate({ id: account.id, is_active: !account.is_active })} className="gap-2 text-[13px]"><Archive className="h-3.5 w-3.5" /> {account.is_active ? "Archive" : "Activate"}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => updateAccount.mutate({ id: account.id, is_active: !account.is_active })} className="gap-2 text-[13px]"><Archive className="h-3.5 w-3.5" /> {account.is_active ? t("action.archive") : t("action.activate")}</DropdownMenuItem>
           <AlertDialogTrigger asChild>
-            <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> {t("action.delete")}</DropdownMenuItem>
           </AlertDialogTrigger>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete "{account.name}"?</AlertDialogTitle>
-          <AlertDialogDescription>This will permanently delete this account and all associated transactions. This action cannot be undone.</AlertDialogDescription>
+          <AlertDialogTitle>{t("confirm.deleteTitle")} "{account.name}"</AlertDialogTitle>
+          <AlertDialogDescription>{t("confirm.deleteDesc")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => deleteAccount.mutate(account.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={() => deleteAccount.mutate(account.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("action.delete")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

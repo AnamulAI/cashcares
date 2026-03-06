@@ -1,5 +1,7 @@
 import { Wallet, Building2, Smartphone, Briefcase } from "lucide-react";
-import { formatCurrency } from "@/config/app";
+import { formatAmount, formatNumber } from "@/lib/formatters";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { DbAccount } from "@/hooks/use-accounts";
 
 interface AccountSummaryProps {
@@ -7,16 +9,20 @@ interface AccountSummaryProps {
 }
 
 export function AccountSummary({ accounts }: AccountSummaryProps) {
+  const { currency } = useAppContext();
+  const { t, lang } = useTranslation();
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+
   const active = accounts.filter(a => a.is_active);
   const cash = accounts.filter(a => a.type === "cash").reduce((s, a) => s + Number(a.balance), 0);
   const bank = accounts.filter(a => a.type === "bank" || a.type === "savings").reduce((s, a) => s + Number(a.balance), 0);
   const wallet = accounts.filter(a => a.type === "mobile_wallet").reduce((s, a) => s + Number(a.balance), 0);
 
   const items = [
-    { icon: Briefcase, label: "Active Accounts", value: String(active.length), sub: active.length > 0 ? "All accounts healthy" : undefined, color: "text-primary bg-primary/10" },
-    { icon: Wallet, label: "Total Cash", value: formatCurrency(cash), color: "text-positive bg-positive/10" },
-    { icon: Building2, label: "Bank Balance", value: formatCurrency(bank), color: "text-primary bg-primary/10" },
-    { icon: Smartphone, label: "Wallet Balance", value: formatCurrency(wallet), color: "text-warning bg-warning/10" },
+    { icon: Briefcase, label: t("accounts.activeAccounts"), value: formatNumber(active.length, lang), sub: active.length > 0 ? t("accounts.allHealthy") : undefined, color: "text-primary bg-primary/10" },
+    { icon: Wallet, label: t("accounts.totalCash"), value: fmt(cash), color: "text-positive bg-positive/10" },
+    { icon: Building2, label: t("accounts.bankBalance"), value: fmt(bank), color: "text-primary bg-primary/10" },
+    { icon: Smartphone, label: t("accounts.walletBalance"), value: fmt(wallet), color: "text-warning bg-warning/10" },
   ];
 
   return (

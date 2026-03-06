@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { usePartnerships, useCreatePartnership, useUpdatePartnership, useDeletePartnership, useCreatePartnershipEntry, PartnershipInsert } from "@/hooks/use-partnerships";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
+import { formatAmount } from "@/lib/formatters";
 
 const statusColors: Record<string, string> = {
   active: "bg-positive/10 text-positive",
@@ -26,7 +27,7 @@ const statusColors: Record<string, string> = {
 
 export default function Partnerships() {
   const { currency, isPremium } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = usePartnerships();
   const createMut = useCreatePartnership();
   const updateMut = useUpdatePartnership();
@@ -48,7 +49,7 @@ export default function Partnerships() {
     shared_expense_total: "0", settlement_amount: "0", start_date: "", note: "", status: "active"
   });
 
-  const fmt = (n: number) => `${currency.symbol}${n.toLocaleString()}`;
+  const fmt = (n: number) => formatAmount(n, currency, lang);
 
   const filtered = useMemo(() => items.filter(p => {
     if (statusFilter !== "all" && p.status !== statusFilter) return false;

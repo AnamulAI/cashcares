@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = { active: "bg-positive/10 text-posi
 
 export default function Assets() {
   const { currency, isPremium, settings } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { data: items = [], isLoading } = useAssets();
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreateAsset();
@@ -41,8 +41,8 @@ export default function Assets() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [form, setForm] = useState({ asset_name: "", asset_type: "other", purchase_value: "", current_value: "", acquisition_date: "", linked_account_id: "", note: "", status: "active" });
-  const fmt = (n: number) => formatAmount(n, currency);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const now = new Date();
   const mStart = startOfMonth(now);
   const mEnd = endOfMonth(now);
