@@ -42,6 +42,25 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
+    /* Feature color system */
+    --feature-income: 152 69% 36%;
+    --feature-expense: 0 65% 55%;
+    --feature-savings: 205 78% 48%;
+    --feature-budget: 262 60% 52%;
+    --feature-accounts: 199 72% 45%;
+    --feature-categories: 280 50% 55%;
+    --feature-transactions: 220 65% 50%;
+    --feature-receivables: 340 65% 55%;
+    --feature-payables: 172 60% 38%;
+    --feature-debt: 25 85% 50%;
+    --feature-assets: 270 55% 58%;
+    --feature-investments: 160 65% 40%;
+    --feature-reports: 230 62% 52%;
+    --feature-reminders: 32 80% 50%;
+    --feature-partnerships: 190 55% 42%;
+    --feature-settings: 220 12% 50%;
+    --feature-subscription: 42 90% 50%;
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5% 34%;
     --sidebar-primary: 245 58% 51%;
