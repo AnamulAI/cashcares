@@ -291,31 +291,31 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="income" className="mt-4">
-          <PlaceholderTab icon={TrendingUp} title="Income Report" description="Detailed income analysis by source, account, and time period will be available here." />
+          <DataSummaryTab icon={TrendingUp} title="Income Report" items={incomeSources.map(s => ({ label: s.name, value: fmt(s.value), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="expense" className="mt-4">
-          <PlaceholderTab icon={TrendingDown} title="Expense Report" description="Category-wise expense breakdown with trends and comparisons." />
+          <DataSummaryTab icon={TrendingDown} title="Expense Report" items={expenseBreakdown.map(e => ({ label: e.name, value: fmt(e.value), color: "text-negative" }))} />
         </TabsContent>
         <TabsContent value="budget" className="mt-4">
-          <PlaceholderTab icon={Gauge} title="Budget Report" description="Track budget utilization, overspending patterns, and monthly comparisons." />
+          <DataSummaryTab icon={Gauge} title="Budget Report" items={budgetsRaw.map((b: any) => ({ label: b.category?.name || "Unknown", value: `${fmt(Number(b.allocated_amount))} allocated` }))} />
         </TabsContent>
         <TabsContent value="savings" className="mt-4">
-          <PlaceholderTab icon={PiggyBank} title="Savings Report" description="Analyze your savings rate, growth trends, and goal progress." />
-        </TabsContent>
-        <TabsContent value="assets" className="mt-4">
-          <PlaceholderTab icon={Building2} title="Asset Report" description="Overview of your asset portfolio, valuations, and appreciation trends." />
-        </TabsContent>
-        <TabsContent value="investments" className="mt-4">
-          <PlaceholderTab icon={TrendingUp} title="Investment Report" description="Track investment performance, returns, and allocation breakdown." />
+          <DataSummaryTab icon={PiggyBank} title="Savings Report" items={accounts.filter(a => a.type === "savings").map(a => ({ label: a.name, value: fmt(Number(a.balance)), color: "text-positive" }))} />
         </TabsContent>
         <TabsContent value="receivables" className="mt-4">
-          <PlaceholderTab icon={HandCoins} title="Receivables Report" description="Outstanding receivables, aging analysis, and collection status." />
+          <DataSummaryTab icon={HandCoins} title="Receivables Report" items={receivablesRaw.filter((r: any) => r.status !== "collected").map((r: any) => ({ label: r.person_name, value: fmt(Number(r.total_amount) - Number(r.received_amount)), color: r.status === "overdue" ? "text-negative" : "" }))} />
         </TabsContent>
         <TabsContent value="payables" className="mt-4">
-          <PlaceholderTab icon={CreditCard} title="Payables Report" description="Upcoming and overdue payables with payment schedule tracking." />
+          <DataSummaryTab icon={CreditCard} title="Payables Report" items={payablesRaw.filter((p: any) => p.status !== "paid").map((p: any) => ({ label: p.person_name, value: fmt(Number(p.total_amount) - Number(p.paid_amount)), color: p.status === "overdue" ? "text-negative" : "" }))} />
         </TabsContent>
         <TabsContent value="debt" className="mt-4">
-          <PlaceholderTab icon={Scale} title="Debt & Loans Report" description="Loan balances, repayment progress, and interest analysis." />
+          <DataSummaryTab icon={Scale} title="Debt & Loans Report" items={loansRaw.filter((l: any) => l.status !== "paid_off").map((l: any) => ({ label: l.lender_name, value: fmt(Number(l.principal_amount) - Number(l.paid_amount)), color: "text-negative" }))} />
+        </TabsContent>
+        <TabsContent value="assets" className="mt-4">
+          <DataSummaryTab icon={Building2} title="Asset Report" items={assetsRaw.filter((a: any) => a.status === "active").map((a: any) => ({ label: a.asset_name, value: fmt(Number(a.current_value)) }))} />
+        </TabsContent>
+        <TabsContent value="investments" className="mt-4">
+          <DataSummaryTab icon={TrendingUp} title="Investment Report" items={investmentsRaw.filter((i: any) => i.status === "active").map((i: any) => { const pl = Number(i.current_value) - Number(i.invested_amount); return { label: i.investment_name, value: `${pl >= 0 ? "+" : ""}${fmt(pl)}`, color: pl >= 0 ? "text-positive" : "text-negative" }; })} />
         </TabsContent>
       </Tabs>
     </div>
