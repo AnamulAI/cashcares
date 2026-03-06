@@ -124,7 +124,7 @@ async function adjustBalance(accountId: string, amount: number) {
 export function useRecordEntryPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, amount, linkedAccountId }: { id: string; amount: number; linkedAccountId?: string | null }) => {
+    mutationFn: async ({ id, amount, linkedAccountId, note }: { id: string; amount: number; linkedAccountId?: string | null; note?: string }) => {
       const { data: current, error: fetchErr } = await (supabase as any).from("payable_entries").select("*").eq("id", id).single();
       if (fetchErr) throw fetchErr;
       const newPaid = Number(current.paid_amount) + amount;
@@ -132,12 +132,21 @@ export function useRecordEntryPayment() {
       const newStatus = remaining <= 0 ? "paid" : "partial";
       const { error } = await (supabase as any).from("payable_entries").update({ paid_amount: newPaid, status: newStatus }).eq("id", id);
       if (error) throw error;
+      // Insert payment history record
+      await (supabase as any).from("payable_payment_history").insert({
+        entry_id: id,
+        date: new Date().toISOString().split("T")[0],
+        amount,
+        account_id: linkedAccountId || null,
+        note: note || null,
+      });
       if (linkedAccountId) await adjustBalance(linkedAccountId, -amount);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["payable_entries"] });
       qc.invalidateQueries({ queryKey: ["payable_entries_all"] });
       qc.invalidateQueries({ queryKey: ["payable_books"] });
+      qc.invalidateQueries({ queryKey: ["payable_payment_history"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Payment recorded");
     },

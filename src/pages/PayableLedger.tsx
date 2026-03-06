@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, DollarSign, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, CreditCard, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { ArrowLeft, Plus, DollarSign, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, CreditCard, CheckCircle2, AlertTriangle, Clock, Eye } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -22,6 +22,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
 import { parseISO, isAfter, format } from "date-fns";
+import { PayableEntryDetailModal } from "@/components/ledger/PayableEntryDetailModal";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
@@ -50,6 +51,7 @@ export default function PayableLedger() {
   const [payAcct, setPayAcct] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [detailEntry, setDetailEntry] = useState<any>(null);
 
   const [form, setForm] = useState({ date: format(new Date(), "yyyy-MM-dd"), description: "", category: "", linked_account_id: "", amount: "", paid_amount: "0", due_date: "", note: "", status: "open" });
 
@@ -243,6 +245,7 @@ export default function PayableLedger() {
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {e.status !== "paid" && <DropdownMenuItem onClick={() => { setPayModal(e); setPayAmt(""); setPayAcct(e.linked_account_id || ""); }}><DollarSign className="h-3.5 w-3.5 mr-2" /> Record Payment</DropdownMenuItem>}
+                          <DropdownMenuItem onClick={() => setDetailEntry(e)}><Eye className="h-3.5 w-3.5 mr-2" /> View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5 mr-2" /> Duplicate</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEntryModal(e)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -329,6 +332,14 @@ export default function PayableLedger() {
         title="Delete this entry?"
         description={t("confirm.deleteDesc")}
         onConfirm={() => { if (deleteId) deleteMut.mutate(deleteId); setDeleteId(null); }}
+      />
+
+      <PayableEntryDetailModal
+        entry={detailEntry}
+        open={!!detailEntry}
+        onOpenChange={(open) => { if (!open) setDetailEntry(null); }}
+        formatAmount={fmt}
+        formatDate={fmtDate}
       />
     </div>
   );

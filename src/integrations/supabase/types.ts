@@ -566,6 +566,57 @@ export type Database = {
           },
         ]
       }
+      payable_payment_history: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          date: string
+          entry_id: string
+          id: string
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          date?: string
+          entry_id: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          date?: string
+          entry_id?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payable_payment_history_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payable_payment_history_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "payable_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payables: {
         Row: {
           created_at: string
@@ -717,6 +768,57 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      receivable_collection_history: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          date: string
+          entry_id: string
+          id: string
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          date?: string
+          entry_id: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          date?: string
+          entry_id?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivable_collection_history_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivable_collection_history_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "receivable_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       receivable_entries: {
         Row: {
