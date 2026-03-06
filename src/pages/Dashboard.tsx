@@ -7,6 +7,7 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { AlertsCard } from "@/components/dashboard/AlertsCard";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { BudgetProgress } from "@/components/dashboard/BudgetProgress";
+import { GettingStarted } from "@/components/shared/GettingStarted";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
@@ -28,6 +29,8 @@ export default function Dashboard() {
           </Button>
         }
       />
+
+      <GettingStarted />
 
       <SummaryCards />
       <SecondaryCards />
