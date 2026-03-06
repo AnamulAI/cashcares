@@ -105,8 +105,12 @@ export default function ReceivableLedger() {
   };
 
   const handleCollect = () => {
-    if (!collectModal || !collectAmt) return;
-    collectMut.mutate({ id: collectModal.id, amount: Number(collectAmt), linkedAccountId: collectAcct || collectModal.linked_account_id }, {
+    if (!collectAmt) return;
+    const targetEntry = collectModal?.bookLevel
+      ? processed.find(e => e.status !== "collected")
+      : collectModal;
+    if (!targetEntry?.id) return;
+    collectMut.mutate({ id: targetEntry.id, amount: Number(collectAmt), linkedAccountId: collectAcct || targetEntry.linked_account_id }, {
       onSuccess: () => { setCollectModal(null); setCollectAmt(""); setCollectAcct(""); }
     });
   };
@@ -166,7 +170,7 @@ export default function ReceivableLedger() {
         subtitle={book.description || "Receivable ledger"}
         actions={
           <div className="flex items-center gap-2 no-print">
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => setCollectModal({ id: "bulk" })}><DollarSign className="h-4 w-4" /> Record Collection</Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => { const entry = processed.find(e => e.status !== "collected"); if (entry) { setCollectModal({ ...entry, bookLevel: true }); setCollectAmt(""); setCollectAcct(entry.linked_account_id || ""); } }}><DollarSign className="h-4 w-4" /> Record Collection</Button>
             <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -302,7 +306,7 @@ export default function ReceivableLedger() {
             <DialogDescription>Record a collection for {book.person_name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
-            {collectModal && collectModal.id !== "bulk" && (
+            {collectModal && collectModal.amount != null && (
               <p className="text-xs text-muted-foreground">{t("module.remaining")}: {fmt(Number(collectModal.amount) - Number(collectModal.collected_amount))}</p>
             )}
             <div><Label className="text-xs">{t("module.collectionAmount")} *</Label><Input type="number" min="0" value={collectAmt} onChange={e => setCollectAmt(e.target.value)} className="mt-1 h-9 text-sm" /></div>
