@@ -234,6 +234,8 @@ export default function Budgets() {
         <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={resetFilters}><RotateCcw className="h-3 w-3" /> {t("action.reset")}</Button>
       </div>
 
+      <BulkActionBar selectedCount={selected.size} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} deleting={bulkDeleting} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-3">
           {isLoading ? (
