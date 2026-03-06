@@ -6,13 +6,13 @@ export default function ComingSoon() {
   const pageName = location.pathname.slice(1).replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent mb-5">
-        <Lock className="h-8 w-8 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center py-28 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8 mb-6">
+        <Lock className="h-7 w-7 text-primary/40" />
       </div>
-      <h1 className="text-2xl font-bold font-display">{pageName || "Coming Soon"}</h1>
-      <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-        This feature is currently under development. Stay tuned for updates!
+      <h1 className="text-xl font-semibold font-display tracking-tight">{pageName || "Coming Soon"}</h1>
+      <p className="mt-2 text-sm text-muted-foreground max-w-xs leading-relaxed">
+        This module is currently under development. We'll notify you when it's ready.
       </p>
     </div>
   );
