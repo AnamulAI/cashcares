@@ -124,7 +124,7 @@ async function adjustBalance(accountId: string, amount: number) {
 export function useRecordEntryCollection() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, amount, linkedAccountId }: { id: string; amount: number; linkedAccountId?: string | null }) => {
+    mutationFn: async ({ id, amount, linkedAccountId, note }: { id: string; amount: number; linkedAccountId?: string | null; note?: string }) => {
       const { data: current, error: fetchErr } = await (supabase as any).from("receivable_entries").select("*").eq("id", id).single();
       if (fetchErr) throw fetchErr;
       const newCollected = Number(current.collected_amount) + amount;
@@ -132,12 +132,21 @@ export function useRecordEntryCollection() {
       const newStatus = remaining <= 0 ? "collected" : "partial";
       const { error } = await (supabase as any).from("receivable_entries").update({ collected_amount: newCollected, status: newStatus }).eq("id", id);
       if (error) throw error;
+      // Insert collection history record
+      await (supabase as any).from("receivable_collection_history").insert({
+        entry_id: id,
+        date: new Date().toISOString().split("T")[0],
+        amount,
+        account_id: linkedAccountId || null,
+        note: note || null,
+      });
       if (linkedAccountId) await adjustBalance(linkedAccountId, amount);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receivable_entries"] });
       qc.invalidateQueries({ queryKey: ["receivable_entries_all"] });
       qc.invalidateQueries({ queryKey: ["receivable_books"] });
+      qc.invalidateQueries({ queryKey: ["receivable_collection_history"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Collection recorded");
     },
