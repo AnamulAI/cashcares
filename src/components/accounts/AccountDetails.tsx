@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,16 +34,16 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
   const totalOutflow = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="pb-2">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <SheetTitle className="font-display text-lg">{account.name}</SheetTitle>
+            <DialogTitle className="font-display text-lg">{account.name}</DialogTitle>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => { onEdit?.(account); onOpenChange(false); }}>
               <Pencil className="h-3 w-3" /> {t("action.edit")}
             </Button>
           </div>
-        </SheetHeader>
+        </DialogHeader>
 
         <div className="rounded-xl bg-accent/60 p-5 mt-2">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{t("accounts.currentBalance")}</p>
@@ -147,8 +147,8 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
             )}
           </TabsContent>
         </Tabs>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
