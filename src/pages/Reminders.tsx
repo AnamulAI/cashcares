@@ -219,7 +219,7 @@ export default function Reminders() {
                       {!r.isAuto && r.status !== "completed" && (
                         <>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Mark Complete" onClick={() => markComplete(r.id)}><Check className="h-3.5 w-3.5 text-positive" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Snooze" onClick={() => snoozeReminder(r.id)}><Snooze className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Snooze" onClick={() => snoozeReminder(r.id)}><AlarmClockOff className="h-3.5 w-3.5" /></Button>
                         </>
                       )}
                       {!r.isAuto && (
