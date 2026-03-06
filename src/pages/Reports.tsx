@@ -81,8 +81,12 @@ export default function Reports() {
 
   const totalIncome = filteredTxns.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const totalExpense = filteredTxns.filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
-  const savings = totalIncome - totalExpense;
-  const netWorth = accounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalReceivableAmt = receivableEntries.filter((r: any) => r.status !== "collected").reduce((s: number, r: any) => s + (Number(r.amount) - Number(r.collected_amount)), 0);
+  const totalPayableAmt = payableEntries.filter((p: any) => p.status !== "paid").reduce((s: number, p: any) => s + (Number(p.amount) - Number(p.paid_amount)), 0);
+  const totalDebtAmt = loansRaw.filter((l: any) => l.status !== "paid_off").reduce((s: number, l: any) => s + (Number(l.principal_amount) - Number(l.paid_amount)), 0);
+  const totalAssetsAmt = assetsRaw.filter((a: any) => a.status === "active").reduce((s: number, a: any) => s + Number(a.current_value), 0);
+  const totalInvestAmt = investmentsRaw.filter((i: any) => i.status === "active").reduce((s: number, i: any) => s + Number(i.current_value), 0);
+  const netWorth = accounts.reduce((s, a) => s + Number(a.balance), 0) + totalAssetsAmt + totalInvestAmt + totalReceivableAmt - totalPayableAmt - totalDebtAmt;
 
   const budgetUtil = useMemo(() => {
     if (!budgetsRaw.length) return 0;
