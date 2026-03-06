@@ -205,13 +205,13 @@ export async function loadDemoData(): Promise<{ total: number }> {
 
 export async function clearDemoData(): Promise<{ total: number }> {
   let total = 0;
-  // Delete in reverse dependency order
-  const tables = ["partnership_entries", "reminders", "investments", "assets", "loans", "payables", "receivables", "budgets", "transactions", "categories", "partnerships", "accounts"];
-
-  for (const table of tables) {
-    const { data, error } = await supabase.from(table as any).delete().like("id", `${DEMO_PREFIX}%`).select("id");
+  // Delete in reverse dependency order using exact ID lists (no LIKE on UUID)
+  for (const { table, data } of DEMO_TABLE_DATA) {
+    const ids = data.map(d => d.id);
+    if (ids.length === 0) continue;
+    const { data: deleted, error } = await supabase.from(table as any).delete().in("id", ids).select("id");
     if (error) throw new Error(`Failed to clear ${table}: ${error.message}`);
-    total += data?.length ?? 0;
+    total += deleted?.length ?? 0;
   }
 
   // Reset client-side demo state
