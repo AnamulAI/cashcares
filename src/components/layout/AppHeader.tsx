@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import {
   Bell, Search, Plus, ChevronDown, User, CreditCard, LogOut,
   Settings2, UserCircle, Check, AlertTriangle, Clock, DollarSign,
-  ArrowUpRight, CheckCheck,
+  ArrowUpRight, CheckCheck, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 import { QuickAddModal } from "./QuickAddModal";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const ICON_MAP: Record<string, any> = {
@@ -44,6 +44,7 @@ export function AppHeader() {
     datePreset, dateRange, setDatePreset, setCustomRange,
     notifications, unreadCount, markRead, markAllRead,
   } = useAppContext();
+  const { profile, isAdmin, signOut } = useAuth();
   const { t } = useTranslation();
 
   const handleDatePreset = (p: DatePreset) => {
@@ -58,16 +59,24 @@ export function AppHeader() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       localStorage.clear();
       toast.success("Signed out successfully");
-      navigate("/");
+      navigate("/auth");
     } catch {
       toast.error("Sign out failed");
     }
   };
 
-  // Get translated label for current preset
+  const displayName = profile?.full_name || "User";
+  const displayEmail = profile?.email || "";
+  const initials = displayName
+    .split(" ")
+    .map(w => w.charAt(0))
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "U";
+
   const currentPresetKey = PRESET_KEYS.find(p => p.preset === datePreset)?.key || "datePreset.thisMonth";
 
   return (
@@ -216,17 +225,27 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
-                  <User className="h-4 w-4 text-primary" />
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold text-primary">{initials}</span>
+                  )}
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52 p-1.5">
               <DropdownMenuLabel className="px-3 py-2">
-                <p className="text-sm font-medium">User Name</p>
-                <p className="text-xs text-muted-foreground">user@email.com</p>
+                <p className="text-sm font-medium">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
+                {isAdmin && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <ShieldCheck className="h-3 w-3 text-primary" />
+                    <span className="text-[10px] text-primary font-medium">Admin</span>
+                  </div>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/settings")}>
+              <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/profile")}>
                 <UserCircle className="h-4 w-4 text-muted-foreground" /> {t("topbar.profile")}
               </DropdownMenuItem>
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/settings")}>
@@ -235,6 +254,11 @@ export function AppHeader() {
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/subscription")}>
                 <CreditCard className="h-4 w-4 text-muted-foreground" /> {t("topbar.billing")}
               </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer" onClick={() => navigate("/admin")}>
+                  <ShieldCheck className="h-4 w-4 text-muted-foreground" /> Admin Dashboard
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="gap-2.5 px-3 py-2 cursor-pointer text-negative" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" /> {t("topbar.signOut")}

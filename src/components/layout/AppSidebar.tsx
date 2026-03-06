@@ -1,12 +1,13 @@
 import {
   LayoutDashboard, ArrowLeftRight, Landmark, Tag, PieChart, BarChart3,
   Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock,
-  Users, Bell, Wallet
+  Users, Bell, Wallet, ShieldCheck
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { APP_CONFIG } from "@/config/app";
 import { useAppContext } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -66,6 +67,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { isModuleLocked } = useAppContext();
+  const { isAdmin } = useAuth();
   const { t } = useTranslation();
 
   return (
@@ -130,6 +132,35 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {/* Admin section - only for admins */}
+        {isAdmin && (
+          <SidebarGroup className="mb-1">
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-medium px-3 mb-1">
+              Admin
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      end
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
+                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                      )}
+                      activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                    >
+                      <ShieldCheck className={cn("h-[18px] w-[18px] shrink-0", location.pathname === "/admin" ? "text-primary" : "text-warning")} />
+                      {!collapsed && <span className="truncate">Admin Dashboard</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="px-3 pb-5 border-t border-sidebar-border pt-3">

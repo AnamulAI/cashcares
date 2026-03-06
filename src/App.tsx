@@ -5,7 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AppProvider } from "@/contexts/AppContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute, AdminRoute } from "@/components/layout/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import CompleteProfile from "./pages/CompleteProfile";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Accounts from "./pages/Accounts";
@@ -22,6 +27,7 @@ import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
 import Partnerships from "./pages/Partnerships";
 import Reminders from "./pages/Reminders";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,13 +35,17 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <AuthProvider>
       <AppProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route element={<AppLayout />}>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/accounts" element={<Accounts />} />
@@ -52,11 +62,13 @@ const App = () => (
             <Route path="/investments" element={<Investments />} />
             <Route path="/partnerships" element={<Partnerships />} />
             <Route path="/reminders" element={<Reminders />} />
+            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
       </AppProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
