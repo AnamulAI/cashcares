@@ -236,6 +236,42 @@ export type Database = {
           },
         ]
       }
+      entry_attachments: {
+        Row: {
+          created_at: string
+          entry_id: string
+          entry_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          entry_type: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          entry_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           created_at: string

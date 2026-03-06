@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { usePaymentHistory } from "@/hooks/use-payment-history";
 import { History } from "lucide-react";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 
 interface Props {
   entry: any;
@@ -46,6 +47,11 @@ export function PayableEntryDetailModal({ entry, open, onOpenChange, formatAmoun
           {entry.category && <div><span className="text-muted-foreground">Category:</span> <span>{entry.category}</span></div>}
           {entry.linked_account?.name && <div><span className="text-muted-foreground">Account:</span> <span>{entry.linked_account.name}</span></div>}
           {entry.note && <div className="col-span-2"><span className="text-muted-foreground">Note:</span> <span>{entry.note}</span></div>}
+        </div>
+
+        {/* Attachments */}
+        <div className="mt-4">
+          <EntryAttachments entryId={entry.id} entryType="payable" readOnly />
         </div>
 
         {/* Payment History */}

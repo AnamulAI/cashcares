@@ -23,6 +23,8 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
 import { parseISO, isAfter, format } from "date-fns";
 import { ReceivableEntryDetailModal } from "@/components/ledger/ReceivableEntryDetailModal";
+import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
@@ -277,7 +279,7 @@ export default function ReceivableLedger() {
             </div>
             <div><Label className="text-xs">Description</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
+              <CategoryCombobox value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))} entries={entries} />
               <div>
                 <Label className="text-xs">Account</Label>
                 <Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}>
@@ -291,6 +293,7 @@ export default function ReceivableLedger() {
               <div><Label className="text-xs">Collected</Label><Input type="number" min="0" value={form.collected_amount} onChange={e => setForm(f => ({ ...f, collected_amount: e.target.value }))} className="mt-1 h-9 text-sm" /></div>
             </div>
             <div><Label className="text-xs">{t("table.note")}</Label><Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1 text-sm" rows={2} /></div>
+            {editing && <EntryAttachments entryId={editing.id} entryType="receivable" />}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setEntryModal(false)}>{t("action.cancel")}</Button>
