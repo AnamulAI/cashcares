@@ -215,10 +215,10 @@ export async function clearDemoData(): Promise<{ total: number }> {
   ];
 
   for (const table of tables) {
-    const { data, error } = await supabase
-      .from(table as any)
+    const { data, error } = await (supabase as any)
+      .from(table)
       .delete()
-      .eq("is_demo" as any, true)
+      .eq("is_demo", true)
       .select("id");
     if (error) throw new Error(`Failed to clear ${table}: ${error.message}`);
     total += data?.length ?? 0;
