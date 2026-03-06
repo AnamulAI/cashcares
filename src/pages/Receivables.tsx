@@ -209,6 +209,7 @@ export default function Receivables() {
                 return (
                   <TableRow key={r.id} className="group">
                     <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleOne(r.id)} /></TableCell>
+                    <TableCell className="text-xs font-medium">{r.person_name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{r.reason || "—"}</TableCell>
                     <TableCell className="text-xs text-right font-semibold">{fmt(Number(r.total_amount))}</TableCell>
                     <TableCell className="text-xs text-right text-positive">{fmt(Number(r.received_amount))}</TableCell>
