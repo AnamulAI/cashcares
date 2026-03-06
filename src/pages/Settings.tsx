@@ -53,6 +53,38 @@ export default function Settings() {
   const handleDefaultRangeChange = (v: string) => { updateSettings({ defaultDashboardRange: v as DatePreset }); toast.success(t("action.save") + " ✓"); };
   const handleThemeChange = (v: "light" | "dark" | "system") => { updateSettings({ theme: v }); toast.success(t("action.save") + " ✓"); };
 
+  const handleLoadDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const already = await isDemoDataLoaded();
+      if (already) {
+        toast.info("Demo data is already loaded");
+        return;
+      }
+      const { total } = await loadDemoData();
+      qc.invalidateQueries();
+      toast.success(`Demo data loaded — ${total} records added`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load demo data");
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
+  const handleClearDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const { total } = await clearDemoData();
+      qc.invalidateQueries();
+      toast.success(`Cleared ${total} demo records`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to clear demo data");
+    } finally {
+      setDemoLoading(false);
+      setClearConfirm(false);
+    }
+  };
+
   const exportAllData = () => {
     const data = { exportedAt: new Date().toISOString(), accounts, categories, transactions };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
