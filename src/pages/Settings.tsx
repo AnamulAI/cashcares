@@ -85,7 +85,7 @@ export default function Settings() {
         {/* General Preferences */}
         <Card className="finance-card-static">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> {t("settings.generalPreferences")}</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Globe className="h-4 w-4 text-feature-settings" /> {t("settings.generalPreferences")}</CardTitle>
             <CardDescription className="text-xs">{t("settings.localeSettings")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
