@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ArrowLeftRight, Landmark, Tag, PieChart, BarChart3,
   Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock,
-  Users, Bell
+  Users, Bell, Wallet
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -19,46 +19,46 @@ const navGroups = [
   {
     labelKey: "nav.overview",
     items: [
-      { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, active: true },
+      { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, color: "text-primary", active: true },
     ],
   },
   {
     labelKey: "nav.money",
     items: [
-      { titleKey: "nav.transactions", url: "/transactions", icon: ArrowLeftRight, active: true },
-      { titleKey: "nav.accounts", url: "/accounts", icon: Landmark, active: true },
-      { titleKey: "nav.categories", url: "/categories", icon: Tag, active: true },
-      { titleKey: "nav.budgets", url: "/budgets", icon: PieChart, active: true },
+      { titleKey: "nav.transactions", url: "/transactions", icon: ArrowLeftRight, color: "text-feature-transactions", active: true },
+      { titleKey: "nav.accounts", url: "/accounts", icon: Wallet, color: "text-feature-accounts", active: true },
+      { titleKey: "nav.categories", url: "/categories", icon: Tag, color: "text-feature-categories", active: true },
+      { titleKey: "nav.budgets", url: "/budgets", icon: PieChart, color: "text-feature-budget", active: true },
     ],
   },
   {
     labelKey: "nav.tracking",
     items: [
-      { titleKey: "nav.receivables", url: "/receivables", icon: HandCoins, active: true },
-      { titleKey: "nav.payables", url: "/payables", icon: CreditCard, active: true },
-      { titleKey: "nav.debtLoans", url: "/debt-loans", icon: Scale, active: true },
-      { titleKey: "nav.partnerships", url: "/partnerships", icon: Users, active: true },
+      { titleKey: "nav.receivables", url: "/receivables", icon: HandCoins, color: "text-feature-receivables", active: true },
+      { titleKey: "nav.payables", url: "/payables", icon: CreditCard, color: "text-feature-payables", active: true },
+      { titleKey: "nav.debtLoans", url: "/debt-loans", icon: Scale, color: "text-feature-debt", active: true },
+      { titleKey: "nav.partnerships", url: "/partnerships", icon: Users, color: "text-feature-partnerships", active: true },
     ],
   },
   {
     labelKey: "nav.wealth",
     items: [
-      { titleKey: "nav.assets", url: "/assets", icon: Building2, active: true },
-      { titleKey: "nav.investments", url: "/investments", icon: TrendingUp, active: true },
+      { titleKey: "nav.assets", url: "/assets", icon: Building2, color: "text-feature-assets", active: true },
+      { titleKey: "nav.investments", url: "/investments", icon: TrendingUp, color: "text-feature-investments", active: true },
     ],
   },
   {
     labelKey: "nav.insights",
     items: [
-      { titleKey: "nav.reports", url: "/reports", icon: BarChart3, active: true },
-      { titleKey: "nav.reminders", url: "/reminders", icon: Bell, active: true },
+      { titleKey: "nav.reports", url: "/reports", icon: BarChart3, color: "text-feature-reports", active: true },
+      { titleKey: "nav.reminders", url: "/reminders", icon: Bell, color: "text-feature-reminders", active: true },
     ],
   },
 ];
 
 const systemItems = [
-  { titleKey: "nav.settings", url: "/settings", icon: Settings, active: true },
-  { titleKey: "nav.subscription", url: "/subscription", icon: Crown, active: true },
+  { titleKey: "nav.settings", url: "/settings", icon: Settings, color: "text-feature-settings", active: true },
+  { titleKey: "nav.subscription", url: "/subscription", icon: Crown, color: "text-feature-subscription", active: true },
 ];
 
 export function AppSidebar() {
@@ -108,7 +108,7 @@ export function AppSidebar() {
                             )}
                             activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
                           >
-                            <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} />
+                            <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-primary" : item.color)} />
                             {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
                           </NavLink>
                         ) : (
@@ -149,7 +149,7 @@ export function AppSidebar() {
                       )}
                       activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
                     >
-                      <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")} />
+                      <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-primary" : item.color)} />
                       {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
                     </NavLink>
                   ) : (

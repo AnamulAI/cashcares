@@ -7,12 +7,12 @@ export function QuickActions() {
   const { t } = useTranslation();
 
   const actions = [
-    { icon: ArrowDownLeft, labelKey: "action.addIncome", color: "text-positive", bg: "bg-positive/8 hover:bg-positive/12" },
-    { icon: ArrowUpRight, labelKey: "action.addExpense", color: "text-negative", bg: "bg-negative/8 hover:bg-negative/12" },
-    { icon: ArrowLeftRight, labelKey: "action.transfer", color: "text-primary", bg: "bg-primary/8 hover:bg-primary/12" },
-    { icon: PieChart, labelKey: "action.addBudget", color: "text-warning", bg: "bg-warning/8 hover:bg-warning/12" },
-    { icon: HandCoins, labelKey: "nav.receivables", color: "text-primary", bg: "bg-primary/8 hover:bg-primary/12" },
-    { icon: CreditCard, labelKey: "nav.payables", color: "text-warning", bg: "bg-warning/8 hover:bg-warning/12" },
+    { icon: ArrowDownLeft, labelKey: "action.addIncome", color: "text-feature-income", bg: "bg-feature-income/8 hover:bg-feature-income/12" },
+    { icon: ArrowUpRight, labelKey: "action.addExpense", color: "text-feature-expense", bg: "bg-feature-expense/8 hover:bg-feature-expense/12" },
+    { icon: ArrowLeftRight, labelKey: "action.transfer", color: "text-feature-transactions", bg: "bg-feature-transactions/8 hover:bg-feature-transactions/12" },
+    { icon: PieChart, labelKey: "action.addBudget", color: "text-feature-budget", bg: "bg-feature-budget/8 hover:bg-feature-budget/12" },
+    { icon: HandCoins, labelKey: "nav.receivables", color: "text-feature-receivables", bg: "bg-feature-receivables/8 hover:bg-feature-receivables/12" },
+    { icon: CreditCard, labelKey: "nav.payables", color: "text-feature-payables", bg: "bg-feature-payables/8 hover:bg-feature-payables/12" },
   ];
 
   return (

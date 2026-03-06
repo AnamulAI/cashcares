@@ -23,11 +23,11 @@ export function SummaryCards() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      <StatCard icon={<Wallet className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("dashboard.totalBalance")} value={fmt(totalBalance)} prominent />
+      <StatCard icon={<Wallet className="h-5 w-5 text-feature-accounts" />} iconBg="bg-feature-accounts/10" label={t("dashboard.totalBalance")} value={fmt(totalBalance)} prominent />
       <StatCard icon={<Globe className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label={t("dashboard.netWorth")} value={fmt(totalBalance)} prominent />
-      <StatCard icon={<TrendingUp className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("dashboard.thisMonthIncome")} value={fmt(monthIncome)} trendType="positive" />
-      <StatCard icon={<TrendingDown className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("dashboard.thisMonthExpense")} value={fmt(monthExpense)} trendType="negative" />
-      <StatCard icon={<PieChart className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("dashboard.budgetUsage")} value={formatPercent(monthExpense > 0 ? Math.round((monthExpense / (monthIncome || 1)) * 100) : 0, lang)} trendType="neutral" />
+      <StatCard icon={<TrendingUp className="h-5 w-5 text-feature-income" />} iconBg="bg-feature-income/10" label={t("dashboard.thisMonthIncome")} value={fmt(monthIncome)} trendType="positive" />
+      <StatCard icon={<TrendingDown className="h-5 w-5 text-feature-expense" />} iconBg="bg-feature-expense/10" label={t("dashboard.thisMonthExpense")} value={fmt(monthExpense)} trendType="negative" />
+      <StatCard icon={<PieChart className="h-5 w-5 text-feature-budget" />} iconBg="bg-feature-budget/10" label={t("dashboard.budgetUsage")} value={formatPercent(monthExpense > 0 ? Math.round((monthExpense / (monthIncome || 1)) * 100) : 0, lang)} trendType="neutral" />
     </div>
   );
 }
