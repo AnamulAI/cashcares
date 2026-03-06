@@ -7,7 +7,7 @@ import { formatAmount } from "@/lib/formatters";
 
 export function TrendChart() {
   const { currency } = useAppContext();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   return (
     <div className="finance-card-static p-6">
