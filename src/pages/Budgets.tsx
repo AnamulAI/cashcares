@@ -23,6 +23,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount } from "@/lib/formatters";
 import { startOfMonth, endOfMonth, format, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 function getStatus(spent: number, allocated: number, threshold: number) {
   const pct = allocated > 0 ? (spent / allocated) * 100 : 0;
