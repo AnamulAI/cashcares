@@ -22,6 +22,8 @@ import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
 import Receivables from "./pages/Receivables";
 import Payables from "./pages/Payables";
+import ReceivableLedger from "./pages/ReceivableLedger";
+import PayableLedger from "./pages/PayableLedger";
 import DebtLoans from "./pages/DebtLoans";
 import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
