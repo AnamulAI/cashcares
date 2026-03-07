@@ -88,6 +88,59 @@ export function useCreateTransaction() {
   });
 }
 
+export function useUpdateTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      oldTxn,
+      newTxn,
+    }: {
+      id: string;
+      oldTxn: { type: string; amount: number; account_id: string; to_account_id?: string | null; transfer_fee?: number | null; category_id?: string | null };
+      newTxn: Partial<TransactionInsert>;
+    }) => {
+      // Reverse old balance impact
+      if (oldTxn.type === "income") {
+        await adjustBalance(oldTxn.account_id, -oldTxn.amount);
+      } else if (oldTxn.type === "expense") {
+        await adjustBalance(oldTxn.account_id, oldTxn.amount);
+      } else if (oldTxn.type === "transfer") {
+        await adjustBalance(oldTxn.account_id, oldTxn.amount + (oldTxn.transfer_fee || 0));
+        if (oldTxn.to_account_id) await adjustBalance(oldTxn.to_account_id, -oldTxn.amount);
+      }
+
+      // Apply new balance impact
+      const type = newTxn.type || oldTxn.type;
+      const amount = newTxn.amount ?? oldTxn.amount;
+      const accountId = newTxn.account_id || oldTxn.account_id;
+      const toAccountId = newTxn.to_account_id ?? oldTxn.to_account_id;
+      const fee = newTxn.transfer_fee ?? oldTxn.transfer_fee ?? 0;
+
+      if (type === "income") {
+        await adjustBalance(accountId, amount);
+      } else if (type === "expense") {
+        await adjustBalance(accountId, -amount);
+      } else if (type === "transfer") {
+        await adjustBalance(accountId, -(amount + fee));
+        if (toAccountId) await adjustBalance(toAccountId, amount);
+      }
+
+      const { data, error } = await supabase.from("transactions").update(newTxn).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Transaction updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export function useDeleteTransaction() {
   const qc = useQueryClient();
   return useMutation({

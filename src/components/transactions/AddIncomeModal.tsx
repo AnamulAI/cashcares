@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,18 +10,24 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowDownLeft } from "lucide-react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
-import { useCreateTransaction } from "@/hooks/use-transactions";
+import { useCreateTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
 import { useTranslation } from "@/i18n/useTranslation";
 
-interface AddIncomeModalProps { open: boolean; onOpenChange: (open: boolean) => void; }
+interface AddIncomeModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editTransaction?: any;
+}
 
-export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
+export function AddIncomeModal({ open, onOpenChange, editTransaction }: AddIncomeModalProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const createTxn = useCreateTransaction();
+  const updateTxn = useUpdateTransaction();
   const { t } = useTranslation();
 
   const incomeCategories = categories.filter(c => c.group === "income");
+  const isEdit = !!editTransaction;
 
   const [categoryId, setCategoryId] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -30,10 +36,24 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
   const [note, setNote] = useState("");
   const [tags, setTags] = useState("");
 
+  useEffect(() => {
+    if (editTransaction && open) {
+      setCategoryId(editTransaction.category_id || "");
+      setAccountId(editTransaction.account_id || "");
+      setAmount(String(editTransaction.amount || ""));
+      setDate(editTransaction.date || new Date().toISOString().split("T")[0]);
+      setNote(editTransaction.note || "");
+      setTags(editTransaction.tags?.join(", ") || "");
+    } else if (!open) {
+      setCategoryId(""); setAccountId(""); setAmount(""); setNote(""); setTags("");
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [editTransaction, open]);
+
   const handleSubmit = async () => {
     if (!accountId || !amount) return;
-    await createTxn.mutateAsync({
-      type: "income",
+    const payload = {
+      type: "income" as const,
       category_id: categoryId || null,
       account_id: accountId,
       to_account_id: null,
@@ -43,10 +63,29 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
       tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : null,
       status: "completed",
       transfer_fee: 0,
-    });
+    };
+
+    if (isEdit) {
+      await updateTxn.mutateAsync({
+        id: editTransaction.id,
+        oldTxn: {
+          type: editTransaction.type,
+          amount: Number(editTransaction.amount),
+          account_id: editTransaction.account_id,
+          to_account_id: editTransaction.to_account_id,
+          transfer_fee: editTransaction.transfer_fee ? Number(editTransaction.transfer_fee) : null,
+          category_id: editTransaction.category_id,
+        },
+        newTxn: payload,
+      });
+    } else {
+      await createTxn.mutateAsync(payload);
+    }
     setCategoryId(""); setAccountId(""); setAmount(""); setNote(""); setTags("");
     onOpenChange(false);
   };
+
+  const isPending = isEdit ? updateTxn.isPending : createTxn.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +96,7 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
               <ArrowDownLeft className="h-4 w-4 text-positive" />
             </div>
             <div>
-              <DialogTitle className="font-display text-base">{t("action.addIncome")}</DialogTitle>
+              <DialogTitle className="font-display text-base">{isEdit ? t("action.edit") : t("action.addIncome")}</DialogTitle>
               <DialogDescription className="text-xs">{t("transactions.recordIncome")}</DialogDescription>
             </div>
           </div>
@@ -86,8 +125,8 @@ export function AddIncomeModal({ open, onOpenChange }: AddIncomeModalProps) {
             <div><Label className="text-sm">{t("transactions.recurring")}</Label><p className="text-[11px] text-muted-foreground">{t("transactions.recurringDesc")}</p></div>
             <Switch />
           </div>
-          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={createTxn.isPending || !accountId || !amount}>
-            {createTxn.isPending ? t("action.saving") : t("action.addIncome")}
+          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !accountId || !amount}>
+            {isPending ? t("action.saving") : isEdit ? t("action.save") : t("action.addIncome")}
           </Button>
         </div>
       </DialogContent>
