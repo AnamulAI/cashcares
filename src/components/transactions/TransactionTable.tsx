@@ -30,7 +30,7 @@ interface TransactionTableProps {
   onEdit?: (txn: any) => void;
 }
 
-export function TransactionTable({ transactions, onViewDetails }: TransactionTableProps) {
+export function TransactionTable({ transactions, onViewDetails, onEdit }: TransactionTableProps) {
   const deleteTxn = useDeleteTransaction();
   const createTxn = useCreateTransaction();
   const { currency, settings } = useAppContext();
