@@ -34,7 +34,7 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
   const [isActive, setIsActive] = useState(true);
   const [usableInBudgets, setUsableInBudgets] = useState(false);
   const [iconSearch, setIconSearch] = useState("");
-  const [iconTab, setIconTab] = useState<"lucide" | "emoji">("lucide");
+  const [iconTab] = useState<"lucide">("lucide");
   const [customColor, setCustomColor] = useState("");
 
   useEffect(() => {
