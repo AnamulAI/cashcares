@@ -11,6 +11,7 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { DbAccount } from "@/hooks/use-accounts";
+import { getAccountVisual } from "./account-brands";
 
 interface AccountDetailsProps {
   account: DbAccount | null;
@@ -28,6 +29,9 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
 
   if (!account) return null;
 
+  const visual = getAccountVisual(account);
+  const IconComp = visual.icon;
+
   const transactions = allTxns.filter((t: any) => t.account_id === account.id);
   const transfers = allTxns.filter((t: any) => t.type === "transfer" && (t.account_id === account.id || t.to_account_id === account.id));
   const totalInflow = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
@@ -38,19 +42,27 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <DialogTitle className="font-display text-lg">{account.name}</DialogTitle>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center ring-1 ring-border/30 shadow-sm" style={{ backgroundColor: `${visual.color}14` }}>
+                <IconComp className="h-5 w-5" style={{ color: visual.color }} />
+              </div>
+              <DialogTitle className="font-display text-lg">{account.name}</DialogTitle>
+            </div>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => { onEdit?.(account); onOpenChange(false); }}>
               <Pencil className="h-3 w-3" /> {t("action.edit")}
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="rounded-xl bg-accent/60 p-5 mt-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{t("accounts.currentBalance")}</p>
-          <p className="text-3xl font-bold font-display mt-1 tracking-tight tabular-nums">{fmt(account.balance)}</p>
-          <div className="flex gap-2 mt-3">
-            {account.is_primary && <Badge className="bg-primary/10 text-primary border-0 text-xs">{t("accounts.primary")}</Badge>}
-            <Badge variant="secondary" className={cn("text-xs", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
+        <div className="rounded-xl overflow-hidden mt-2">
+          <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${visual.color}, ${visual.color}88)` }} />
+          <div className="bg-accent/60 p-5">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{t("accounts.currentBalance")}</p>
+            <p className="text-3xl font-bold font-display mt-1 tracking-tight tabular-nums">{fmt(account.balance)}</p>
+            <div className="flex gap-2 mt-3">
+              {account.is_primary && <Badge className="bg-primary/10 text-primary border-0 text-xs">{t("accounts.primary")}</Badge>}
+              <Badge variant="secondary" className={cn("text-xs", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
+            </div>
           </div>
         </div>
 

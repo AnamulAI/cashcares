@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useUpdateAccount, useDeleteAccount, type DbAccount } from "@/hooks/use-accounts";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
+import { getAccountVisual } from "./account-brands";
 
 interface AccountCardsProps {
   accounts: DbAccount[];
@@ -37,6 +38,8 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
         <div className="divide-y divide-border/50">
           {accounts.map((account) => {
             const isSelected = selected?.has(account.id) ?? false;
+            const visual = getAccountVisual(account);
+            const IconComp = visual.icon;
             return (
               <div key={account.id} className={cn("flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors cursor-pointer group", isSelected && "bg-primary/5")} onClick={() => onViewDetails?.(account)}>
                 {onToggleSelect && (
@@ -44,8 +47,8 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
                     <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(account.id)} />
                   </div>
                 )}
-                <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${account.color}12` }}>
-                  <div className="h-4 w-4 rounded-full" style={{ backgroundColor: account.color }} />
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-border/30" style={{ backgroundColor: `${visual.color}14` }}>
+                  <IconComp className="h-5 w-5" style={{ color: visual.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -73,37 +76,44 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {accounts.map((account) => {
         const isSelected = selected?.has(account.id) ?? false;
+        const visual = getAccountVisual(account);
+        const IconComp = visual.icon;
         return (
-          <div key={account.id} className={cn("finance-card p-5 cursor-pointer group", isSelected && "ring-2 ring-primary/40")} onClick={() => onViewDetails?.(account)}>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                {onToggleSelect && (
-                  <div onClick={e => e.stopPropagation()}>
-                    <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(account.id)} />
+          <div key={account.id} className={cn("finance-card overflow-hidden cursor-pointer group", isSelected && "ring-2 ring-primary/40")} onClick={() => onViewDetails?.(account)}>
+            {/* Color accent strip */}
+            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${visual.color}, ${visual.color}88)` }} />
+
+            <div className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  {onToggleSelect && (
+                    <div onClick={e => e.stopPropagation()}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(account.id)} />
+                    </div>
+                  )}
+                  <div className="h-11 w-11 rounded-xl flex items-center justify-center ring-1 ring-border/30 shadow-sm" style={{ backgroundColor: `${visual.color}14` }}>
+                    <IconComp className="h-5 w-5" style={{ color: visual.color }} />
                   </div>
-                )}
-                <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${account.color}12` }}>
-                  <div className="h-5 w-5 rounded-full" style={{ backgroundColor: account.color }} />
+                  <div>
+                    <p className="font-semibold text-sm">{account.name}</p>
+                    <p className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">{account.name}</p>
-                  <p className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type}</p>
+                <div onClick={e => e.stopPropagation()}>
+                  <AccountActions account={account} onViewDetails={onViewDetails} onEdit={onEdit} />
                 </div>
               </div>
-              <div onClick={e => e.stopPropagation()}>
-                <AccountActions account={account} onViewDetails={onViewDetails} onEdit={onEdit} />
+
+              <div className="mt-5">
+                <p className="text-2xl font-bold font-display tabular-nums tracking-tight">{fmt(account.balance)}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{account.currency}</p>
               </div>
-            </div>
 
-            <div className="mt-5">
-              <p className="text-2xl font-bold font-display tabular-nums tracking-tight">{fmt(account.balance)}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{account.currency}</p>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-              {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">{t("accounts.primary")}</Badge>}
-              <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
-              <span className="text-[10px] text-muted-foreground ml-auto">{t("accounts.updated")} {fmtDate(account.updated_at)}</span>
+              <div className="mt-3 flex items-center gap-2">
+                {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">{t("accounts.primary")}</Badge>}
+                <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
+                <span className="text-[10px] text-muted-foreground ml-auto">{t("accounts.updated")} {fmtDate(account.updated_at)}</span>
+              </div>
             </div>
           </div>
         );
