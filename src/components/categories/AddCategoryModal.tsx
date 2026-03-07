@@ -19,7 +19,7 @@ interface AddCategoryModalProps {
   editCategory?: DbCategory | null;
 }
 
-const EMOJI_ICONS = ["🏠","💰","🍕","🚗","📚","🎮","💊","🛍️","⚡","✈️","🎁","📊","💼","🎓","❤️","🔧","📱","🏋️"];
+
 
 export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCategoryModalProps) {
   const isEdit = !!editCategory;
