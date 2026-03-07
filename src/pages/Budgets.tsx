@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2 } from "lucide-react";
+import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2, Wallet } from "lucide-react";
+import { CATEGORY_ICONS } from "@/components/categories/category-icons";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -258,9 +259,14 @@ export default function Budgets() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleOne(b.id)} />
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: b.categoryColor + "18" }}>
-                        <span className="text-sm">{b.categoryIcon?.startsWith?.("") ? b.categoryIcon : "📊"}</span>
-                      </div>
+                      {(() => {
+                        const IconComp = CATEGORY_ICONS.find(i => i.key === b.categoryIcon)?.icon || Wallet;
+                        return (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: b.categoryColor + "18" }}>
+                            <IconComp className="h-5 w-5" style={{ color: b.categoryColor }} />
+                          </div>
+                        );
+                      })()}
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate">{b.categoryName}</p>
                         <p className="text-xs text-muted-foreground">{fmt(b.spent)} {t("common.of")} {fmt(alloc)}</p>
