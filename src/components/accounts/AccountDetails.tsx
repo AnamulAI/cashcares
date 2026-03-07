@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { Pencil, TrendingUp, TrendingDown, ArrowRightLeft } from "lucide-react";
+import { Pencil, TrendingUp, TrendingDown, ArrowRightLeft, Star } from "lucide-react";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -43,10 +43,21 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
         <DialogHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl flex items-center justify-center ring-1 ring-border/30 shadow-sm" style={{ backgroundColor: `${visual.color}14` }}>
-                <IconComp className="h-5 w-5" style={{ color: visual.color }} />
+              <div
+                className="h-11 w-11 rounded-xl flex items-center justify-center ring-1 ring-border/20 shadow-sm"
+                style={{ backgroundColor: `${visual.color}18`, boxShadow: `0 4px 12px -4px ${visual.color}30` }}
+              >
+                <IconComp className="h-5.5 w-5.5" style={{ color: visual.color }} />
               </div>
-              <DialogTitle className="font-display text-lg">{account.name}</DialogTitle>
+              <div>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="font-display text-lg">{account.name}</DialogTitle>
+                  {account.is_primary && <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />}
+                </div>
+                {visual.label && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold" style={{ backgroundColor: `${visual.color}12`, color: visual.color }}>{visual.label}</span>
+                )}
+              </div>
             </div>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => { onEdit?.(account); onOpenChange(false); }}>
               <Pencil className="h-3 w-3" /> {t("action.edit")}
@@ -55,13 +66,15 @@ export function AccountDetails({ account, open, onOpenChange, onEdit }: AccountD
         </DialogHeader>
 
         <div className="rounded-xl overflow-hidden mt-2">
-          <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${visual.color}, ${visual.color}88)` }} />
+          <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${visual.color}, ${visual.color}66)` }} />
           <div className="bg-accent/60 p-5">
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{t("accounts.currentBalance")}</p>
             <p className="text-3xl font-bold font-display mt-1 tracking-tight tabular-nums">{fmt(account.balance)}</p>
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3 flex-wrap">
               {account.is_primary && <Badge className="bg-primary/10 text-primary border-0 text-xs">{t("accounts.primary")}</Badge>}
               <Badge variant="secondary" className={cn("text-xs", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
+              <Badge variant="outline" className="text-xs capitalize">{account.type.replace("_", " ")}</Badge>
+              <Badge variant="outline" className="text-xs">{account.currency}</Badge>
             </div>
           </div>
         </div>
