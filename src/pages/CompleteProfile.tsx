@@ -1,31 +1,68 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { User, Phone, Building2, MapPin } from "lucide-react";
 
 export default function CompleteProfile() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, loading, profileComplete, refreshProfile } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    full_name: profile?.full_name || "",
-    phone: profile?.phone || "",
-    company_name: profile?.company_name || "",
-    country: profile?.country || "Bangladesh",
-    state_division: profile?.state_division || "",
+    full_name: "",
+    phone: "",
+    company_name: "",
+    country: "Bangladesh",
+    state_division: "",
   });
+
+  // Sync form with profile when it loads
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        full_name: profile.full_name || "",
+        phone: profile.phone || "",
+        company_name: profile.company_name || "",
+        country: profile.country || "Bangladesh",
+        state_division: profile.state_division || "",
+      });
+    }
+  }, [profile]);
+
+  // Show loading while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="space-y-4 w-full max-w-md px-4">
+          <Skeleton className="h-12 w-12 rounded-xl mx-auto" />
+          <Skeleton className="h-4 w-48 mx-auto" />
+          <Skeleton className="h-4 w-32 mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in → send to auth
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Profile already complete → send to dashboard
+  if (profileComplete) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    setLoading(true);
+    setSaving(true);
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -36,7 +73,7 @@ export default function CompleteProfile() {
         state_division: form.state_division || null,
       })
       .eq("id", user.id);
-    setLoading(false);
+    setSaving(false);
     if (error) {
       toast.error("Failed to save profile");
     } else {
@@ -111,8 +148,8 @@ export default function CompleteProfile() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full h-10" disabled={loading}>
-                {loading ? "Saving..." : "Continue to Dashboard"}
+              <Button type="submit" className="w-full h-10" disabled={saving}>
+                {saving ? "Saving..." : "Continue to Dashboard"}
               </Button>
             </form>
           </CardContent>

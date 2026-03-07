@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -20,6 +20,12 @@ export interface UserProfile {
 
 export type AppRole = "admin" | "user";
 
+/** Only these fields are required for profile to be considered complete */
+function isProfileComplete(profile: UserProfile | null): boolean {
+  if (!profile) return false;
+  return !!profile.full_name && profile.full_name.trim().length > 0;
+}
+
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
@@ -40,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const initializedRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -76,48 +83,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // 1. Set up auth listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
 
-        if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlock
-          setTimeout(async () => {
-            await Promise.all([
-              fetchProfile(session.user.id),
-              fetchRoles(session.user.id),
-            ]);
-            setLoading(false);
-          }, 0);
+        if (newSession?.user) {
+          // If getSession already initialized, handle subsequent auth events
+          if (initializedRef.current) {
+            // Fetch profile/roles for new sign-in events
+            setTimeout(async () => {
+              await Promise.all([
+                fetchProfile(newSession.user.id),
+                fetchRoles(newSession.user.id),
+              ]);
+            }, 0);
+          }
         } else {
           setProfile(null);
           setRoles([]);
-          setLoading(false);
+          if (initializedRef.current) {
+            setLoading(false);
+          }
         }
       }
     );
 
-    // THEN check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        Promise.all([
-          fetchProfile(session.user.id),
-          fetchRoles(session.user.id),
-        ]).then(() => setLoading(false));
-      } else {
-        setLoading(false);
+    // 2. Then restore existing session — this is the ONLY path that sets loading=false initially
+    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      setUser(existingSession?.user ?? null);
+
+      if (existingSession?.user) {
+        await Promise.all([
+          fetchProfile(existingSession.user.id),
+          fetchRoles(existingSession.user.id),
+        ]);
       }
+
+      initializedRef.current = true;
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, [fetchProfile, fetchRoles]);
 
   const isAdmin = roles.includes("admin");
-  const profileComplete = !!profile?.full_name && profile.full_name.trim().length > 0;
+  const profileComplete = isProfileComplete(profile);
 
   return (
     <AuthContext.Provider value={{
