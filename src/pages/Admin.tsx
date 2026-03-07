@@ -160,16 +160,32 @@ export default function Admin() {
 
   const handlePlanChange = async (newPlan: string, note: string) => {
     if (!planTarget) return;
-    const { error } = await supabase
+    console.log("[Admin] Updating plan:", { userId: planTarget.id, field: "profiles.subscription_plan", newPlan });
+    const { error, count } = await supabase
       .from("profiles")
       .update({ subscription_plan: newPlan } as any)
-      .eq("id", planTarget.id);
+      .eq("id", planTarget.id)
+      .select("subscription_plan")
+      .then(async (res) => {
+        // Verify the write by re-reading the row
+        if (!res.error && res.data && res.data.length > 0) {
+          const persisted = (res.data[0] as any).subscription_plan;
+          console.log("[Admin] Persisted value:", persisted);
+          if (persisted !== newPlan) {
+            return { error: { message: "Write did not persist — value mismatch" }, count: 0 };
+          }
+          return { error: null, count: res.data.length };
+        }
+        if (!res.error && (!res.data || res.data.length === 0)) {
+          return { error: { message: "No rows updated — RLS may be blocking the write" }, count: 0 };
+        }
+        return { error: res.error, count: 0 };
+      });
     if (error) {
-      toast.error("Failed to update plan: " + error.message);
+      toast.error("Failed to update plan: " + (error as any).message);
     } else {
       toast.success(`Subscription updated to ${newPlan}`);
       setUsers(prev => prev.map(u => u.id === planTarget.id ? { ...u, plan: newPlan } : u));
-      // Update plan distribution
       setPlanDist(prev => {
         const next = { ...prev };
         const oldPlan = planTarget.plan as keyof PlanDist;
