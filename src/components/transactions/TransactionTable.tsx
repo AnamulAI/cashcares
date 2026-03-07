@@ -27,6 +27,7 @@ const typeColors: Record<string, string> = {
 interface TransactionTableProps {
   transactions: any[];
   onViewDetails?: (txn: any) => void;
+  onEdit?: (txn: any) => void;
 }
 
 export function TransactionTable({ transactions, onViewDetails }: TransactionTableProps) {
