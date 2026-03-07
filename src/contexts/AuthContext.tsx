@@ -14,6 +14,7 @@ export interface UserProfile {
   organization_type: string | null;
   country: string | null;
   state_division: string | null;
+  subscription_plan: string;
   created_at: string;
   updated_at: string;
 }

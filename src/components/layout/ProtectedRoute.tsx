@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppContext } from "@/contexts/AppContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,16 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
+
+  return <>{children}</>;
+}
+
+export function PremiumRoute({ children }: { children: React.ReactNode }) {
+  const { isPremium } = useAppContext();
+
+  if (!isPremium) {
+    return <Navigate to="/subscription" replace />;
+  }
 
   return <>{children}</>;
 }

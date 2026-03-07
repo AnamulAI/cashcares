@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 // --- Currency ---
 export interface CurrencyOption {
@@ -121,14 +122,6 @@ function loadNotifications(): AppNotification[] {
 // --- Premium / Plan ---
 export type PlanType = "free" | "monthly" | "yearly" | "lifetime";
 
-function loadPlan(): PlanType {
-  try {
-    const saved = localStorage.getItem("cc_plan") as PlanType | null;
-    if (saved && ["free", "monthly", "yearly", "lifetime"].includes(saved)) return saved;
-  } catch {}
-  return "free";
-}
-
 export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments", "partnerships"] as const;
 
 // --- Settings ---
@@ -194,6 +187,8 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
+
   // Currency
   const [currency, setCurrencyState] = useState<CurrencyOption>(loadCurrency);
   const setCurrency = useCallback((c: CurrencyOption) => {
@@ -243,11 +238,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Plan
-  const [plan, setPlanState] = useState<PlanType>(loadPlan);
-  const setPlan = useCallback((p: PlanType) => {
-    setPlanState(p);
-    localStorage.setItem("cc_plan", p);
+  // Plan — derived from DB profile, NOT localStorage
+  const plan: PlanType = (profile?.subscription_plan as PlanType) || "free";
+  const setPlan = useCallback((_p: PlanType) => {
+    // Plan is now read from DB profile. To change plan, update profiles.subscription_plan.
+    // This is a no-op kept for API compatibility.
   }, []);
   const isPremium = plan !== "free";
   const isModuleLocked = useCallback((path: string) => {

@@ -4,7 +4,7 @@ import {
   Users, Bell, Wallet, ShieldCheck
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { APP_CONFIG } from "@/config/app";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +66,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
   const { isModuleLocked } = useAppContext();
   const { isAdmin } = useAuth();
   const { t } = useTranslation();
@@ -114,7 +115,10 @@ export function AppSidebar() {
                             {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
                           </NavLink>
                         ) : (
-                          <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-default select-none">
+                          <div
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-pointer select-none hover:bg-sidebar-accent/50 transition-colors"
+                            onClick={() => navigate("/subscription")}
+                          >
                             <item.icon className="h-[18px] w-[18px] shrink-0" />
                             {!collapsed && (
                               <>
