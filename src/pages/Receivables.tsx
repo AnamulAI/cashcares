@@ -216,6 +216,7 @@ export default function Receivables() {
                       <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/receivables/${book.id}`); }}><BookOpen className="h-3.5 w-3.5 mr-2" /> Open Ledger</DropdownMenuItem>
                       <DropdownMenuItem onClick={e => { e.stopPropagation(); openModal(book); }}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                       <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/receivables/${book.id}`); }}><FileText className="h-3.5 w-3.5 mr-2" /> Report</DropdownMenuItem>
+                      <DropdownMenuItem onClick={e => { e.stopPropagation(); setMoveBook({ id: book.id, name: book.person_name, entryCount: agg.entryCount }); }}><ArrowRightLeft className="h-3.5 w-3.5 mr-2" /> Move to Payables</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive" onClick={e => { e.stopPropagation(); setDeleteId(book.id); }}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
