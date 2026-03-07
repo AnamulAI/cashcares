@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePayableBooks, useCreatePayableBook, useUpdatePayableBook, useDeletePayableBook, PayableBookInsert } from "@/hooks/use-payable-books";
+import { MoveBookModal } from "@/components/shared/MoveBookModal";
 import { useAllPayableEntries } from "@/hooks/use-payable-entries";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
