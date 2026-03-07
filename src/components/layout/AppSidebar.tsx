@@ -66,6 +66,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
   const { isModuleLocked } = useAppContext();
   const { isAdmin } = useAuth();
   const { t } = useTranslation();
