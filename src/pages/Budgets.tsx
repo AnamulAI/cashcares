@@ -67,7 +67,7 @@ export default function Budgets() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  const expenseCategories = categories.filter(c => c.group === "expense" && c.usable_in_budgets);
+  const expenseCategories = categories.filter(c => c.group === "budget" || c.usable_in_budgets);
 
   const spentByCategory = useMemo(() => {
     const now = new Date();
