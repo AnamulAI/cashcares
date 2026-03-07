@@ -53,9 +53,12 @@ export function useAllPayableEntries() {
   return useQuery({
     queryKey: ["payable_entries_all"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("payable_entries")
         .select("*")
+        .eq("user_id", user.id)
         .order("date", { ascending: false });
       if (error) throw error;
       return (data || []) as PayableEntry[];

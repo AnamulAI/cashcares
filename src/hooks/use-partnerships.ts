@@ -35,9 +35,12 @@ export function usePartnerships() {
   return useQuery({
     queryKey: ["partnerships"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("partnerships")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as DbPartnership[];

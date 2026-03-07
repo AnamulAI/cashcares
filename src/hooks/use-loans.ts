@@ -29,9 +29,12 @@ export function useLoans() {
   return useQuery({
     queryKey: ["loans"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("loans")
         .select("*, linked_account:accounts!loans_linked_account_id_fkey(name)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as (DbLoan & { linked_account: { name: string } | null })[];

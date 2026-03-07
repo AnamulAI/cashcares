@@ -27,9 +27,12 @@ export function usePayables() {
   return useQuery({
     queryKey: ["payables"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("payables")
         .select("*, linked_account:accounts!payables_linked_account_id_fkey(name)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as (DbPayable & { linked_account: { name: string } | null })[];

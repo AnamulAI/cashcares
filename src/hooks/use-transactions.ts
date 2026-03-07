@@ -38,9 +38,12 @@ export function useTransactions() {
   return useQuery({
     queryKey: ["transactions"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("transactions")
         .select("*, account:accounts!transactions_account_id_fkey(name), to_account:accounts!transactions_to_account_id_fkey(name), category:categories!transactions_category_id_fkey(name, group)")
+        .eq("user_id", user.id)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
