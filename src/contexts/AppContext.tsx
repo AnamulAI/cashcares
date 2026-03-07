@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 // --- Currency ---
 export interface CurrencyOption {
