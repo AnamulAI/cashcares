@@ -400,6 +400,7 @@ export type Database = {
           entry_type: string
           id: string
           is_demo: boolean
+          linked_account_id: string | null
           note: string | null
           partnership_id: string
           user_id: string
@@ -413,6 +414,7 @@ export type Database = {
           entry_type?: string
           id?: string
           is_demo?: boolean
+          linked_account_id?: string | null
           note?: string | null
           partnership_id: string
           user_id?: string
@@ -426,11 +428,19 @@ export type Database = {
           entry_type?: string
           id?: string
           is_demo?: boolean
+          linked_account_id?: string | null
           note?: string | null
           partnership_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "partnership_entries_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partnership_entries_partnership_id_fkey"
             columns: ["partnership_id"]
@@ -446,6 +456,10 @@ export type Database = {
           id: string
           is_demo: boolean
           note: string | null
+          partner_1_name: string | null
+          partner_1_share: number
+          partner_2_name: string | null
+          partner_2_share: number
           partner_contribution: number
           partner_name: string
           partnership_name: string
@@ -453,6 +467,10 @@ export type Database = {
           shared_expense_total: number
           start_date: string | null
           status: string
+          total_capital: number
+          total_profit_distributed: number
+          total_reinvested: number
+          total_withdrawn: number
           updated_at: string
           user_id: string
           your_contribution: number
@@ -462,6 +480,10 @@ export type Database = {
           id?: string
           is_demo?: boolean
           note?: string | null
+          partner_1_name?: string | null
+          partner_1_share?: number
+          partner_2_name?: string | null
+          partner_2_share?: number
           partner_contribution?: number
           partner_name: string
           partnership_name: string
@@ -469,6 +491,10 @@ export type Database = {
           shared_expense_total?: number
           start_date?: string | null
           status?: string
+          total_capital?: number
+          total_profit_distributed?: number
+          total_reinvested?: number
+          total_withdrawn?: number
           updated_at?: string
           user_id?: string
           your_contribution?: number
@@ -478,6 +504,10 @@ export type Database = {
           id?: string
           is_demo?: boolean
           note?: string | null
+          partner_1_name?: string | null
+          partner_1_share?: number
+          partner_2_name?: string | null
+          partner_2_share?: number
           partner_contribution?: number
           partner_name?: string
           partnership_name?: string
@@ -485,6 +515,10 @@ export type Database = {
           shared_expense_total?: number
           start_date?: string | null
           status?: string
+          total_capital?: number
+          total_profit_distributed?: number
+          total_reinvested?: number
+          total_withdrawn?: number
           updated_at?: string
           user_id?: string
           your_contribution?: number

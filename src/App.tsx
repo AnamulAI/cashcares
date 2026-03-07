@@ -28,6 +28,7 @@ import DebtLoans from "./pages/DebtLoans";
 import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
 import Partnerships from "./pages/Partnerships";
+import PartnershipLedger from "./pages/PartnershipLedger";
 import Reminders from "./pages/Reminders";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/assets" element={<Assets />} />
             <Route path="/investments" element={<Investments />} />
             <Route path="/partnerships" element={<Partnerships />} />
+            <Route path="/partnerships/:id" element={<PartnershipLedger />} />
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Route>
