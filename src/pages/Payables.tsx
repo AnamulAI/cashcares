@@ -276,6 +276,16 @@ export default function Payables() {
         loading={bulkDeleting}
         confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
       />
+      {moveBook && (
+        <MoveBookModal
+          open={!!moveBook}
+          onOpenChange={(open) => { if (!open) setMoveBook(null); }}
+          bookId={moveBook.id}
+          personName={moveBook.name}
+          direction="payable-to-receivable"
+          entryCount={moveBook.entryCount}
+        />
+      )}
     </div>
   );
 }
