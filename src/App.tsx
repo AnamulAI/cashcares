@@ -58,15 +58,15 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/subscription" element={<Subscription />} />
-            <Route path="/receivables" element={<Receivables />} />
-            <Route path="/receivables/:id" element={<ReceivableLedger />} />
-            <Route path="/payables" element={<Payables />} />
-            <Route path="/payables/:id" element={<PayableLedger />} />
-            <Route path="/debt-loans" element={<DebtLoans />} />
-            <Route path="/assets" element={<Assets />} />
-            <Route path="/investments" element={<Investments />} />
-            <Route path="/partnerships" element={<Partnerships />} />
-            <Route path="/partnerships/:id" element={<PartnershipLedger />} />
+            <Route path="/receivables" element={<PremiumRoute><Receivables /></PremiumRoute>} />
+            <Route path="/receivables/:id" element={<PremiumRoute><ReceivableLedger /></PremiumRoute>} />
+            <Route path="/payables" element={<PremiumRoute><Payables /></PremiumRoute>} />
+            <Route path="/payables/:id" element={<PremiumRoute><PayableLedger /></PremiumRoute>} />
+            <Route path="/debt-loans" element={<PremiumRoute><DebtLoans /></PremiumRoute>} />
+            <Route path="/assets" element={<PremiumRoute><Assets /></PremiumRoute>} />
+            <Route path="/investments" element={<PremiumRoute><Investments /></PremiumRoute>} />
+            <Route path="/partnerships" element={<PremiumRoute><Partnerships /></PremiumRoute>} />
+            <Route path="/partnerships/:id" element={<PremiumRoute><PartnershipLedger /></PremiumRoute>} />
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Route>
