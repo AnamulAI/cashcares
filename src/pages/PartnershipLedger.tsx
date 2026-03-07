@@ -52,6 +52,7 @@ export default function PartnershipLedger() {
   const deleteMut = useDeletePartnershipEntry();
 
   const [entryModal, setEntryModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<DbPartnershipEntry | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
