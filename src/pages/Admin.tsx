@@ -19,6 +19,7 @@ import {
 import { UserDetailModal, type UserDetail } from "@/components/admin/UserDetailModal";
 import { EditRoleModal } from "@/components/admin/EditRoleModal";
 import { UpdatePlanModal } from "@/components/admin/UpdatePlanModal";
+import { AdminUpgradeRequests } from "@/components/admin/AdminUpgradeRequests";
 import { toast } from "sonner";
 import { startOfMonth } from "date-fns";
 
