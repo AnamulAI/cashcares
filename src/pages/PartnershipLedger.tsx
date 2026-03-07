@@ -312,6 +312,7 @@ export default function PartnershipLedger() {
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setDetailEntry(e)}><Eye className="h-3.5 w-3.5 mr-2" /> View</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEntryModal(e)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5 mr-2" /> Duplicate</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
