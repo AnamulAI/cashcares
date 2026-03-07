@@ -4,7 +4,7 @@ import {
   Users, Bell, Wallet, ShieldCheck
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { APP_CONFIG } from "@/config/app";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
