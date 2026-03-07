@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Copy, Archive, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Copy, Archive, Trash2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useUpdateCategory, useDeleteCategory, useCreateCategory, type DbCategory } from "@/hooks/use-categories";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatNumber } from "@/lib/formatters";
+import { CATEGORY_ICONS } from "./category-icons";
 
 interface CategoryListProps {
   categories: DbCategory[];
@@ -37,67 +38,113 @@ export function CategoryList({ categories, onEdit, selected, onToggleSelect }: C
     });
   };
 
+  const renderIcon = (cat: DbCategory) => {
+    const iconKey = cat.icon || "";
+    // Check if it's a Lucide icon key
+    const LucideIcon = CATEGORY_ICONS.find(i => i.key === iconKey)?.icon;
+    if (LucideIcon) {
+      return <LucideIcon className="h-5 w-5" style={{ color: cat.color }} />;
+    }
+    // Emoji fallback
+    if (iconKey) {
+      return <span className="text-lg leading-none">{iconKey}</span>;
+    }
+    // Color dot fallback
+    return <div className="h-4 w-4 rounded-full" style={{ backgroundColor: cat.color }} />;
+  };
+
   return (
-    <div className="finance-card-static overflow-hidden">
-      <div className="divide-y divide-border/50">
-        {categories.map((cat) => {
-          const isSelected = selected?.has(cat.id) ?? false;
-          return (
-            <div key={cat.id} className={`flex items-center gap-3 px-5 py-3.5 hover:bg-accent/30 transition-colors group ${isSelected ? "bg-primary/5" : ""}`}>
-              {onToggleSelect && (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {categories.map((cat) => {
+        const isSelected = selected?.has(cat.id) ?? false;
+        return (
+          <div
+            key={cat.id}
+            className={`finance-card-static relative group rounded-xl border transition-all hover:shadow-md ${
+              isSelected ? "ring-2 ring-primary border-primary" : ""
+            } ${!cat.is_active ? "opacity-60" : ""}`}
+          >
+            {/* Top actions row */}
+            <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              <AlertDialog>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 backdrop-blur-sm shadow-sm">
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={() => onEdit?.(cat)} className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> {t("action.edit")}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDuplicate(cat)} className="gap-2 text-[13px]"><Copy className="h-3.5 w-3.5" /> {t("action.duplicate")}</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => updateCategory.mutate({ id: cat.id, is_active: !cat.is_active })} className="gap-2 text-[13px]"><Archive className="h-3.5 w-3.5" /> {cat.is_active ? t("action.archive") : t("action.activate")}</DropdownMenuItem>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> {t("action.delete")}</DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("confirm.deleteCategory")} "{cat.name}"?</AlertDialogTitle>
+                    <AlertDialogDescription>{t("confirm.deleteCategoryDesc")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteCategory.mutate(cat.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("action.delete")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {/* Checkbox */}
+            {onToggleSelect && (
+              <div className="absolute top-3 left-3 z-10">
                 <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(cat.id)} />
-              )}
-              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${cat.color}12` }}>
-                <div className="h-4 w-4 rounded-full" style={{ backgroundColor: cat.color }} />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold truncate">{cat.name}</p>
-                  {cat.usable_in_budgets && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-warning/10 text-warning border-0 shrink-0">{t("nav.budgets")}</Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] text-muted-foreground capitalize">{groupLabels[cat.group] || cat.group}</span>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <span className="text-[11px] text-muted-foreground">{formatNumber(cat.usage_count, lang)} {t("categories.transactions")}</span>
-                </div>
+            )}
+
+            {/* Card content */}
+            <div className="p-4 flex flex-col items-center text-center gap-2.5 pt-5">
+              {/* Icon chip */}
+              <div
+                className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: `${cat.color}18` }}
+              >
+                {renderIcon(cat)}
               </div>
-              <div className="flex items-center gap-2">
-                {!cat.is_active && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t("status.inactive")}</Badge>}
-                <AlertDialog>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => onEdit?.(cat)} className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> {t("action.edit")}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(cat)} className="gap-2 text-[13px]"><Copy className="h-3.5 w-3.5" /> {t("action.duplicate")}</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => updateCategory.mutate({ id: cat.id, is_active: !cat.is_active })} className="gap-2 text-[13px]"><Archive className="h-3.5 w-3.5" /> {cat.is_active ? t("action.archive") : t("action.activate")}</DropdownMenuItem>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem className="text-destructive gap-2 text-[13px]"><Trash2 className="h-3.5 w-3.5" /> {t("action.delete")}</DropdownMenuItem>
-                      </AlertDialogTrigger>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t("confirm.deleteCategory")} "{cat.name}"?</AlertDialogTitle>
-                      <AlertDialogDescription>{t("confirm.deleteCategoryDesc")}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => deleteCategory.mutate(cat.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("action.delete")}</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+
+              {/* Name */}
+              <div className="min-w-0 w-full">
+                <p className="text-sm font-semibold truncate">{cat.name}</p>
+                <p className="text-[11px] text-muted-foreground capitalize mt-0.5">
+                  {groupLabels[cat.group] || cat.group}
+                </p>
+              </div>
+
+              {/* Bottom row */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>{formatNumber(cat.usage_count, lang)} {t("categories.transactions")}</span>
+                </div>
+                {cat.usable_in_budgets && (
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-warning/10 text-warning border-0">
+                    {t("nav.budgets")}
+                  </Badge>
+                )}
+                {!cat.is_active && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                    {t("status.inactive")}
+                  </Badge>
+                )}
               </div>
             </div>
-          );
-        })}
-      </div>
+
+            {/* Color strip at bottom */}
+            <div className="h-1 rounded-b-xl" style={{ backgroundColor: cat.color }} />
+          </div>
+        );
+      })}
     </div>
   );
 }
