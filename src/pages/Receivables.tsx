@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText } from "lucide-react";
+import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, ArrowRightLeft } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useReceivableBooks, useCreateReceivableBook, useUpdateReceivableBook, useDeleteReceivableBook, ReceivableBookInsert } from "@/hooks/use-receivable-books";
+import { MoveBookModal } from "@/components/shared/MoveBookModal";
 import { useAllReceivableEntries } from "@/hooks/use-receivable-entries";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -48,6 +49,7 @@ export default function Receivables() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [moveBook, setMoveBook] = useState<{ id: string; name: string; entryCount: number } | null>(null);
 
   const [form, setForm] = useState({ person_name: "", description: "", phone: "", email: "", status: "active", opening_balance: "0" });
 
@@ -214,6 +216,7 @@ export default function Receivables() {
                       <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/receivables/${book.id}`); }}><BookOpen className="h-3.5 w-3.5 mr-2" /> Open Ledger</DropdownMenuItem>
                       <DropdownMenuItem onClick={e => { e.stopPropagation(); openModal(book); }}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                       <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/receivables/${book.id}`); }}><FileText className="h-3.5 w-3.5 mr-2" /> Report</DropdownMenuItem>
+                      <DropdownMenuItem onClick={e => { e.stopPropagation(); setMoveBook({ id: book.id, name: book.person_name, entryCount: agg.entryCount }); }}><ArrowRightLeft className="h-3.5 w-3.5 mr-2" /> Move to Payables</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive" onClick={e => { e.stopPropagation(); setDeleteId(book.id); }}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -277,6 +280,16 @@ export default function Receivables() {
         loading={bulkDeleting}
         confirmLabel={t("bulk.confirmDelete").replace("{count}", String(selected.size))}
       />
+      {moveBook && (
+        <MoveBookModal
+          open={!!moveBook}
+          onOpenChange={(open) => { if (!open) setMoveBook(null); }}
+          bookId={moveBook.id}
+          personName={moveBook.name}
+          direction="receivable-to-payable"
+          entryCount={moveBook.entryCount}
+        />
+      )}
     </div>
   );
 }

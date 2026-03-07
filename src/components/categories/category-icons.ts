@@ -7,6 +7,10 @@ import {
   Shirt, Coffee, Bus, Fuel, Wifi, Tv,
   FolderOpen, Tag, ArrowDownUp, ArrowUpRight, ArrowDownRight,
   CircleDollarSign, BadgeDollarSign, Scale, ChartBar, Layers,
+  ArrowRightLeft, Send, Download, Upload, RefreshCcw,
+  ClipboardCheck, FileCheck, ShieldCheck, CircleCheck,
+  Repeat, ReceiptText, Handshake, MoveRight, MoveLeft,
+  ArrowUpFromLine, ArrowDownToLine, BadgeCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,6 +40,25 @@ export const CATEGORY_ICONS: CategoryIconOption[] = [
   { key: "arrow-up-right", icon: ArrowUpRight, label: "Send", group: "Finance" },
   { key: "arrow-down-right", icon: ArrowDownRight, label: "Receive", group: "Finance" },
   { key: "arrow-down-up", icon: ArrowDownUp, label: "Transfer", group: "Finance" },
+
+  // Debt & Settlement
+  { key: "arrow-right-left", icon: ArrowRightLeft, label: "Exchange", group: "Debt" },
+  { key: "send", icon: Send, label: "কর্জ দেওয়া", group: "Debt" },
+  { key: "download", icon: Download, label: "কর্জ পাওয়া", group: "Debt" },
+  { key: "clipboard-check", icon: ClipboardCheck, label: "কর্জ পরিশোধ", group: "Debt" },
+  { key: "move-right", icon: MoveRight, label: "দেনা", group: "Debt" },
+  { key: "move-left", icon: MoveLeft, label: "পাওনা", group: "Debt" },
+  { key: "badge-check", icon: BadgeCheck, label: "আদায়", group: "Debt" },
+  { key: "shield-check", icon: ShieldCheck, label: "Settlement", group: "Debt" },
+  { key: "file-check", icon: FileCheck, label: "Paid Back", group: "Debt" },
+  { key: "circle-check", icon: CircleCheck, label: "Cleared", group: "Debt" },
+  { key: "repeat", icon: Repeat, label: "Repayment", group: "Debt" },
+  { key: "receipt-text", icon: ReceiptText, label: "Due", group: "Debt" },
+  { key: "handshake", icon: Handshake, label: "Agreement", group: "Debt" },
+  { key: "upload", icon: Upload, label: "Money Out", group: "Debt" },
+  { key: "refresh-ccw", icon: RefreshCcw, label: "Refund", group: "Debt" },
+  { key: "arrow-up-from-line", icon: ArrowUpFromLine, label: "Outgoing", group: "Debt" },
+  { key: "arrow-down-to-line", icon: ArrowDownToLine, label: "Incoming", group: "Debt" },
 
   // Living
   { key: "home", icon: Home, label: "Home", group: "Living" },
