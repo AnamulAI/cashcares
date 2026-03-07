@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useReceivableBooks, useCreateReceivableBook, useUpdateReceivableBook, useDeleteReceivableBook, ReceivableBookInsert } from "@/hooks/use-receivable-books";
+import { MoveBookModal } from "@/components/shared/MoveBookModal";
 import { useAllReceivableEntries } from "@/hooks/use-receivable-entries";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
