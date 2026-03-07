@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,17 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Wallet2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCreateAccount, useUpdateAccount, type DbAccount } from "@/hooks/use-accounts";
+import { getAccountVisual, detectBrand, getTypeDefaultColor, ACCOUNT_COLORS } from "./account-brands";
 
 interface AddAccountModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editAccount?: DbAccount | null;
 }
-
-const colors = ["#6366f1","#10b981","#f59e0b","#e11d48","#8b5cf6","#f97316","#06b6d4","#78716c"];
 
 export function AddAccountModal({ open, onOpenChange, editAccount }: AddAccountModalProps) {
   const isEdit = !!editAccount;
@@ -32,6 +32,7 @@ export function AddAccountModal({ open, onOpenChange, editAccount }: AddAccountM
   const [notes, setNotes] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [customHex, setCustomHex] = useState("");
 
   useEffect(() => {
     if (editAccount) {
@@ -43,11 +44,29 @@ export function AddAccountModal({ open, onOpenChange, editAccount }: AddAccountM
       setNotes(editAccount.notes || "");
       setIsPrimary(editAccount.is_primary);
       setIsActive(editAccount.is_active);
+      setCustomHex("");
     } else {
       setName(""); setType("cash"); setBalance(""); setCurrency("BDT");
       setColor("#6366f1"); setNotes(""); setIsPrimary(false); setIsActive(true);
+      setCustomHex("");
     }
   }, [editAccount, open]);
+
+  // Auto-detect brand and suggest color
+  const detectedBrand = useMemo(() => detectBrand(name), [name]);
+
+  useEffect(() => {
+    if (!isEdit && detectedBrand && color === "#6366f1") {
+      setColor(detectedBrand.color);
+    }
+  }, [detectedBrand, isEdit]);
+
+  // When type changes (new account), suggest type default color
+  useEffect(() => {
+    if (!isEdit && !detectedBrand) {
+      setColor(getTypeDefaultColor(type));
+    }
+  }, [type, isEdit, detectedBrand]);
 
   const isPending = createAccount.isPending || updateAccount.isPending;
 
@@ -73,9 +92,20 @@ export function AddAccountModal({ open, onOpenChange, editAccount }: AddAccountM
     onOpenChange(false);
   };
 
+  const handleCustomHex = (hex: string) => {
+    setCustomHex(hex);
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      setColor(hex);
+    }
+  };
+
+  // Preview visual
+  const previewVisual = getAccountVisual({ name, type, color });
+  const PreviewIcon = previewVisual.icon;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[540px]">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -87,7 +117,34 @@ export function AddAccountModal({ open, onOpenChange, editAccount }: AddAccountM
             </div>
           </div>
         </DialogHeader>
+
         <div className="space-y-4 mt-1">
+          {/* Live Card Preview */}
+          <div className="rounded-xl border border-border/60 overflow-hidden bg-accent/30">
+            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+            <div className="p-4 flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl flex items-center justify-center ring-1 ring-border/30 shadow-sm" style={{ backgroundColor: `${color}14` }}>
+                <PreviewIcon className="h-5 w-5" style={{ color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{name || "Account Name"}</p>
+                <p className="text-xs text-muted-foreground capitalize">{type.replace("_", " ")}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold font-display tabular-nums">{balance || "0.00"}</p>
+                <p className="text-[10px] text-muted-foreground">{currency}</p>
+              </div>
+            </div>
+          </div>
+
+          {detectedBrand && (
+            <div className="flex items-center gap-2 px-1">
+              <Badge variant="secondary" className="text-[11px] gap-1 py-0.5" style={{ backgroundColor: `${detectedBrand.color}14`, color: detectedBrand.color }}>
+                <previewVisual.icon className="h-3 w-3" /> {detectedBrand.label} detected
+              </Badge>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <FieldGroup label="Account Name">
               <Input placeholder="e.g. My Bank" className="h-9" value={name} onChange={e => setName(e.target.value)} />
@@ -121,13 +178,24 @@ export function AddAccountModal({ open, onOpenChange, editAccount }: AddAccountM
             </FieldGroup>
           </div>
 
-          <FieldGroup label="Color">
-            <div className="flex gap-2">
-              {colors.map(c => (
-                <button key={c} onClick={() => setColor(c)} className={cn("h-7 w-7 rounded-full border-2 transition-all relative flex items-center justify-center", color === c ? "border-foreground/40 scale-110" : "border-transparent hover:scale-110")} style={{ backgroundColor: c }}>
-                  {color === c && <Check className="h-3.5 w-3.5 text-white" />}
-                </button>
-              ))}
+          <FieldGroup label="Account Color">
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {ACCOUNT_COLORS.map(c => (
+                  <button key={c} onClick={() => { setColor(c); setCustomHex(""); }} className={cn("h-7 w-7 rounded-full border-2 transition-all relative flex items-center justify-center", color === c ? "border-foreground/40 scale-110" : "border-transparent hover:scale-110")} style={{ backgroundColor: c }}>
+                    {color === c && <Check className="h-3.5 w-3.5 text-white drop-shadow-sm" />}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-full border border-border shrink-0" style={{ backgroundColor: color }} />
+                <Input
+                  placeholder="#hex"
+                  className="h-8 w-28 text-xs font-mono"
+                  value={customHex || color}
+                  onChange={e => handleCustomHex(e.target.value)}
+                />
+              </div>
             </div>
           </FieldGroup>
 
