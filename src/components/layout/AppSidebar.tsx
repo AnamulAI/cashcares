@@ -115,7 +115,10 @@ export function AppSidebar() {
                             {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
                           </NavLink>
                         ) : (
-                          <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-default select-none">
+                          <div
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-pointer select-none hover:bg-sidebar-accent/50 transition-colors"
+                            onClick={() => navigate("/subscription")}
+                          >
                             <item.icon className="h-[18px] w-[18px] shrink-0" />
                             {!collapsed && (
                               <>
