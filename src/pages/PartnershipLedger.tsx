@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { usePartnership, usePartnershipEntries, useCreatePartnershipEntry, useDeletePartnershipEntry, DbPartnershipEntry } from "@/hooks/use-partnerships";
+import { usePartnership, usePartnershipEntries, useCreatePartnershipEntry, useUpdatePartnershipEntry, useDeletePartnershipEntry, DbPartnershipEntry } from "@/hooks/use-partnerships";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -48,9 +48,11 @@ export default function PartnershipLedger() {
   const { data: entries = [], isLoading: entriesLoading } = usePartnershipEntries(id);
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreatePartnershipEntry();
+  const updateMut = useUpdatePartnershipEntry();
   const deleteMut = useDeletePartnershipEntry();
 
   const [entryModal, setEntryModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<DbPartnershipEntry | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
@@ -92,29 +94,46 @@ export default function PartnershipLedger() {
     return { p1, p2, p1Net, p2Net };
   }, [entries, p1Name]);
 
-  const openEntryModal = () => {
-    setForm({
-      entry_type: "initial_invest", contributor: p1Name, date: format(new Date(), "yyyy-MM-dd"),
-      linked_account_id: "", amount: "", description: "", note: ""
-    });
+  const openEntryModal = (entry?: DbPartnershipEntry) => {
+    if (entry) {
+      setEditingEntry(entry);
+      setForm({
+        entry_type: entry.entry_type, contributor: entry.contributor || p1Name, date: entry.date,
+        linked_account_id: entry.linked_account_id || "", amount: String(entry.amount), description: entry.description || "", note: entry.note || ""
+      });
+    } else {
+      setEditingEntry(null);
+      setForm({
+        entry_type: "initial_invest", contributor: p1Name, date: format(new Date(), "yyyy-MM-dd"),
+        linked_account_id: "", amount: "", description: "", note: ""
+      });
+    }
     setEntryModal(true);
   };
 
   const handleSaveEntry = () => {
     if (!id || !form.amount) return;
-    createMut.mutate({
-      partnershipId: id,
-      entry: {
-        partnership_id: id,
-        entry_type: form.entry_type,
-        contributor: form.contributor,
-        date: form.date,
-        amount: Number(form.amount),
-        description: form.description || null,
-        note: form.note || null,
-        linked_account_id: form.linked_account_id || null,
-      },
-    }, { onSuccess: () => setEntryModal(false) });
+    const payload = {
+      entry_type: form.entry_type,
+      contributor: form.contributor,
+      date: form.date,
+      amount: Number(form.amount),
+      description: form.description || null,
+      note: form.note || null,
+      linked_account_id: form.linked_account_id || null,
+    };
+    if (editingEntry) {
+      updateMut.mutate({
+        entryId: editingEntry.id,
+        partnershipId: id,
+        updates: payload,
+      }, { onSuccess: () => { setEntryModal(false); setEditingEntry(null); } });
+    } else {
+      createMut.mutate({
+        partnershipId: id,
+        entry: { ...payload, partnership_id: id },
+      }, { onSuccess: () => setEntryModal(false) });
+    }
   };
 
   const handleDuplicate = (entry: DbPartnershipEntry) => {
@@ -176,7 +195,7 @@ export default function PartnershipLedger() {
         subtitle={`${p1Name} (${partnership.partner_1_share}%) · ${p2Name} (${partnership.partner_2_share}%)${partnership.note ? " — " + partnership.note : ""}`}
         actions={
           <div className="flex items-center gap-2 no-print">
-            <Button size="sm" className="gap-1" onClick={openEntryModal}><Plus className="h-4 w-4" /> Add Entry</Button>
+            <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -254,7 +273,7 @@ export default function PartnershipLedger() {
       ) : filtered.length === 0 ? (
         <Card className="finance-card-static p-8 text-center">
           <p className="text-muted-foreground text-sm">No entries yet.</p>
-          <Button size="sm" className="mt-3" onClick={openEntryModal}><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
+          <Button size="sm" className="mt-3" onClick={() => openEntryModal()}><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
         </Card>
       ) : (
         <Card className="finance-card-static overflow-hidden">
@@ -293,6 +312,7 @@ export default function PartnershipLedger() {
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setDetailEntry(e)}><Eye className="h-3.5 w-3.5 mr-2" /> View</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEntryModal(e)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(e)}><Copy className="h-3.5 w-3.5 mr-2" /> Duplicate</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
@@ -308,11 +328,11 @@ export default function PartnershipLedger() {
       )}
 
       {/* Add Entry Modal */}
-      <Dialog open={entryModal} onOpenChange={setEntryModal}>
+      <Dialog open={entryModal} onOpenChange={(open) => { setEntryModal(open); if (!open) setEditingEntry(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Entry</DialogTitle>
-            <DialogDescription>Record a transaction for {partnership.partnership_name}</DialogDescription>
+            <DialogTitle>{editingEntry ? "Edit Entry" : "Add Entry"}</DialogTitle>
+            <DialogDescription>{editingEntry ? "Update this entry" : `Record a transaction for ${partnership.partnership_name}`}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
@@ -363,9 +383,9 @@ export default function PartnershipLedger() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setEntryModal(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveEntry} disabled={!form.amount || !form.contributor || !form.date || createMut.isPending}>
-              {createMut.isPending ? "Saving..." : "Save"}
+            <Button variant="outline" size="sm" onClick={() => { setEntryModal(false); setEditingEntry(null); }}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveEntry} disabled={!form.amount || !form.contributor || !form.date || createMut.isPending || updateMut.isPending}>
+              {(createMut.isPending || updateMut.isPending) ? "Saving..." : editingEntry ? "Update Entry" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

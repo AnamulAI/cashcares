@@ -213,6 +213,62 @@ export function useCreatePartnershipEntry() {
   });
 }
 
+export function useUpdatePartnershipEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entryId, partnershipId, updates }: {
+      entryId: string;
+      partnershipId: string;
+      updates: Partial<Omit<DbPartnershipEntry, "id" | "created_at">>;
+    }) => {
+      const { error } = await (supabase as any).from("partnership_entries").update(updates).eq("id", entryId);
+      if (error) throw error;
+
+      // Recalculate totals
+      const { data: allEntries, error: fetchErr } = await (supabase as any)
+        .from("partnership_entries").select("*").eq("partnership_id", partnershipId);
+      if (fetchErr) throw fetchErr;
+
+      const { data: partnership } = await (supabase as any)
+        .from("partnerships").select("partner_1_name, partner_2_name").eq("id", partnershipId).single();
+
+      const p1Name = partnership?.partner_1_name || "";
+      let p1Contribution = 0, p2Contribution = 0, totalWithdrawn = 0, totalProfitDist = 0, totalReinvested = 0;
+
+      for (const e of (allEntries || [])) {
+        const amt = Number(e.amount);
+        const isP1 = e.contributor === p1Name;
+        if (e.entry_type === "initial_invest" || e.entry_type === "new_invest") {
+          if (isP1) p1Contribution += amt; else p2Contribution += amt;
+        } else if (e.entry_type === "withdraw") {
+          totalWithdrawn += amt;
+        } else if (e.entry_type === "profit_distribution") {
+          totalProfitDist += amt;
+        } else if (e.entry_type === "reinvest") {
+          totalReinvested += amt;
+        }
+      }
+
+      const totalCapital = p1Contribution + p2Contribution + totalReinvested - totalWithdrawn;
+
+      await (supabase as any).from("partnerships").update({
+        your_contribution: p1Contribution,
+        partner_contribution: p2Contribution,
+        total_capital: totalCapital,
+        total_withdrawn: totalWithdrawn,
+        total_profit_distributed: totalProfitDist,
+        total_reinvested: totalReinvested,
+      }).eq("id", partnershipId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partnerships"] });
+      qc.invalidateQueries({ queryKey: ["partnership_entries"] });
+      toast.success("Entry updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export function useDeletePartnershipEntry() {
   const qc = useQueryClient();
   return useMutation({
