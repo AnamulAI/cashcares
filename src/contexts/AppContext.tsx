@@ -122,14 +122,6 @@ function loadNotifications(): AppNotification[] {
 // --- Premium / Plan ---
 export type PlanType = "free" | "monthly" | "yearly" | "lifetime";
 
-function loadPlan(): PlanType {
-  try {
-    const saved = localStorage.getItem("cc_plan") as PlanType | null;
-    if (saved && ["free", "monthly", "yearly", "lifetime"].includes(saved)) return saved;
-  } catch {}
-  return "free";
-}
-
 export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments", "partnerships"] as const;
 
 // --- Settings ---
