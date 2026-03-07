@@ -19,7 +19,7 @@ interface AddCategoryModalProps {
   editCategory?: DbCategory | null;
 }
 
-const EMOJI_ICONS = ["🏠","💰","🍕","🚗","📚","🎮","💊","🛍️","⚡","✈️","🎁","📊","💼","🎓","❤️","🔧","📱","🏋️"];
+
 
 export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCategoryModalProps) {
   const isEdit = !!editCategory;
@@ -34,7 +34,7 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
   const [isActive, setIsActive] = useState(true);
   const [usableInBudgets, setUsableInBudgets] = useState(false);
   const [iconSearch, setIconSearch] = useState("");
-  const [iconTab, setIconTab] = useState<"lucide" | "emoji">("lucide");
+  const [iconTab] = useState<"lucide">("lucide");
   const [customColor, setCustomColor] = useState("");
 
   useEffect(() => {
@@ -117,8 +117,6 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
               <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${selectedColor}18` }}>
                 {PreviewIcon ? (
                   <PreviewIcon className="h-5 w-5" style={{ color: selectedColor }} />
-                ) : selectedIcon ? (
-                  <span className="text-lg leading-none">{selectedIcon}</span>
                 ) : (
                   <div className="h-4 w-4 rounded-full" style={{ backgroundColor: selectedColor }} />
                 )}
@@ -155,62 +153,40 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
             {/* Icon Picker */}
             <FieldGroup label="Icon">
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex rounded-lg border bg-muted/40 p-0.5 gap-0.5">
-                    <button
-                      onClick={() => setIconTab("lucide")}
-                      className={cn("text-[11px] px-2.5 py-1 rounded-md transition-all font-medium", iconTab === "lucide" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground")}
-                    >Icons</button>
-                    <button
-                      onClick={() => setIconTab("emoji")}
-                      className={cn("text-[11px] px-2.5 py-1 rounded-md transition-all font-medium", iconTab === "emoji" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground")}
-                    >Emoji</button>
-                  </div>
-                  {iconTab === "lucide" && (
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                      <Input placeholder="Search icons..." className="h-7 pl-7 text-xs" value={iconSearch} onChange={e => setIconSearch(e.target.value)} />
-                    </div>
-                  )}
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  <Input placeholder="Search icons..." className="h-7 pl-7 text-xs" value={iconSearch} onChange={e => setIconSearch(e.target.value)} />
                 </div>
 
-                {iconTab === "lucide" ? (
-                  <div className="border rounded-lg p-2 max-h-[180px] overflow-y-auto space-y-2">
-                    {Object.entries(iconGroups).map(([groupName, icons]) => (
-                      <div key={groupName}>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 px-0.5">{groupName}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {icons.map(item => {
-                            const Icon = item.icon;
-                            const isActive = selectedIcon === item.key;
-                            return (
-                              <button
-                                key={item.key}
-                                title={item.label}
-                                onClick={() => setSelectedIcon(item.key)}
-                                className={cn(
-                                  "h-8 w-8 rounded-lg border flex items-center justify-center transition-all hover:bg-accent",
-                                  isActive && "ring-2 ring-primary border-primary bg-primary/5"
-                                )}
-                              >
-                                <Icon className="h-4 w-4" style={isActive ? { color: selectedColor } : undefined} />
-                              </button>
-                            );
-                          })}
-                        </div>
+                <div className="border rounded-lg p-2 max-h-[180px] overflow-y-auto space-y-2">
+                  {Object.entries(iconGroups).map(([groupName, icons]) => (
+                    <div key={groupName}>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 px-0.5">{groupName}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {icons.map(item => {
+                          const Icon = item.icon;
+                          const isActive = selectedIcon === item.key;
+                          return (
+                            <button
+                              key={item.key}
+                              title={item.label}
+                              onClick={() => setSelectedIcon(item.key)}
+                              className={cn(
+                                "h-8 w-8 rounded-lg border flex items-center justify-center transition-all hover:bg-accent",
+                                isActive && "ring-2 ring-primary border-primary bg-primary/5"
+                              )}
+                            >
+                              <Icon className="h-4 w-4" style={isActive ? { color: selectedColor } : undefined} />
+                            </button>
+                          );
+                        })}
                       </div>
-                    ))}
-                    {filteredIcons.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-4">No icons found</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {EMOJI_ICONS.map(icon => (
-                      <button key={icon} onClick={() => setSelectedIcon(icon)} className={cn("h-9 w-9 rounded-lg border text-base hover:bg-accent transition-all flex items-center justify-center", selectedIcon === icon && "ring-2 ring-primary border-primary bg-primary/5")}>{icon}</button>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                  {filteredIcons.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">No icons found</p>
+                  )}
+                </div>
               </div>
             </FieldGroup>
 

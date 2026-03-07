@@ -45,9 +45,10 @@ export function CategoryList({ categories, onEdit, selected, onToggleSelect }: C
     if (LucideIcon) {
       return <LucideIcon className="h-5 w-5" style={{ color: cat.color }} />;
     }
-    // Emoji fallback
+    // Fallback: if iconKey exists but isn't a known Lucide key (e.g. legacy emoji), show a default icon
     if (iconKey) {
-      return <span className="text-lg leading-none">{iconKey}</span>;
+      const FallbackIcon = CATEGORY_ICONS[0].icon; // Wallet
+      return <FallbackIcon className="h-5 w-5" style={{ color: cat.color }} />;
     }
     // Color dot fallback
     return <div className="h-4 w-4 rounded-full" style={{ backgroundColor: cat.color }} />;
