@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2 } from "lucide-react";
+import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2, Wallet } from "lucide-react";
+import { CATEGORY_ICONS } from "@/components/categories/category-icons";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
