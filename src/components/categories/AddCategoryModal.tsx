@@ -97,7 +97,7 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -110,7 +110,7 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6 min-h-0">
+        <div>
           <div className="space-y-4 mt-1 pb-4">
             {/* Live Preview Card */}
             <div className="rounded-xl border bg-accent/30 p-4 flex items-center gap-4">
