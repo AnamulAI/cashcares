@@ -328,11 +328,11 @@ export default function PartnershipLedger() {
       )}
 
       {/* Add Entry Modal */}
-      <Dialog open={entryModal} onOpenChange={setEntryModal}>
+      <Dialog open={entryModal} onOpenChange={(open) => { setEntryModal(open); if (!open) setEditingEntry(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Entry</DialogTitle>
-            <DialogDescription>Record a transaction for {partnership.partnership_name}</DialogDescription>
+            <DialogTitle>{editingEntry ? "Edit Entry" : "Add Entry"}</DialogTitle>
+            <DialogDescription>{editingEntry ? "Update this entry" : `Record a transaction for ${partnership.partnership_name}`}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="grid grid-cols-2 gap-3">
