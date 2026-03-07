@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,14 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeftRight, ArrowRight } from "lucide-react";
 import { useAccounts } from "@/hooks/use-accounts";
-import { useCreateTransaction } from "@/hooks/use-transactions";
+import { useCreateTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
 import { toast } from "sonner";
 
-interface TransferModalProps { open: boolean; onOpenChange: (open: boolean) => void; }
+interface TransferModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editTransaction?: any;
+}
 
-export function TransferModal({ open, onOpenChange }: TransferModalProps) {
+export function TransferModal({ open, onOpenChange, editTransaction }: TransferModalProps) {
   const { data: accounts = [] } = useAccounts();
   const createTxn = useCreateTransaction();
+  const updateTxn = useUpdateTransaction();
+  const isEdit = !!editTransaction;
 
   const [fromAccountId, setFromAccountId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
@@ -24,14 +30,28 @@ export function TransferModal({ open, onOpenChange }: TransferModalProps) {
   const [fee, setFee] = useState("");
   const [note, setNote] = useState("");
 
+  useEffect(() => {
+    if (editTransaction && open) {
+      setFromAccountId(editTransaction.account_id || "");
+      setToAccountId(editTransaction.to_account_id || "");
+      setAmount(String(editTransaction.amount || ""));
+      setDate(editTransaction.date || new Date().toISOString().split("T")[0]);
+      setFee(editTransaction.transfer_fee ? String(editTransaction.transfer_fee) : "");
+      setNote(editTransaction.note || "");
+    } else if (!open) {
+      setFromAccountId(""); setToAccountId(""); setAmount(""); setFee(""); setNote("");
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [editTransaction, open]);
+
   const handleSubmit = async () => {
     if (!fromAccountId || !toAccountId || !amount) return;
     if (fromAccountId === toAccountId) {
       toast.error("Cannot transfer to the same account");
       return;
     }
-    await createTxn.mutateAsync({
-      type: "transfer",
+    const payload = {
+      type: "transfer" as const,
       category_id: null,
       account_id: fromAccountId,
       to_account_id: toAccountId,
@@ -41,10 +61,29 @@ export function TransferModal({ open, onOpenChange }: TransferModalProps) {
       tags: null,
       status: "completed",
       transfer_fee: Number(fee) || 0,
-    });
+    };
+
+    if (isEdit) {
+      await updateTxn.mutateAsync({
+        id: editTransaction.id,
+        oldTxn: {
+          type: editTransaction.type,
+          amount: Number(editTransaction.amount),
+          account_id: editTransaction.account_id,
+          to_account_id: editTransaction.to_account_id,
+          transfer_fee: editTransaction.transfer_fee ? Number(editTransaction.transfer_fee) : null,
+          category_id: editTransaction.category_id,
+        },
+        newTxn: payload,
+      });
+    } else {
+      await createTxn.mutateAsync(payload);
+    }
     setFromAccountId(""); setToAccountId(""); setAmount(""); setFee(""); setNote("");
     onOpenChange(false);
   };
+
+  const isPending = isEdit ? updateTxn.isPending : createTxn.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,7 +94,7 @@ export function TransferModal({ open, onOpenChange }: TransferModalProps) {
               <ArrowLeftRight className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <DialogTitle className="font-display text-base">Transfer Money</DialogTitle>
+              <DialogTitle className="font-display text-base">{isEdit ? "Edit Transfer" : "Transfer Money"}</DialogTitle>
               <DialogDescription className="text-xs">Move funds between your accounts</DialogDescription>
             </div>
           </div>
@@ -83,8 +122,8 @@ export function TransferModal({ open, onOpenChange }: TransferModalProps) {
           </div>
           <FieldGroup label="Transfer Fee"><Input type="number" placeholder="0.00" className="h-9" value={fee} onChange={e => setFee(e.target.value)} /></FieldGroup>
           <FieldGroup label="Note"><Textarea placeholder="Add a note..." rows={2} className="resize-none" value={note} onChange={e => setNote(e.target.value)} /></FieldGroup>
-          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={createTxn.isPending || !fromAccountId || !toAccountId || !amount}>
-            {createTxn.isPending ? "Transferring..." : "Transfer Money"}
+          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !fromAccountId || !toAccountId || !amount}>
+            {isPending ? "Saving..." : isEdit ? "Save Changes" : "Transfer Money"}
           </Button>
         </div>
       </DialogContent>

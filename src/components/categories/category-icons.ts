@@ -11,6 +11,12 @@ import {
   ClipboardCheck, FileCheck, ShieldCheck, CircleCheck,
   Repeat, ReceiptText, Handshake, MoveRight, MoveLeft,
   ArrowUpFromLine, ArrowDownToLine, BadgeCheck,
+  // Mobile & Telecom
+  Phone, PhoneCall, PhoneIncoming, PhoneOutgoing, PhoneForwarded,
+  Signal, Radio, Router, Globe, Antenna,
+  TabletSmartphone, Monitor,
+  // More hand / debt variations
+  HandMetal, Hand, HeartHandshake, Grab, Fingerprint,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,6 +65,27 @@ export const CATEGORY_ICONS: CategoryIconOption[] = [
   { key: "refresh-ccw", icon: RefreshCcw, label: "Refund", group: "Debt" },
   { key: "arrow-up-from-line", icon: ArrowUpFromLine, label: "Outgoing", group: "Debt" },
   { key: "arrow-down-to-line", icon: ArrowDownToLine, label: "Incoming", group: "Debt" },
+  // Hand variations for debt
+  { key: "heart-handshake", icon: HeartHandshake, label: "Promise", group: "Debt" },
+  { key: "hand", icon: Hand, label: "Hand Stop", group: "Debt" },
+  { key: "hand-metal", icon: HandMetal, label: "Hand Give", group: "Debt" },
+  { key: "grab", icon: Grab, label: "Hand Grab", group: "Debt" },
+  { key: "fingerprint", icon: Fingerprint, label: "Verified", group: "Debt" },
+
+  // Mobile & Telecom
+  { key: "smartphone", icon: Smartphone, label: "Mobile", group: "Telecom" },
+  { key: "phone", icon: Phone, label: "Phone", group: "Telecom" },
+  { key: "phone-call", icon: PhoneCall, label: "Call", group: "Telecom" },
+  { key: "phone-incoming", icon: PhoneIncoming, label: "Incoming Call", group: "Telecom" },
+  { key: "phone-outgoing", icon: PhoneOutgoing, label: "Outgoing Call", group: "Telecom" },
+  { key: "phone-forwarded", icon: PhoneForwarded, label: "Call Package", group: "Telecom" },
+  { key: "signal", icon: Signal, label: "Signal", group: "Telecom" },
+  { key: "radio", icon: Radio, label: "Network", group: "Telecom" },
+  { key: "router", icon: Router, label: "Router", group: "Telecom" },
+  { key: "globe", icon: Globe, label: "Internet", group: "Telecom" },
+  { key: "antenna", icon: Antenna, label: "Telecom", group: "Telecom" },
+  { key: "tablet-smartphone", icon: TabletSmartphone, label: "Recharge", group: "Telecom" },
+  { key: "monitor", icon: Monitor, label: "Data Pack", group: "Telecom" },
 
   // Living
   { key: "home", icon: Home, label: "Home", group: "Living" },
@@ -89,7 +116,6 @@ export const CATEGORY_ICONS: CategoryIconOption[] = [
   // Work & Business
   { key: "briefcase", icon: Briefcase, label: "Business", group: "Work" },
   { key: "building2", icon: Building2, label: "Office", group: "Work" },
-  { key: "smartphone", icon: Smartphone, label: "Tech", group: "Work" },
 
   // Lifestyle
   { key: "gift", icon: Gift, label: "Gift", group: "Lifestyle" },

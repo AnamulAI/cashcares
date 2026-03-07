@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, MoreHorizontal, Eye, Copy, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, MoreHorizontal, Eye, Copy, Trash2, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -27,9 +27,10 @@ const typeColors: Record<string, string> = {
 interface TransactionTableProps {
   transactions: any[];
   onViewDetails?: (txn: any) => void;
+  onEdit?: (txn: any) => void;
 }
 
-export function TransactionTable({ transactions, onViewDetails }: TransactionTableProps) {
+export function TransactionTable({ transactions, onViewDetails, onEdit }: TransactionTableProps) {
   const deleteTxn = useDeleteTransaction();
   const createTxn = useCreateTransaction();
   const { currency, settings } = useAppContext();
@@ -168,6 +169,7 @@ export function TransactionTable({ transactions, onViewDetails }: TransactionTab
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem onClick={() => onViewDetails?.(txn)} className="gap-2 text-[13px]"><Eye className="h-3.5 w-3.5" /> {t("action.view")}</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit?.(txn)} className="gap-2 text-[13px]"><Pencil className="h-3.5 w-3.5" /> {t("action.edit")}</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(txn)} className="gap-2 text-[13px]"><Copy className="h-3.5 w-3.5" /> {t("action.duplicate")}</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <AlertDialogTrigger asChild>
