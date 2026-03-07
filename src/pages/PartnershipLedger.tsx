@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, Users, DollarSign, TrendingDown, PiggyBank, RotateCcw, Eye, Landmark, ArrowDownCircle } from "lucide-react";
+import { ArrowLeft, Plus, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, Users, DollarSign, TrendingDown, PiggyBank, RotateCcw, Eye, Landmark, Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -16,7 +16,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { usePartnership, usePartnershipEntries, useCreatePartnershipEntry, useUpdatePartnershipEntry, useDeletePartnershipEntry, DbPartnershipEntry } from "@/hooks/use-partnerships";
-import { useAccounts } from "@/hooks/use-accounts";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
@@ -28,14 +27,27 @@ const ENTRY_TYPES = [
   { value: "withdraw", label: "Withdraw", color: "bg-negative/10 text-negative" },
   { value: "profit_distribution", label: "Profit Distribution", color: "bg-warning/10 text-warning" },
   { value: "reinvest", label: "Reinvest", color: "bg-positive/10 text-positive" },
+  { value: "working_contribution", label: "Working Contribution", color: "bg-feature-partnerships/10 text-feature-partnerships" },
 ];
 
 const entryTypeLabel = (t: string) => ENTRY_TYPES.find(e => e.value === t)?.label || t;
 const entryTypeColor = (t: string) => ENTRY_TYPES.find(e => e.value === t)?.color || "";
 
+const ROLE_LABELS: Record<string, string> = {
+  capital_partner: "Capital Partner",
+  working_partner: "Working Partner",
+  mixed_partner: "Mixed Partner",
+};
+const NATURE_LABELS: Record<string, string> = {
+  cash: "Cash",
+  skill_work: "Skill/Work",
+  mixed: "Mixed",
+};
+
 function getDirection(entryType: string): string {
   if (entryType === "initial_invest" || entryType === "new_invest" || entryType === "reinvest") return "IN";
   if (entryType === "withdraw" || entryType === "profit_distribution") return "OUT";
+  if (entryType === "working_contribution") return "WORK";
   return "—";
 }
 
@@ -46,7 +58,6 @@ export default function PartnershipLedger() {
   const { t, lang } = useTranslation();
   const { data: partnership, isLoading: partnershipLoading } = usePartnership(id);
   const { data: entries = [], isLoading: entriesLoading } = usePartnershipEntries(id);
-  const { data: accounts = [] } = useAccounts();
   const createMut = useCreatePartnershipEntry();
   const updateMut = useUpdatePartnershipEntry();
   const deleteMut = useDeletePartnershipEntry();
@@ -60,8 +71,10 @@ export default function PartnershipLedger() {
 
   const [form, setForm] = useState({
     entry_type: "initial_invest", contributor: "", date: format(new Date(), "yyyy-MM-dd"),
-    linked_account_id: "", amount: "", description: "", note: ""
+    amount: "", estimated_value: "", description: "", note: ""
   });
+
+  const isWorkingContribution = form.entry_type === "working_contribution";
 
   const fmt = (n: number) => formatAmount(n, currency, lang);
   const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
@@ -77,8 +90,8 @@ export default function PartnershipLedger() {
 
   // Partner-wise breakdown
   const breakdown = useMemo(() => {
-    const p1 = { initialInvest: 0, newInvest: 0, withdraw: 0, profitReceived: 0, reinvest: 0 };
-    const p2 = { initialInvest: 0, newInvest: 0, withdraw: 0, profitReceived: 0, reinvest: 0 };
+    const p1 = { initialInvest: 0, newInvest: 0, withdraw: 0, profitReceived: 0, reinvest: 0, workingContribCount: 0, workingContribValue: 0 };
+    const p2 = { initialInvest: 0, newInvest: 0, withdraw: 0, profitReceived: 0, reinvest: 0, workingContribCount: 0, workingContribValue: 0 };
     entries.forEach(e => {
       const isP1 = e.contributor === p1Name;
       const target = isP1 ? p1 : p2;
@@ -88,6 +101,10 @@ export default function PartnershipLedger() {
       else if (e.entry_type === "withdraw") target.withdraw += amt;
       else if (e.entry_type === "profit_distribution") target.profitReceived += amt;
       else if (e.entry_type === "reinvest") target.reinvest += amt;
+      else if (e.entry_type === "working_contribution") {
+        target.workingContribCount += 1;
+        target.workingContribValue += Number(e.estimated_value || 0);
+      }
     });
     const p1Net = p1.initialInvest + p1.newInvest + p1.reinvest - p1.withdraw - p1.profitReceived;
     const p2Net = p2.initialInvest + p2.newInvest + p2.reinvest - p2.withdraw - p2.profitReceived;
@@ -99,28 +116,33 @@ export default function PartnershipLedger() {
       setEditingEntry(entry);
       setForm({
         entry_type: entry.entry_type, contributor: entry.contributor || p1Name, date: entry.date,
-        linked_account_id: entry.linked_account_id || "", amount: String(entry.amount), description: entry.description || "", note: entry.note || ""
+        amount: String(entry.amount), estimated_value: entry.estimated_value ? String(entry.estimated_value) : "",
+        description: entry.description || "", note: entry.note || ""
       });
     } else {
       setEditingEntry(null);
       setForm({
         entry_type: "initial_invest", contributor: p1Name, date: format(new Date(), "yyyy-MM-dd"),
-        linked_account_id: "", amount: "", description: "", note: ""
+        amount: "", estimated_value: "", description: "", note: ""
       });
     }
     setEntryModal(true);
   };
 
   const handleSaveEntry = () => {
-    if (!id || !form.amount) return;
-    const payload = {
+    if (!id) return;
+    // For working contribution, amount is not required (estimated_value is optional)
+    if (!isWorkingContribution && !form.amount) return;
+
+    const payload: any = {
       entry_type: form.entry_type,
       contributor: form.contributor,
       date: form.date,
-      amount: Number(form.amount),
+      amount: isWorkingContribution ? 0 : Number(form.amount),
+      estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
       description: form.description || null,
       note: form.note || null,
-      linked_account_id: form.linked_account_id || null,
+      linked_account_id: null,
     };
     if (editingEntry) {
       updateMut.mutate({
@@ -146,18 +168,21 @@ export default function PartnershipLedger() {
         contributor: entry.contributor,
         date: format(new Date(), "yyyy-MM-dd"),
         amount: Number(entry.amount),
+        estimated_value: entry.estimated_value,
         description: entry.description,
         note: entry.note,
-        linked_account_id: entry.linked_account_id,
+        linked_account_id: null,
       },
     });
   };
 
   const handlePrint = () => window.print();
   const handleCSV = () => {
-    const headers = ["Date", "Entry Type", "Partner", "Account", "Description", "Amount", "Direction"];
+    const headers = ["Date", "Entry Type", "Partner", "Description", "Amount", "Estimated Value", "Direction"];
     const rows = entries.map(e => [
-      e.date, entryTypeLabel(e.entry_type), e.contributor || "", "", e.description || "", e.amount, getDirection(e.entry_type)
+      e.date, entryTypeLabel(e.entry_type), e.contributor || "", e.description || "",
+      e.entry_type === "working_contribution" ? "" : e.amount,
+      e.estimated_value || "", getDirection(e.entry_type)
     ]);
     const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -192,7 +217,7 @@ export default function PartnershipLedger() {
 
       <PageHeader
         title={partnership.partnership_name}
-        subtitle={`${p1Name} (${partnership.partner_1_share}%) · ${p2Name} (${partnership.partner_2_share}%)${partnership.note ? " — " + partnership.note : ""}`}
+        subtitle={`${p1Name} (${ROLE_LABELS[partnership.partner_1_role] || partnership.partner_1_role}, ${partnership.partner_1_share}%) · ${p2Name} (${ROLE_LABELS[partnership.partner_2_role] || partnership.partner_2_role}, ${partnership.partner_2_share}%)${partnership.note ? " — " + partnership.note : ""}`}
         actions={
           <div className="flex items-center gap-2 no-print">
             <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
@@ -220,7 +245,10 @@ export default function PartnershipLedger() {
 
       {/* Partner Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {[{ name: p1Name, data: breakdown.p1, net: breakdown.p1Net, share: partnership.partner_1_share }, { name: p2Name, data: breakdown.p2, net: breakdown.p2Net, share: partnership.partner_2_share }].map(partner => (
+        {[
+          { name: p1Name, data: breakdown.p1, net: breakdown.p1Net, share: partnership.partner_1_share, role: partnership.partner_1_role, nature: partnership.partner_1_contribution_nature },
+          { name: p2Name, data: breakdown.p2, net: breakdown.p2Net, share: partnership.partner_2_share, role: partnership.partner_2_role, nature: partnership.partner_2_contribution_nature }
+        ].map(partner => (
           <Card key={partner.name} className="finance-card-static p-4">
             <div className="flex items-center gap-2 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-feature-partnerships/10">
@@ -228,7 +256,9 @@ export default function PartnershipLedger() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold">{partner.name}</h4>
-                <p className="text-[11px] text-muted-foreground">{partner.share}% share</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {partner.share}% · {ROLE_LABELS[partner.role] || partner.role} · {NATURE_LABELS[partner.nature] || partner.nature}
+                </p>
               </div>
             </div>
             <div className="space-y-1.5 text-xs">
@@ -237,6 +267,15 @@ export default function PartnershipLedger() {
               <div className="flex justify-between"><span className="text-muted-foreground">Withdraw</span><span className="text-negative">{fmt(partner.data.withdraw)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Profit Received</span><span className="text-warning">{fmt(partner.data.profitReceived)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Reinvest</span><span className="text-positive">{fmt(partner.data.reinvest)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Working Contribution</span>
+                <span className="text-feature-partnerships">
+                  {partner.data.workingContribCount > 0
+                    ? partner.data.workingContribValue > 0
+                      ? `${partner.data.workingContribCount} entries · ${fmt(partner.data.workingContribValue)}`
+                      : `${partner.data.workingContribCount} entries`
+                    : "—"}
+                </span>
+              </div>
               <div className="flex justify-between border-t pt-1.5 font-semibold"><span>Net Position</span><span className={partner.net >= 0 ? "text-positive" : "text-negative"}>{fmt(partner.net)}</span></div>
             </div>
           </Card>
@@ -246,7 +285,7 @@ export default function PartnershipLedger() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 no-print">
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             {ENTRY_TYPES.map(et => <SelectItem key={et.value} value={et.value}>{et.label}</SelectItem>)}
@@ -283,7 +322,6 @@ export default function PartnershipLedger() {
                 <TableHead className="text-xs">Date</TableHead>
                 <TableHead className="text-xs">Entry Type</TableHead>
                 <TableHead className="text-xs">Partner</TableHead>
-                <TableHead className="text-xs">Account</TableHead>
                 <TableHead className="text-xs">Description</TableHead>
                 <TableHead className="text-xs text-right">Amount</TableHead>
                 <TableHead className="text-xs">Direction</TableHead>
@@ -293,17 +331,21 @@ export default function PartnershipLedger() {
             <TableBody>
               {filtered.map(e => {
                 const dir = getDirection(e.entry_type);
-                const acct = accounts.find(a => a.id === e.linked_account_id);
+                const isWork = e.entry_type === "working_contribution";
                 return (
                   <TableRow key={e.id}>
                     <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
                     <TableCell><Badge variant="secondary" className={`text-[10px] ${entryTypeColor(e.entry_type)}`}>{entryTypeLabel(e.entry_type)}</Badge></TableCell>
                     <TableCell className="text-xs">{e.contributor || "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{acct?.name || "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{e.description || "—"}</TableCell>
-                    <TableCell className="text-xs text-right font-semibold">{fmt(Number(e.amount))}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{e.description || "—"}</TableCell>
+                    <TableCell className="text-xs text-right font-semibold">
+                      {isWork
+                        ? (e.estimated_value ? <span className="text-muted-foreground">~{fmt(Number(e.estimated_value))}</span> : <span className="text-muted-foreground">—</span>)
+                        : fmt(Number(e.amount))
+                      }
+                    </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={`text-[10px] ${dir === "IN" ? "bg-positive/10 text-positive" : dir === "OUT" ? "bg-negative/10 text-negative" : ""}`}>
+                      <Badge variant="secondary" className={`text-[10px] ${dir === "IN" ? "bg-positive/10 text-positive" : dir === "OUT" ? "bg-negative/10 text-negative" : dir === "WORK" ? "bg-feature-partnerships/10 text-feature-partnerships" : ""}`}>
                         {dir}
                       </Badge>
                     </TableCell>
@@ -327,7 +369,7 @@ export default function PartnershipLedger() {
         </Card>
       )}
 
-      {/* Add Entry Modal */}
+      {/* Add/Edit Entry Modal */}
       <Dialog open={entryModal} onOpenChange={(open) => { setEntryModal(open); if (!open) setEditingEntry(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -356,26 +398,25 @@ export default function PartnershipLedger() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Date *</Label>
-                <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="mt-1 h-9 text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs">Account</Label>
-                <Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}>
-                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
             <div>
-              <Label className="text-xs">Amount *</Label>
-              <Input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="mt-1 h-9 text-sm" />
+              <Label className="text-xs">Date *</Label>
+              <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="mt-1 h-9 text-sm" />
             </div>
+            {!isWorkingContribution && (
+              <div>
+                <Label className="text-xs">Amount *</Label>
+                <Input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="mt-1 h-9 text-sm" />
+              </div>
+            )}
+            {isWorkingContribution && (
+              <div>
+                <Label className="text-xs">Estimated Value (Optional)</Label>
+                <Input type="number" min="0" value={form.estimated_value} onChange={e => setForm(f => ({ ...f, estimated_value: e.target.value }))} className="mt-1 h-9 text-sm" placeholder="Leave empty if no monetary value" />
+              </div>
+            )}
             <div>
               <Label className="text-xs">Description</Label>
-              <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 h-9 text-sm" />
+              <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 h-9 text-sm" placeholder={isWorkingContribution ? "e.g. Website design, Facebook ads setup" : ""} />
             </div>
             <div>
               <Label className="text-xs">Note</Label>
@@ -384,7 +425,9 @@ export default function PartnershipLedger() {
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => { setEntryModal(false); setEditingEntry(null); }}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveEntry} disabled={!form.amount || !form.contributor || !form.date || createMut.isPending || updateMut.isPending}>
+            <Button size="sm" onClick={handleSaveEntry} disabled={
+              (!isWorkingContribution && !form.amount) || !form.contributor || !form.date || createMut.isPending || updateMut.isPending
+            }>
               {(createMut.isPending || updateMut.isPending) ? "Saving..." : editingEntry ? "Update Entry" : "Save"}
             </Button>
           </DialogFooter>
@@ -400,7 +443,12 @@ export default function PartnershipLedger() {
               <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span>{fmtDate(detailEntry.date)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Type</span><Badge variant="secondary" className={`text-[10px] ${entryTypeColor(detailEntry.entry_type)}`}>{entryTypeLabel(detailEntry.entry_type)}</Badge></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Partner</span><span>{detailEntry.contributor || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><span className="font-semibold">{fmt(Number(detailEntry.amount))}</span></div>
+              {detailEntry.entry_type !== "working_contribution" && (
+                <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><span className="font-semibold">{fmt(Number(detailEntry.amount))}</span></div>
+              )}
+              {detailEntry.entry_type === "working_contribution" && detailEntry.estimated_value && (
+                <div className="flex justify-between"><span className="text-muted-foreground">Estimated Value</span><span className="font-semibold">~{fmt(Number(detailEntry.estimated_value))}</span></div>
+              )}
               <div className="flex justify-between"><span className="text-muted-foreground">Direction</span><span>{getDirection(detailEntry.entry_type)}</span></div>
               {detailEntry.description && <div className="flex justify-between"><span className="text-muted-foreground">Description</span><span>{detailEntry.description}</span></div>}
               {detailEntry.note && <div className="flex justify-between"><span className="text-muted-foreground">Note</span><span>{detailEntry.note}</span></div>}

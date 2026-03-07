@@ -398,6 +398,7 @@ export type Database = {
           date: string
           description: string | null
           entry_type: string
+          estimated_value: number | null
           id: string
           is_demo: boolean
           linked_account_id: string | null
@@ -412,6 +413,7 @@ export type Database = {
           date?: string
           description?: string | null
           entry_type?: string
+          estimated_value?: number | null
           id?: string
           is_demo?: boolean
           linked_account_id?: string | null
@@ -426,6 +428,7 @@ export type Database = {
           date?: string
           description?: string | null
           entry_type?: string
+          estimated_value?: number | null
           id?: string
           is_demo?: boolean
           linked_account_id?: string | null
@@ -456,9 +459,13 @@ export type Database = {
           id: string
           is_demo: boolean
           note: string | null
+          partner_1_contribution_nature: string
           partner_1_name: string | null
+          partner_1_role: string
           partner_1_share: number
+          partner_2_contribution_nature: string
           partner_2_name: string | null
+          partner_2_role: string
           partner_2_share: number
           partner_contribution: number
           partner_name: string
@@ -480,9 +487,13 @@ export type Database = {
           id?: string
           is_demo?: boolean
           note?: string | null
+          partner_1_contribution_nature?: string
           partner_1_name?: string | null
+          partner_1_role?: string
           partner_1_share?: number
+          partner_2_contribution_nature?: string
           partner_2_name?: string | null
+          partner_2_role?: string
           partner_2_share?: number
           partner_contribution?: number
           partner_name: string
@@ -504,9 +515,13 @@ export type Database = {
           id?: string
           is_demo?: boolean
           note?: string | null
+          partner_1_contribution_nature?: string
           partner_1_name?: string | null
+          partner_1_role?: string
           partner_1_share?: number
+          partner_2_contribution_nature?: string
           partner_2_name?: string | null
+          partner_2_role?: string
           partner_2_share?: number
           partner_contribution?: number
           partner_name?: string

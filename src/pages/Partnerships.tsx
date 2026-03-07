@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Users, DollarSign, TrendingDown, PiggyBank, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, Percent, ArrowDownCircle, Landmark } from "lucide-react";
+import { Plus, Users, DollarSign, TrendingDown, PiggyBank, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, Percent, Landmark } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -32,6 +32,21 @@ const statusColors: Record<string, string> = {
   closed: "bg-muted text-muted-foreground",
 };
 
+const ROLE_OPTIONS = [
+  { value: "capital_partner", label: "Capital Partner" },
+  { value: "working_partner", label: "Working Partner" },
+  { value: "mixed_partner", label: "Mixed Partner" },
+];
+
+const NATURE_OPTIONS = [
+  { value: "cash", label: "Cash" },
+  { value: "skill_work", label: "Skill/Work" },
+  { value: "mixed", label: "Mixed" },
+];
+
+const roleLabel = (v: string) => ROLE_OPTIONS.find(r => r.value === v)?.label || v;
+const natureLabel = (v: string) => NATURE_OPTIONS.find(n => n.value === v)?.label || v;
+
 export default function Partnerships() {
   const { currency, isPremium, settings } = useAppContext();
   const { t, lang } = useTranslation();
@@ -55,6 +70,8 @@ export default function Partnerships() {
   const [form, setForm] = useState({
     partnership_name: "", partner_1_name: "", partner_2_name: "",
     partner_1_share: "50", partner_2_share: "50",
+    partner_1_role: "capital_partner", partner_2_role: "capital_partner",
+    partner_1_contribution_nature: "cash", partner_2_contribution_nature: "cash",
     start_date: "", note: "", status: "active"
   });
 
@@ -98,11 +115,21 @@ export default function Partnerships() {
         partner_2_name: item.partner_2_name || item.partner_name || "",
         partner_1_share: String(item.partner_1_share || 50),
         partner_2_share: String(item.partner_2_share || 50),
+        partner_1_role: item.partner_1_role || "capital_partner",
+        partner_2_role: item.partner_2_role || "capital_partner",
+        partner_1_contribution_nature: item.partner_1_contribution_nature || "cash",
+        partner_2_contribution_nature: item.partner_2_contribution_nature || "cash",
         start_date: item.start_date || "", note: item.note || "", status: item.status
       });
     } else {
       setEditing(null);
-      setForm({ partnership_name: "", partner_1_name: "", partner_2_name: "", partner_1_share: "50", partner_2_share: "50", start_date: "", note: "", status: "active" });
+      setForm({
+        partnership_name: "", partner_1_name: "", partner_2_name: "",
+        partner_1_share: "50", partner_2_share: "50",
+        partner_1_role: "capital_partner", partner_2_role: "capital_partner",
+        partner_1_contribution_nature: "cash", partner_2_contribution_nature: "cash",
+        start_date: "", note: "", status: "active"
+      });
     }
     setModal(true);
   };
@@ -111,11 +138,15 @@ export default function Partnerships() {
     if (shareError) { toast.error(shareError); return; }
     const payload: PartnershipInsert = {
       partnership_name: form.partnership_name,
-      partner_name: form.partner_2_name, // backward compat
+      partner_name: form.partner_2_name,
       partner_1_name: form.partner_1_name,
       partner_2_name: form.partner_2_name,
       partner_1_share: Number(form.partner_1_share),
       partner_2_share: Number(form.partner_2_share),
+      partner_1_role: form.partner_1_role,
+      partner_2_role: form.partner_2_role,
+      partner_1_contribution_nature: form.partner_1_contribution_nature,
+      partner_2_contribution_nature: form.partner_2_contribution_nature,
       start_date: form.start_date || null,
       note: form.note || null,
       status: form.status,
@@ -235,7 +266,9 @@ export default function Partnerships() {
                       <h3 className="text-sm font-semibold truncate">{p.partnership_name}</h3>
                       <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[p.status] || ""}`}>{p.status}</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{p1} ({p.partner_1_share}%) · {p2} ({p.partner_2_share}%)</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {p1} <span className="text-muted-foreground/60">({roleLabel(p.partner_1_role)}, {p.partner_1_share}%)</span> · {p2} <span className="text-muted-foreground/60">({roleLabel(p.partner_2_role)}, {p.partner_2_share}%)</span>
+                    </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">Created {fmtDate(p.created_at)}</p>
                   </div>
                   <div className="text-right shrink-0 hidden sm:block">
@@ -263,10 +296,10 @@ export default function Partnerships() {
 
       {/* Create/Edit Partnership Modal */}
       <Dialog open={modal} onOpenChange={setModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Partnership" : "Add Partnership"}</DialogTitle>
-            <DialogDescription>Define a partnership business with 2 partners and custom share ratio.</DialogDescription>
+            <DialogDescription>Define a partnership business with 2 partners, roles, and custom share ratio.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div>
@@ -281,6 +314,38 @@ export default function Partnerships() {
               <div>
                 <Label className="text-xs">Partner Name (Partner 2) *</Label>
                 <Input value={form.partner_2_name} onChange={e => setForm(f => ({ ...f, partner_2_name: e.target.value }))} className="mt-1 h-9 text-sm" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Partner 1 Role</Label>
+                <Select value={form.partner_1_role} onValueChange={v => setForm(f => ({ ...f, partner_1_role: v }))}>
+                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{ROLE_OPTIONS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Partner 2 Role</Label>
+                <Select value={form.partner_2_role} onValueChange={v => setForm(f => ({ ...f, partner_2_role: v }))}>
+                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{ROLE_OPTIONS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Partner 1 Contribution Nature</Label>
+                <Select value={form.partner_1_contribution_nature} onValueChange={v => setForm(f => ({ ...f, partner_1_contribution_nature: v }))}>
+                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{NATURE_OPTIONS.map(n => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Partner 2 Contribution Nature</Label>
+                <Select value={form.partner_2_contribution_nature} onValueChange={v => setForm(f => ({ ...f, partner_2_contribution_nature: v }))}>
+                  <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{NATURE_OPTIONS.map(n => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

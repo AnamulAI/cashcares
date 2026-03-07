@@ -10,6 +10,10 @@ export interface DbPartnership {
   partner_2_name: string | null;
   partner_1_share: number;
   partner_2_share: number;
+  partner_1_role: string;
+  partner_2_role: string;
+  partner_1_contribution_nature: string;
+  partner_2_contribution_nature: string;
   your_contribution: number;
   partner_contribution: number;
   shared_expense_total: number;
@@ -32,6 +36,7 @@ export interface DbPartnershipEntry {
   contributor: string | null;
   description: string | null;
   amount: number;
+  estimated_value: number | null;
   date: string;
   note: string | null;
   linked_account_id: string | null;
@@ -45,9 +50,45 @@ export interface PartnershipInsert {
   partner_2_name: string;
   partner_1_share: number;
   partner_2_share: number;
+  partner_1_role?: string;
+  partner_2_role?: string;
+  partner_1_contribution_nature?: string;
+  partner_2_contribution_nature?: string;
   start_date?: string | null;
   note?: string | null;
   status: string;
+}
+
+// Shared recalculation logic
+function recalcTotals(allEntries: any[], p1Name: string) {
+  let p1Contribution = 0, p2Contribution = 0, totalWithdrawn = 0, totalProfitDist = 0, totalReinvested = 0;
+  for (const e of (allEntries || [])) {
+    const amt = Number(e.amount);
+    const isP1 = e.contributor === p1Name;
+    if (e.entry_type === "initial_invest" || e.entry_type === "new_invest") {
+      if (isP1) p1Contribution += amt; else p2Contribution += amt;
+    } else if (e.entry_type === "withdraw") {
+      totalWithdrawn += amt;
+    } else if (e.entry_type === "profit_distribution") {
+      totalProfitDist += amt;
+    } else if (e.entry_type === "reinvest") {
+      totalReinvested += amt;
+    }
+    // working_contribution does not affect cash totals
+  }
+  const totalCapital = p1Contribution + p2Contribution + totalReinvested - totalWithdrawn;
+  return { your_contribution: p1Contribution, partner_contribution: p2Contribution, total_capital: totalCapital, total_withdrawn: totalWithdrawn, total_profit_distributed: totalProfitDist, total_reinvested: totalReinvested };
+}
+
+async function recalcAndUpdate(partnershipId: string) {
+  const { data: allEntries, error: fetchErr } = await (supabase as any)
+    .from("partnership_entries").select("*").eq("partnership_id", partnershipId);
+  if (fetchErr) throw fetchErr;
+  const { data: partnership } = await (supabase as any)
+    .from("partnerships").select("partner_1_name").eq("id", partnershipId).single();
+  const totals = recalcTotals(allEntries || [], partnership?.partner_1_name || "");
+  const { error: updateErr } = await (supabase as any).from("partnerships").update(totals).eq("id", partnershipId);
+  if (updateErr) throw updateErr;
 }
 
 export function usePartnerships() {
@@ -57,10 +98,7 @@ export function usePartnerships() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
-        .from("partnerships")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .from("partnerships").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as DbPartnership[];
     },
@@ -72,11 +110,7 @@ export function usePartnership(id?: string) {
     queryKey: ["partnerships", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("partnerships")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data, error } = await (supabase as any).from("partnerships").select("*").eq("id", id).single();
       if (error) throw error;
       return data as DbPartnership;
     },
@@ -89,10 +123,7 @@ export function usePartnershipEntries(partnershipId?: string) {
     enabled: !!partnershipId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("partnership_entries")
-        .select("*")
-        .eq("partnership_id", partnershipId)
-        .order("date", { ascending: false });
+        .from("partnership_entries").select("*").eq("partnership_id", partnershipId).order("date", { ascending: false });
       if (error) throw error;
       return (data || []) as DbPartnershipEntry[];
     },
@@ -105,14 +136,8 @@ export function useCreatePartnership() {
     mutationFn: async (p: PartnershipInsert) => {
       const { data, error } = await (supabase as any).from("partnerships").insert({
         ...p,
-        your_contribution: 0,
-        partner_contribution: 0,
-        shared_expense_total: 0,
-        settlement_amount: 0,
-        total_capital: 0,
-        total_withdrawn: 0,
-        total_profit_distributed: 0,
-        total_reinvested: 0,
+        your_contribution: 0, partner_contribution: 0, shared_expense_total: 0, settlement_amount: 0,
+        total_capital: 0, total_withdrawn: 0, total_profit_distributed: 0, total_reinvested: 0,
       }).select().single();
       if (error) throw error;
       return data;
@@ -139,7 +164,6 @@ export function useDeletePartnership() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // Delete entries first
       await (supabase as any).from("partnership_entries").delete().eq("partnership_id", id);
       const { error } = await (supabase as any).from("partnerships").delete().eq("id", id);
       if (error) throw error;
@@ -156,53 +180,9 @@ export function useCreatePartnershipEntry() {
       partnershipId: string;
       entry: Omit<DbPartnershipEntry, "id" | "created_at">;
     }) => {
-      // Insert entry
       const { error: entryErr } = await (supabase as any).from("partnership_entries").insert(entry);
       if (entryErr) throw entryErr;
-
-      // Recalculate partnership totals from entries
-      const { data: allEntries, error: fetchErr } = await (supabase as any)
-        .from("partnership_entries")
-        .select("*")
-        .eq("partnership_id", partnershipId);
-      if (fetchErr) throw fetchErr;
-
-      const { data: partnership } = await (supabase as any)
-        .from("partnerships")
-        .select("partner_1_name, partner_2_name")
-        .eq("id", partnershipId)
-        .single();
-
-      const p1Name = partnership?.partner_1_name || "";
-      const p2Name = partnership?.partner_2_name || "";
-
-      let p1Contribution = 0, p2Contribution = 0, totalWithdrawn = 0, totalProfitDist = 0, totalReinvested = 0;
-
-      for (const e of allEntries) {
-        const amt = Number(e.amount);
-        const isP1 = e.contributor === p1Name;
-        if (e.entry_type === "initial_invest" || e.entry_type === "new_invest") {
-          if (isP1) p1Contribution += amt; else p2Contribution += amt;
-        } else if (e.entry_type === "withdraw") {
-          totalWithdrawn += amt;
-        } else if (e.entry_type === "profit_distribution") {
-          totalProfitDist += amt;
-        } else if (e.entry_type === "reinvest") {
-          totalReinvested += amt;
-        }
-      }
-
-      const totalCapital = p1Contribution + p2Contribution + totalReinvested - totalWithdrawn;
-
-      const { error: updateErr } = await (supabase as any).from("partnerships").update({
-        your_contribution: p1Contribution,
-        partner_contribution: p2Contribution,
-        total_capital: totalCapital,
-        total_withdrawn: totalWithdrawn,
-        total_profit_distributed: totalProfitDist,
-        total_reinvested: totalReinvested,
-      }).eq("id", partnershipId);
-      if (updateErr) throw updateErr;
+      await recalcAndUpdate(partnershipId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partnerships"] });
@@ -223,42 +203,7 @@ export function useUpdatePartnershipEntry() {
     }) => {
       const { error } = await (supabase as any).from("partnership_entries").update(updates).eq("id", entryId);
       if (error) throw error;
-
-      // Recalculate totals
-      const { data: allEntries, error: fetchErr } = await (supabase as any)
-        .from("partnership_entries").select("*").eq("partnership_id", partnershipId);
-      if (fetchErr) throw fetchErr;
-
-      const { data: partnership } = await (supabase as any)
-        .from("partnerships").select("partner_1_name, partner_2_name").eq("id", partnershipId).single();
-
-      const p1Name = partnership?.partner_1_name || "";
-      let p1Contribution = 0, p2Contribution = 0, totalWithdrawn = 0, totalProfitDist = 0, totalReinvested = 0;
-
-      for (const e of (allEntries || [])) {
-        const amt = Number(e.amount);
-        const isP1 = e.contributor === p1Name;
-        if (e.entry_type === "initial_invest" || e.entry_type === "new_invest") {
-          if (isP1) p1Contribution += amt; else p2Contribution += amt;
-        } else if (e.entry_type === "withdraw") {
-          totalWithdrawn += amt;
-        } else if (e.entry_type === "profit_distribution") {
-          totalProfitDist += amt;
-        } else if (e.entry_type === "reinvest") {
-          totalReinvested += amt;
-        }
-      }
-
-      const totalCapital = p1Contribution + p2Contribution + totalReinvested - totalWithdrawn;
-
-      await (supabase as any).from("partnerships").update({
-        your_contribution: p1Contribution,
-        partner_contribution: p2Contribution,
-        total_capital: totalCapital,
-        total_withdrawn: totalWithdrawn,
-        total_profit_distributed: totalProfitDist,
-        total_reinvested: totalReinvested,
-      }).eq("id", partnershipId);
+      await recalcAndUpdate(partnershipId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partnerships"] });
@@ -275,46 +220,7 @@ export function useDeletePartnershipEntry() {
     mutationFn: async ({ entryId, partnershipId }: { entryId: string; partnershipId: string }) => {
       const { error: delErr } = await (supabase as any).from("partnership_entries").delete().eq("id", entryId);
       if (delErr) throw delErr;
-
-      // Recalculate
-      const { data: allEntries } = await (supabase as any)
-        .from("partnership_entries")
-        .select("*")
-        .eq("partnership_id", partnershipId);
-
-      const { data: partnership } = await (supabase as any)
-        .from("partnerships")
-        .select("partner_1_name, partner_2_name")
-        .eq("id", partnershipId)
-        .single();
-
-      const p1Name = partnership?.partner_1_name || "";
-      let p1Contribution = 0, p2Contribution = 0, totalWithdrawn = 0, totalProfitDist = 0, totalReinvested = 0;
-
-      for (const e of (allEntries || [])) {
-        const amt = Number(e.amount);
-        const isP1 = e.contributor === p1Name;
-        if (e.entry_type === "initial_invest" || e.entry_type === "new_invest") {
-          if (isP1) p1Contribution += amt; else p2Contribution += amt;
-        } else if (e.entry_type === "withdraw") {
-          totalWithdrawn += amt;
-        } else if (e.entry_type === "profit_distribution") {
-          totalProfitDist += amt;
-        } else if (e.entry_type === "reinvest") {
-          totalReinvested += amt;
-        }
-      }
-
-      const totalCapital = p1Contribution + p2Contribution + totalReinvested - totalWithdrawn;
-
-      await (supabase as any).from("partnerships").update({
-        your_contribution: p1Contribution,
-        partner_contribution: p2Contribution,
-        total_capital: totalCapital,
-        total_withdrawn: totalWithdrawn,
-        total_profit_distributed: totalProfitDist,
-        total_reinvested: totalReinvested,
-      }).eq("id", partnershipId);
+      await recalcAndUpdate(partnershipId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partnerships"] });
