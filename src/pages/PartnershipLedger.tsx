@@ -113,19 +113,27 @@ export default function PartnershipLedger() {
 
   const handleSaveEntry = () => {
     if (!id || !form.amount) return;
-    createMut.mutate({
-      partnershipId: id,
-      entry: {
-        partnership_id: id,
-        entry_type: form.entry_type,
-        contributor: form.contributor,
-        date: form.date,
-        amount: Number(form.amount),
-        description: form.description || null,
-        note: form.note || null,
-        linked_account_id: form.linked_account_id || null,
-      },
-    }, { onSuccess: () => setEntryModal(false) });
+    const payload = {
+      entry_type: form.entry_type,
+      contributor: form.contributor,
+      date: form.date,
+      amount: Number(form.amount),
+      description: form.description || null,
+      note: form.note || null,
+      linked_account_id: form.linked_account_id || null,
+    };
+    if (editingEntry) {
+      updateMut.mutate({
+        entryId: editingEntry.id,
+        partnershipId: id,
+        updates: payload,
+      }, { onSuccess: () => { setEntryModal(false); setEditingEntry(null); } });
+    } else {
+      createMut.mutate({
+        partnershipId: id,
+        entry: { ...payload, partnership_id: id },
+      }, { onSuccess: () => setEntryModal(false) });
+    }
   };
 
   const handleDuplicate = (entry: DbPartnershipEntry) => {
