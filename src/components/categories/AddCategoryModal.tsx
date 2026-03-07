@@ -97,7 +97,7 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -110,8 +110,8 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-4 mt-1 pb-2">
+        <ScrollArea className="flex-1 -mx-6 px-6 min-h-0">
+          <div className="space-y-4 mt-1 pb-4">
             {/* Live Preview Card */}
             <div className="rounded-xl border bg-accent/30 p-4 flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${selectedColor}18` }}>
@@ -262,11 +262,14 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
               <div><Label className="text-sm">Usable in Budgets</Label><p className="text-[11px] text-muted-foreground">Allow budget tracking</p></div>
               <Switch checked={usableInBudgets} onCheckedChange={setUsableInBudgets} />
             </div>
-            <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !name.trim()}>
-              {isPending ? "Saving..." : isEdit ? "Update Category" : "Create Category"}
-            </Button>
           </div>
         </ScrollArea>
+
+        <div className="pt-3 -mx-6 px-6 border-t bg-background shrink-0">
+          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !name.trim()}>
+            {isPending ? "Saving..." : isEdit ? "Update Category" : "Create Category"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
