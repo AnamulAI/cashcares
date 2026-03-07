@@ -3,12 +3,14 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Crown, Zap, Star, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+import { Check, X, Crown, Zap, Star, ChevronDown, ChevronUp, HelpCircle, Clock, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppContext, type PlanType } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useMyUpgradeRequests, useSubmitUpgradeRequest } from "@/hooks/use-upgrade-requests";
+import { useAuth } from "@/contexts/AuthContext";
 
 const features = [
   { name: "Income & Expense Tracking", free: true, premium: true },
@@ -47,12 +49,19 @@ function FeatureCell({ value }: { value: boolean | string }) {
 }
 
 export default function Subscription() {
-  const { plan, setPlan, isPremium, currency } = useAppContext();
+  const { plan, isPremium, currency } = useAppContext();
+  const { isAdmin } = useAuth();
   const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<PlanType | null>(null);
+
+  const { data: myRequests = [] } = useMyUpgradeRequests();
+  const submitRequest = useSubmitUpgradeRequest();
+
+  // Check if there's a pending request
+  const pendingRequest = myRequests.find(r => r.status === "pending");
 
   const planLabels: Record<PlanType, string> = {
     free: t("subscription.freePlan"),
@@ -72,10 +81,17 @@ export default function Subscription() {
     setConfirmOpen(true);
   };
 
-  const handleConfirmUpgrade = () => {
+  const handleConfirmUpgrade = async () => {
     if (!pendingPlan) return;
-    setPlan(pendingPlan);
-    toast.success(`Plan upgraded to ${planLabels[pendingPlan]}`);
+    try {
+      await submitRequest.mutateAsync({
+        requested_plan: pendingPlan,
+        current_plan: plan,
+      });
+      toast.success("Upgrade request submitted! Your request is awaiting admin approval.");
+    } catch (e: any) {
+      toast.error("Failed to submit request: " + e.message);
+    }
     setConfirmOpen(false);
     setPendingPlan(null);
     setSelectedPlan(null);
@@ -107,7 +123,7 @@ export default function Subscription() {
               {isPremium ? "Full access to all premium features" : "Basic financial tracking with limited features"}
             </p>
           </div>
-          {!isPremium && (
+          {!isPremium && !pendingRequest && (
             <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleUpgradeClick(selectedPlan || "yearly")}><Zap className="h-4 w-4" /> {t("subscription.upgradeToPremium")}</Button>
           )}
           {isPremium && (
@@ -115,6 +131,46 @@ export default function Subscription() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pending request banner */}
+      {pendingRequest && (
+        <Card className="finance-card-static border-warning/30 bg-warning/5">
+          <CardContent className="flex items-center gap-3 pt-5 pb-4">
+            <Clock className="h-5 w-5 text-warning shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Upgrade Request Pending</p>
+              <p className="text-xs text-muted-foreground">
+                You requested <span className="font-medium text-foreground">{planLabels[pendingRequest.requested_plan as PlanType] || pendingRequest.requested_plan}</span> on {new Date(pendingRequest.created_at).toLocaleDateString()}. Awaiting admin approval.
+              </p>
+            </div>
+            <Badge variant="outline" className="text-[10px] text-warning border-warning/40 shrink-0">Pending</Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent approved/rejected requests */}
+      {myRequests.filter(r => r.status !== "pending").slice(0, 1).map(r => (
+        <Card key={r.id} className={cn("finance-card-static", r.status === "approved" ? "border-positive/30 bg-positive/5" : "border-destructive/30 bg-destructive/5")}>
+          <CardContent className="flex items-center gap-3 pt-5 pb-4">
+            {r.status === "approved" ? (
+              <CheckCircle2 className="h-5 w-5 text-positive shrink-0" />
+            ) : (
+              <X className="h-5 w-5 text-destructive shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">
+                {r.status === "approved" ? "Upgrade Approved" : "Upgrade Request Declined"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {planLabels[r.requested_plan as PlanType] || r.requested_plan} — {r.admin_note || (r.status === "approved" ? "Your plan has been activated." : "Please contact support for details.")}
+              </p>
+            </div>
+            <Badge variant="outline" className={cn("text-[10px] shrink-0", r.status === "approved" ? "text-positive border-positive/40" : "text-destructive border-destructive/40")}>
+              {r.status}
+            </Badge>
+          </CardContent>
+        </Card>
+      ))}
 
       <div>
         <div className="text-center mb-5">
@@ -125,6 +181,7 @@ export default function Subscription() {
           {plans.map(p => {
             const isCurrentPlan = plan === p.id;
             const isSelected = selectedPlan === p.id;
+            const hasPendingForThis = pendingRequest?.requested_plan === p.id;
             return (
               <Card
                 key={p.id}
@@ -134,9 +191,10 @@ export default function Subscription() {
                   p.popular && !isSelected && !isCurrentPlan && "border-primary/40 shadow-md",
                   isCurrentPlan && "ring-2 ring-primary border-primary cursor-default",
                   isSelected && !isCurrentPlan && "ring-2 ring-accent-foreground border-accent-foreground shadow-lg",
+                  hasPendingForThis && "ring-2 ring-warning border-warning",
                 )}
               >
-                {p.popular && (
+                {p.popular && !hasPendingForThis && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <Badge className="bg-primary text-primary-foreground text-[10px] px-3 gap-1"><Star className="h-3 w-3" /> {t("subscription.recommended")}</Badge>
                   </div>
@@ -144,6 +202,11 @@ export default function Subscription() {
                 {isCurrentPlan && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <Badge variant="secondary" className="text-[10px] px-3">{t("subscription.currentPlanBadge")}</Badge>
+                  </div>
+                )}
+                {hasPendingForThis && !isCurrentPlan && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge variant="outline" className="text-[10px] px-3 text-warning border-warning/40 bg-background">Pending</Badge>
                   </div>
                 )}
                 <CardContent className="pt-6 text-center space-y-4">
@@ -157,10 +220,10 @@ export default function Subscription() {
                     className="w-full"
                     variant={isCurrentPlan ? "secondary" : isSelected ? "default" : p.popular ? "default" : "outline"}
                     size="sm"
-                    disabled={isCurrentPlan}
+                    disabled={isCurrentPlan || !!hasPendingForThis}
                     onClick={(e) => { e.stopPropagation(); handleUpgradeClick(p.id); }}
                   >
-                    {isCurrentPlan ? t("subscription.currentPlanBadge") : isSelected ? "Confirm & Upgrade" : p.popular ? t("subscription.getStarted") : t("subscription.selectPlan")}
+                    {isCurrentPlan ? t("subscription.currentPlanBadge") : hasPendingForThis ? "Request Pending" : isSelected ? "Request Upgrade" : p.popular ? t("subscription.getStarted") : t("subscription.selectPlan")}
                   </Button>
                   <ul className="text-left space-y-1.5 pt-2">
                     {["All premium features", "Unlimited budgets", "Advanced reports", "Priority support"].map((f, i) => (
@@ -235,16 +298,16 @@ export default function Subscription() {
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title={isDowngrade ? "Downgrade to Free Plan?" : `Upgrade to ${pendingPlan ? planLabels[pendingPlan] : ""}?`}
+        title={isDowngrade ? "Request Downgrade to Free Plan?" : `Request Upgrade to ${pendingPlan ? planLabels[pendingPlan] : ""}?`}
         description={
           isDowngrade
-            ? "Premium features will become read-only. Your data will be preserved."
+            ? "Your downgrade request will be submitted for admin review. Premium features will remain active until processed."
             : pendingPlanData
-              ? `You're about to upgrade to the ${pendingPlanData.name} plan at ${currency.symbol}${pendingPlanData.price.toLocaleString()}${pendingPlanData.period}. ${pendingPlanData.billed}. Payment integration coming soon — this is a demo upgrade.`
+              ? `Your upgrade request for the ${pendingPlanData.name} plan (${currency.symbol}${pendingPlanData.price.toLocaleString()}${pendingPlanData.period}) will be submitted for admin approval. Payment integration is coming soon.`
               : ""
         }
         onConfirm={handleConfirmUpgrade}
-        confirmLabel={isDowngrade ? "Confirm Downgrade" : "Confirm Upgrade"}
+        confirmLabel={isDowngrade ? "Submit Request" : "Submit Upgrade Request"}
         destructive={isDowngrade}
       />
     </div>

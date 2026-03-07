@@ -1105,6 +1105,48 @@ export type Database = {
           },
         ]
       }
+      upgrade_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          current_plan: string
+          id: string
+          note: string | null
+          requested_plan: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          current_plan?: string
+          id?: string
+          note?: string | null
+          requested_plan: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          current_plan?: string
+          id?: string
+          note?: string | null
+          requested_plan?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
