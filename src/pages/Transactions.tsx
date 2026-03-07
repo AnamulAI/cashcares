@@ -21,6 +21,7 @@ export default function Transactions() {
   const [activeTab, setActiveTab] = useState("all");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
+  const [editTxn, setEditTxn] = useState<any>(null);
   const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
   const { t } = useTranslation();
 
@@ -67,6 +68,28 @@ export default function Transactions() {
     setDetailsOpen(true);
   };
 
+  const handleEdit = (txn: any) => {
+    setEditTxn(txn);
+    if (txn.type === "income") setIncomeOpen(true);
+    else if (txn.type === "expense") setExpenseOpen(true);
+    else if (txn.type === "transfer") setTransferOpen(true);
+  };
+
+  const handleIncomeClose = (open: boolean) => {
+    setIncomeOpen(open);
+    if (!open) setEditTxn(null);
+  };
+
+  const handleExpenseClose = (open: boolean) => {
+    setExpenseOpen(open);
+    if (!open) setEditTxn(null);
+  };
+
+  const handleTransferClose = (open: boolean) => {
+    setTransferOpen(open);
+    if (!open) setEditTxn(null);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -106,7 +129,7 @@ export default function Transactions() {
           {isLoading ? (
             <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
           ) : filtered.length > 0 ? (
-            <TransactionTable transactions={filtered} onViewDetails={handleViewDetails} />
+            <TransactionTable transactions={filtered} onViewDetails={handleViewDetails} onEdit={handleEdit} />
           ) : (
             <EmptyState
               title={hasActiveFilters ? t("transactions.noMatch") : t("transactions.noFound")}
@@ -122,9 +145,9 @@ export default function Transactions() {
         </TabsContent>
       </Tabs>
 
-      <AddIncomeModal open={incomeOpen} onOpenChange={setIncomeOpen} />
-      <AddExpenseModal open={expenseOpen} onOpenChange={setExpenseOpen} />
-      <TransferModal open={transferOpen} onOpenChange={setTransferOpen} />
+      <AddIncomeModal open={incomeOpen} onOpenChange={handleIncomeClose} editTransaction={editTxn?.type === "income" ? editTxn : undefined} />
+      <AddExpenseModal open={expenseOpen} onOpenChange={handleExpenseClose} editTransaction={editTxn?.type === "expense" ? editTxn : undefined} />
+      <TransferModal open={transferOpen} onOpenChange={handleTransferClose} editTransaction={editTxn?.type === "transfer" ? editTxn : undefined} />
       <TransactionDetails transaction={selectedTxn} open={detailsOpen} onOpenChange={setDetailsOpen} />
     </div>
   );
