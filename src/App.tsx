@@ -28,6 +28,7 @@ import DebtLoans from "./pages/DebtLoans";
 import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
 import Partnerships from "./pages/Partnerships";
+import PartnershipLedger from "./pages/PartnershipLedger";
 import Reminders from "./pages/Reminders";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
