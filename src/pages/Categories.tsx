@@ -113,7 +113,7 @@ export default function Categories() {
 
         <TabsContent value={tab} className="mt-4">
           {isLoading ? (
-            <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">{[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-[140px] rounded-xl" />)}</div>
           ) : filtered.length > 0 ? (
             <CategoryList categories={filtered} onEdit={handleEdit} selected={selected} onToggleSelect={toggleOne} />
           ) : (
