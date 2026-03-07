@@ -195,7 +195,7 @@ export default function PartnershipLedger() {
         subtitle={`${p1Name} (${partnership.partner_1_share}%) · ${p2Name} (${partnership.partner_2_share}%)${partnership.note ? " — " + partnership.note : ""}`}
         actions={
           <div className="flex items-center gap-2 no-print">
-            <Button size="sm" className="gap-1" onClick={openEntryModal}><Plus className="h-4 w-4" /> Add Entry</Button>
+            <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
