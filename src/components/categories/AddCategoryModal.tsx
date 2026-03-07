@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { FolderPlus, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCreateCategory, useUpdateCategory, type DbCategory } from "@/hooks/use-categories";
