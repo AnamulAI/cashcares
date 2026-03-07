@@ -40,12 +40,16 @@ export function AdminUpgradeRequests({ users, onPlanActivated }: AdminUpgradeReq
         admin_note: adminNotes[req.id] || "Approved by admin",
         reviewed_by: currentUser!.id,
       });
-      // 2. Activate the plan on the profile
-      const { error } = await supabase
+      // 2. Activate the plan on the profile and verify
+      console.log("[AdminUpgrade] Activating plan:", { userId: req.user_id, plan: req.requested_plan });
+      const { data: updated, error } = await supabase
         .from("profiles")
         .update({ subscription_plan: req.requested_plan } as any)
-        .eq("id", req.user_id);
+        .eq("id", req.user_id)
+        .select("subscription_plan");
       if (error) throw error;
+      if (!updated || updated.length === 0) throw new Error("No rows updated — RLS may be blocking");
+      console.log("[AdminUpgrade] Persisted:", (updated[0] as any).subscription_plan);
       toast.success(`Plan upgraded to ${req.requested_plan} for ${getUserName(req.user_id)}`);
       onPlanActivated?.(req.user_id, req.requested_plan);
     } catch (e: any) {
