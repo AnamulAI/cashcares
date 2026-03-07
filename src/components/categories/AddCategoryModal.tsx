@@ -117,8 +117,6 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
               <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${selectedColor}18` }}>
                 {PreviewIcon ? (
                   <PreviewIcon className="h-5 w-5" style={{ color: selectedColor }} />
-                ) : selectedIcon ? (
-                  <span className="text-lg leading-none">{selectedIcon}</span>
                 ) : (
                   <div className="h-4 w-4 rounded-full" style={{ backgroundColor: selectedColor }} />
                 )}
