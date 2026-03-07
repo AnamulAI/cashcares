@@ -263,13 +263,11 @@ export function AddCategoryModal({ open, onOpenChange, editCategory }: AddCatego
               <Switch checked={usableInBudgets} onCheckedChange={setUsableInBudgets} />
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="pt-3 -mx-6 px-6 border-t bg-background shrink-0">
           <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !name.trim()}>
             {isPending ? "Saving..." : isEdit ? "Update Category" : "Create Category"}
           </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
