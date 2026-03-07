@@ -7,6 +7,10 @@ import {
   Shirt, Coffee, Bus, Fuel, Wifi, Tv,
   FolderOpen, Tag, ArrowDownUp, ArrowUpRight, ArrowDownRight,
   CircleDollarSign, BadgeDollarSign, Scale, ChartBar, Layers,
+  ArrowRightLeft, Send, Download, Upload, RefreshCcw,
+  ClipboardCheck, FileCheck, ShieldCheck, CircleCheck,
+  Repeat, ReceiptText, Handshake, MoveRight, MoveLeft,
+  ArrowUpFromLine, ArrowDownToLine, BadgeCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
