@@ -48,6 +48,7 @@ export default function PartnershipLedger() {
   const { data: entries = [], isLoading: entriesLoading } = usePartnershipEntries(id);
   const { data: accounts = [] } = useAccounts();
   const createMut = useCreatePartnershipEntry();
+  const updateMut = useUpdatePartnershipEntry();
   const deleteMut = useDeletePartnershipEntry();
 
   const [entryModal, setEntryModal] = useState(false);
