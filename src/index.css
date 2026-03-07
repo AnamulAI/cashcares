@@ -153,11 +153,61 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: "Hind Siliguri", "Inter", system-ui, sans-serif;
+    font-size: 14.5px;
+    line-height: 1.5;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Inter", "Hind Siliguri", system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
+  }
+
+  /* Typography polish — lift tiny text for readability */
+  .text-xs {
+    font-size: 0.8125rem; /* 13px instead of 12px */
+    line-height: 1.385;
+  }
+  .text-\[10px\] {
+    font-size: 11px !important;
+    line-height: 1.35;
+  }
+  .text-\[11px\] {
+    font-size: 12px !important;
+    line-height: 1.4;
+  }
+
+  /* Table headers — slightly bolder and more readable */
+  th, [role="columnheader"] {
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Muted text — slightly better contrast */
+  .text-muted-foreground {
+    opacity: 0.92;
+  }
+
+  /* Form labels and placeholders */
+  label, .label {
+    font-size: 0.8125rem;
+  }
+  input::placeholder,
+  textarea::placeholder,
+  [data-placeholder] {
+    font-size: inherit;
+    opacity: 0.6;
+  }
+
+  /* Badge text readability */
+  [data-slot="badge"], .badge {
+    font-size: 0.6875rem; /* 11px min for badges */
+    letter-spacing: 0.015em;
+  }
+
+  /* Select trigger text */
+  [data-slot="select-trigger"] button,
+  [role="combobox"] {
+    font-size: 0.8125rem;
   }
 }
 
