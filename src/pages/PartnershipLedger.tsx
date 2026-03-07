@@ -94,11 +94,20 @@ export default function PartnershipLedger() {
     return { p1, p2, p1Net, p2Net };
   }, [entries, p1Name]);
 
-  const openEntryModal = () => {
-    setForm({
-      entry_type: "initial_invest", contributor: p1Name, date: format(new Date(), "yyyy-MM-dd"),
-      linked_account_id: "", amount: "", description: "", note: ""
-    });
+  const openEntryModal = (entry?: DbPartnershipEntry) => {
+    if (entry) {
+      setEditingEntry(entry);
+      setForm({
+        entry_type: entry.entry_type, contributor: entry.contributor || p1Name, date: entry.date,
+        linked_account_id: entry.linked_account_id || "", amount: String(entry.amount), description: entry.description || "", note: entry.note || ""
+      });
+    } else {
+      setEditingEntry(null);
+      setForm({
+        entry_type: "initial_invest", contributor: p1Name, date: format(new Date(), "yyyy-MM-dd"),
+        linked_account_id: "", amount: "", description: "", note: ""
+      });
+    }
     setEntryModal(true);
   };
 
