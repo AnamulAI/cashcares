@@ -47,13 +47,19 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
                     <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(account.id)} />
                   </div>
                 )}
-                <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-border/30" style={{ backgroundColor: `${visual.color}14` }}>
+                <div
+                  className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-border/20 shadow-sm"
+                  style={{ backgroundColor: `${visual.color}18`, boxShadow: `0 2px 8px -2px ${visual.color}25` }}
+                >
                   <IconComp className="h-5 w-5" style={{ color: visual.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold truncate">{account.name}</p>
-                    {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0 shrink-0">{t("accounts.primary")}</Badge>}
+                    {visual.label && (
+                      <span className="text-[10px] px-1.5 py-0 rounded font-medium shrink-0" style={{ backgroundColor: `${visual.color}10`, color: visual.color }}>{visual.label}</span>
+                    )}
+                    {account.is_primary && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />}
                   </div>
                   <p className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type} · {account.currency}</p>
                 </div>
@@ -79,9 +85,9 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
         const visual = getAccountVisual(account);
         const IconComp = visual.icon;
         return (
-          <div key={account.id} className={cn("finance-card overflow-hidden cursor-pointer group", isSelected && "ring-2 ring-primary/40")} onClick={() => onViewDetails?.(account)}>
+          <div key={account.id} className={cn("finance-card overflow-hidden cursor-pointer group relative", isSelected && "ring-2 ring-primary/40")} onClick={() => onViewDetails?.(account)}>
             {/* Color accent strip */}
-            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${visual.color}, ${visual.color}88)` }} />
+            <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${visual.color}, ${visual.color}55)` }} />
 
             <div className="p-5">
               <div className="flex items-start justify-between">
@@ -91,12 +97,28 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
                       <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(account.id)} />
                     </div>
                   )}
-                  <div className="h-11 w-11 rounded-xl flex items-center justify-center ring-1 ring-border/30 shadow-sm" style={{ backgroundColor: `${visual.color}14` }}>
-                    <IconComp className="h-5 w-5" style={{ color: visual.color }} />
+                  <div
+                    className="h-12 w-12 rounded-xl flex items-center justify-center ring-1 ring-border/20 shadow-sm transition-transform group-hover:scale-105"
+                    style={{ backgroundColor: `${visual.color}18`, boxShadow: `0 4px 12px -4px ${visual.color}30` }}
+                  >
+                    <IconComp className="h-5.5 w-5.5" style={{ color: visual.color }} />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">{account.name}</p>
-                    <p className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-sm">{account.name}</p>
+                      {account.is_primary && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-muted-foreground">{typeLabels[account.type] || account.type}</span>
+                      {visual.label && (
+                        <span
+                          className="text-[9px] px-1 py-0 rounded font-semibold leading-tight"
+                          style={{ backgroundColor: `${visual.color}12`, color: visual.color }}
+                        >
+                          {visual.label}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div onClick={e => e.stopPropagation()}>
@@ -110,7 +132,6 @@ export function AccountCards({ accounts, onViewDetails, onEdit, viewMode = "grid
               </div>
 
               <div className="mt-3 flex items-center gap-2">
-                {account.is_primary && <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-0">{t("accounts.primary")}</Badge>}
                 <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", account.is_active ? "bg-positive/10 text-positive border-0" : "")}>{account.is_active ? t("status.active") : t("status.inactive")}</Badge>
                 <span className="text-[10px] text-muted-foreground ml-auto">{t("accounts.updated")} {fmtDate(account.updated_at)}</span>
               </div>
