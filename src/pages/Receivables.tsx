@@ -49,6 +49,7 @@ export default function Receivables() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [moveBook, setMoveBook] = useState<{ id: string; name: string; entryCount: number } | null>(null);
 
   const [form, setForm] = useState({ person_name: "", description: "", phone: "", email: "", status: "active", opening_balance: "0" });
 
