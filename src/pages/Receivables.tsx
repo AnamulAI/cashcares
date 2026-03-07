@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText } from "lucide-react";
+import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, ArrowRightLeft } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
