@@ -273,7 +273,7 @@ export default function PartnershipLedger() {
       ) : filtered.length === 0 ? (
         <Card className="finance-card-static p-8 text-center">
           <p className="text-muted-foreground text-sm">No entries yet.</p>
-          <Button size="sm" className="mt-3" onClick={openEntryModal}><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
+          <Button size="sm" className="mt-3" onClick={() => openEntryModal()}><Plus className="h-4 w-4 mr-1" /> Add Entry</Button>
         </Card>
       ) : (
         <Card className="finance-card-static overflow-hidden">
