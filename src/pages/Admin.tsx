@@ -257,6 +257,21 @@ export default function Admin() {
             </CardContent>
           </Card>
 
+          {/* Upgrade Requests */}
+          <AdminUpgradeRequests
+            users={users}
+            onPlanActivated={(userId, newPlan) => {
+              setUsers(prev => prev.map(u => u.id === userId ? { ...u, plan: newPlan } : u));
+              const old = users.find(u => u.id === userId)?.plan || "free";
+              setPlanDist(prev => {
+                const next = { ...prev };
+                if (old in next) next[old as keyof PlanDist]--;
+                if (newPlan in next) next[newPlan as keyof PlanDist]++;
+                return next;
+              });
+            }}
+          />
+
           {/* User management table */}
           <Card className="finance-card-static">
             <CardHeader className="pb-3">
