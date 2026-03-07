@@ -383,9 +383,9 @@ export default function PartnershipLedger() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setEntryModal(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveEntry} disabled={!form.amount || !form.contributor || !form.date || createMut.isPending}>
-              {createMut.isPending ? "Saving..." : "Save"}
+            <Button variant="outline" size="sm" onClick={() => { setEntryModal(false); setEditingEntry(null); }}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveEntry} disabled={!form.amount || !form.contributor || !form.date || createMut.isPending || updateMut.isPending}>
+              {(createMut.isPending || updateMut.isPending) ? "Saving..." : editingEntry ? "Update Entry" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
