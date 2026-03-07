@@ -25,9 +25,12 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("categories")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data as DbCategory[];

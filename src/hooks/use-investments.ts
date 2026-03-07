@@ -22,9 +22,12 @@ export function useInvestments() {
   return useQuery({
     queryKey: ["investments"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("investments")
         .select("*, linked_account:accounts!investments_linked_account_id_fkey(name)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as (DbInvestment & { linked_account: { name: string } | null })[];

@@ -22,9 +22,12 @@ export function useReminders() {
   return useQuery({
     queryKey: ["reminders"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("reminders")
         .select("*")
+        .eq("user_id", user.id)
         .order("due_date", { ascending: true });
       if (error) throw error;
       return (data || []) as DbReminder[];

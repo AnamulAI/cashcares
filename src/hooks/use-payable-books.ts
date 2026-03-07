@@ -21,9 +21,12 @@ export function usePayableBooks() {
   return useQuery({
     queryKey: ["payable_books"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("payable_books")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as PayableBook[];

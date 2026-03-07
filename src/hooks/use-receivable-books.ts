@@ -21,9 +21,12 @@ export function useReceivableBooks() {
   return useQuery({
     queryKey: ["receivable_books"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await (supabase as any)
         .from("receivable_books")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as ReceivableBook[];

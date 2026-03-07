@@ -24,9 +24,12 @@ export function useAccounts() {
   return useQuery({
     queryKey: ["accounts"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("accounts")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data as DbAccount[];
