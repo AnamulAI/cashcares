@@ -13,6 +13,9 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useAppContext } from "@/contexts/AppContext";
+import { formatAmount } from "@/lib/formatters";
+import { parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 export default function Transactions() {
   const [incomeOpen, setIncomeOpen] = useState(false);
