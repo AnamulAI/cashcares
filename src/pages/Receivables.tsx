@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, ArrowRightLeft } from "lucide-react";
+import { Plus, HandCoins, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, ArrowRightLeft, Upload } from "lucide-react";
+import { ImportLedgerModal } from "@/components/shared/ImportLedgerModal";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -50,6 +51,7 @@ export default function Receivables() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [moveBook, setMoveBook] = useState<{ id: string; name: string; entryCount: number } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const [form, setForm] = useState({ person_name: "", description: "", phone: "", email: "", status: "active", opening_balance: "0" });
 
@@ -145,7 +147,14 @@ export default function Receivables() {
       <PageHeader
         title={t("receivables.title")}
         subtitle="Track money expected from people or entities"
-        actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Person</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 h-9 text-xs" onClick={() => setImportOpen(true)}>
+              <Upload className="h-3.5 w-3.5" /> Import
+            </Button>
+            <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Person</Button>
+          </div>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -290,6 +299,4 @@ export default function Receivables() {
           entryCount={moveBook.entryCount}
         />
       )}
-    </div>
-  );
-}
+      <ImportLedgerModal open={importOpen} onOpenChange={setImportOpen} type="receivable" />
