@@ -239,3 +239,46 @@ export function useMarkInstallmentPaid() {
     onError: (e: Error) => toast.error(e.message),
   });
 }
+
+export function useGenerateMoreInstallments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { plan: SavingsPlan; count?: number }) => {
+      const { plan, count = 12 } = params;
+      if (plan.plan_type !== "open") throw new Error("Only open-ended plans can be extended");
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Find latest existing due_date for this plan
+      const { data: latest, error: le } = await (supabase as any)
+        .from("savings_installments")
+        .select("due_date")
+        .eq("plan_id", plan.id)
+        .order("due_date", { ascending: false })
+        .limit(1);
+      if (le) throw le;
+
+      const startFrom = latest && latest.length > 0
+        ? addPeriod(latest[0].due_date, plan.frequency, 1)
+        : addPeriod(plan.start_date, plan.frequency, 0);
+
+      const rows = Array.from({ length: count }, (_, i) => ({
+        user_id: user.id,
+        plan_id: plan.id,
+        due_date: addPeriod(startFrom, plan.frequency, i),
+        amount: plan.installment_amount,
+      }));
+
+      const { error } = await (supabase as any).from("savings_installments").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count, vars) => {
+      qc.invalidateQueries({ queryKey: ["savings_installments", vars.plan.id] });
+      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
+      toast.success(`Added ${count} more installments`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
