@@ -39,7 +39,7 @@ export function TrendChart() {
   const hasData = chartData.some(d => d.income > 0 || d.expense > 0);
 
   return (
-    <div className="finance-card-static p-6">
+    <div className="finance-card-static finance-card-hover p-6">
       <SectionHeader title={t("dashboard.incomeVsExpenseTrend")} />
       <div className="mt-5 h-[280px]">
         {!hasData ? (

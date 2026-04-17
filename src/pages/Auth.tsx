@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { LogIn, UserPlus, Mail, Lock, User } from "lucide-react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 export default function Auth() {
   const [tab, setTab] = useState<"login" | "signup">("login");
@@ -64,12 +65,12 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mx-auto shadow-sm">
-            CC
+        <div className="flex flex-col items-center space-y-3">
+          <BrandLogo size="lg" showText={false} />
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl font-bold font-display tracking-tight">MahBook</h1>
+            <p className="text-sm text-muted-foreground">Personal Finance, Refined</p>
           </div>
-          <h1 className="text-2xl font-bold font-display tracking-tight">Cash Care</h1>
-          <p className="text-sm text-muted-foreground">Smart financial management for everyone</p>
         </div>
 
         <Card className="border-border/60">

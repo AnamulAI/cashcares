@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
-  name: "Cash Care",
-  tagline: "Smart Money Management",
+  name: "MahBook",
+  tagline: "Personal Finance, Refined",
   currency: {
     code: "BDT",
     symbol: "৳",

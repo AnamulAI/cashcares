@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Hind Siliguri"', '"Inter"', 'system-ui', 'sans-serif'],
-        display: ['"Inter"', '"Hind Siliguri"', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', '"Inter"', '"Hind Siliguri"', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

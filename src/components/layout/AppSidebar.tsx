@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
-import { APP_CONFIG } from "@/config/app";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -75,17 +75,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="px-4 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
-            CC
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="font-semibold text-[15px] font-display tracking-tight">{APP_CONFIG.name}</p>
-              <p className="text-[11px] text-muted-foreground/70 leading-none mt-0.5">{APP_CONFIG.tagline}</p>
-            </div>
-          )}
-        </div>
+        <BrandLogo size="md" showText={!collapsed} />
       </SidebarHeader>
 
       <SidebarContent className="px-3 mt-1">
@@ -107,10 +97,10 @@ export function AppSidebar() {
                             to={item.url}
                             end
                             className={cn(
-                              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                              "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
+                              "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
                             )}
-                            activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                            activeClassName="bg-gradient-to-r from-primary/10 to-violet-500/5 text-primary font-medium border-l-2 border-primary !pl-[10px]"
                           >
                             <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-primary" : item.color)} />
                             {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
@@ -152,10 +142,10 @@ export function AppSidebar() {
                       to="/admin"
                       end
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
+                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
                       )}
-                      activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                      activeClassName="bg-gradient-to-r from-primary/10 to-violet-500/5 text-primary font-medium border-l-2 border-primary !pl-[10px]"
                     >
                       <ShieldCheck className={cn("h-[18px] w-[18px] shrink-0", location.pathname === "/admin" ? "text-primary" : "text-warning")} />
                       {!collapsed && <span className="truncate">Admin Dashboard</span>}
@@ -180,10 +170,10 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
+                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
                       )}
-                      activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                      activeClassName="bg-gradient-to-r from-primary/10 to-violet-500/5 text-primary font-medium border-l-2 border-primary !pl-[10px]"
                     >
                       <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-primary" : item.color)} />
                       {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
