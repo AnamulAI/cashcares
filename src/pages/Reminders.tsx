@@ -40,7 +40,7 @@ const priorityColors: Record<string, string> = {
   low: "bg-muted text-muted-foreground",
 };
 
-const REMINDER_TYPES = ["budget_alert", "receivable_followup", "payable_due", "loan_due", "credit_card_due", "custom"];
+const REMINDER_TYPES = ["budget_alert", "receivable_followup", "payable_due", "loan_due", "savings_due", "credit_card_due", "custom"];
 
 export default function Reminders() {
   const { t } = useTranslation();
@@ -48,6 +48,8 @@ export default function Reminders() {
   const { data: receivables = [] } = useReceivables();
   const { data: payables = [] } = usePayables();
   const { data: loans = [] } = useLoans();
+  const { data: savingsInstallments = [] } = useAllInstallments();
+  const { data: savingsPlans = [] } = useSavingsPlans();
   const createMut = useCreateReminder();
   const updateMut = useUpdateReminder();
   const deleteMut = useDeleteReminder();
@@ -85,8 +87,40 @@ export default function Reminders() {
       const status = isBefore(due, startOfDay(now)) ? "overdue" : isToday(due) ? "due today" : "upcoming";
       auto.push({ id: `auto-loan-${l.id}`, title: `Loan: ${l.lender_name}`, type: "loan_due", due_date: l.due_date, module: "loans", status, priority: status === "overdue" ? "high" : "medium" });
     });
+    // Savings installments — only show next unpaid per active plan within 30 days, plus all overdue
+    const planMap = new Map((savingsPlans as any[]).map(p => [p.id, p]));
+    const horizon = addDays(now, 30);
+    const byPlan = new Map<string, any[]>();
+    (savingsInstallments as any[])
+      .filter(i => i.status !== "paid")
+      .forEach(i => {
+        const arr = byPlan.get(i.plan_id) || [];
+        arr.push(i);
+        byPlan.set(i.plan_id, arr);
+      });
+    byPlan.forEach((items, planId) => {
+      const plan = planMap.get(planId);
+      if (!plan || plan.status !== "active") return;
+      items.sort((a, b) => a.due_date.localeCompare(b.due_date));
+      items.forEach(i => {
+        const due = parseISO(i.due_date);
+        const isOverdue = isBefore(due, startOfDay(now));
+        const isWithinHorizon = isWithinInterval(due, { start: startOfDay(now), end: endOfDay(horizon) });
+        if (!isOverdue && !isWithinHorizon) return;
+        const status = isOverdue ? "overdue" : isToday(due) ? "due today" : "upcoming";
+        auto.push({
+          id: `auto-savings-${i.id}`,
+          title: `Savings: ${plan.plan_name}`,
+          type: "savings_due",
+          due_date: i.due_date,
+          module: "savings",
+          status,
+          priority: isOverdue ? "high" : "medium",
+        });
+      });
+    });
     return auto;
-  }, [receivables, payables, loans]);
+  }, [receivables, payables, loans, savingsInstallments, savingsPlans]);
 
   const processedReminders = useMemo(() => {
     return reminders.map(r => {
