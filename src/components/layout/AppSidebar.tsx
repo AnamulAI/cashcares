@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ArrowLeftRight, Landmark, Tag, PieChart, BarChart3,
   Building2, TrendingUp, HandCoins, CreditCard, Scale, Settings, Crown, Lock,
-  Users, Bell, Wallet, ShieldCheck
+  Users, Bell, Wallet, ShieldCheck, PiggyBank
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -46,6 +46,7 @@ const navGroups = [
     items: [
       { titleKey: "nav.assets", url: "/assets", icon: Building2, color: "text-feature-assets", active: true },
       { titleKey: "nav.investments", url: "/investments", icon: TrendingUp, color: "text-feature-investments", active: true },
+      { titleKey: "nav.savings", url: "/savings", icon: PiggyBank, color: "text-feature-savings", active: true },
     ],
   },
   {

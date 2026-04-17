@@ -1078,6 +1078,122 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_installments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          is_demo: boolean
+          linked_account_id: string | null
+          note: string | null
+          paid_amount: number
+          paid_date: string | null
+          plan_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          is_demo?: boolean
+          linked_account_id?: string | null
+          note?: string | null
+          paid_amount?: number
+          paid_date?: string | null
+          plan_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          is_demo?: boolean
+          linked_account_id?: string | null
+          note?: string | null
+          paid_amount?: number
+          paid_date?: string | null
+          plan_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_installments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "savings_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      savings_plans: {
+        Row: {
+          created_at: string
+          duration_months: number | null
+          frequency: string
+          id: string
+          installment_amount: number
+          is_demo: boolean
+          maturity_date: string | null
+          note: string | null
+          plan_name: string
+          plan_type: string
+          recipient_name: string | null
+          start_date: string
+          status: string
+          target_amount: number
+          total_saved: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_months?: number | null
+          frequency?: string
+          id?: string
+          installment_amount?: number
+          is_demo?: boolean
+          maturity_date?: string | null
+          note?: string | null
+          plan_name: string
+          plan_type?: string
+          recipient_name?: string | null
+          start_date?: string
+          status?: string
+          target_amount?: number
+          total_saved?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_months?: number | null
+          frequency?: string
+          id?: string
+          installment_amount?: number
+          is_demo?: boolean
+          maturity_date?: string | null
+          note?: string | null
+          plan_name?: string
+          plan_type?: string
+          recipient_name?: string | null
+          start_date?: string
+          status?: string
+          target_amount?: number
+          total_saved?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string
