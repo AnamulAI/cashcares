@@ -923,10 +923,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     "subscription.lifetime": "আজীবন",
     // Receivables
     "receivables.title": "পাওনা",
-    "receivables.subtitle": "আপনি যে টাকা পাবেন তা ট্র্যাক করুন",
+    "receivables.subtitle": "পাওনাদারদের কাছ থেকে প্রাপ্য টাকা ট্র্যাক করুন",
     // Payables
     "payables.title": "দেনা",
-    "payables.subtitle": "আপনাকে যে টাকা দিতে হবে তা ট্র্যাক করুন",
+    "payables.subtitle": "দেনাদারদের পরিশোধ্য টাকা ট্র্যাক করুন",
     // Debt & Loans
     "debtLoans.title": "ঋণ ও লোন",
     "debtLoans.subtitle": "দায়, নির্ধারিত তারিখ ও পরিশোধের অগ্রগতি ট্র্যাক করুন",
