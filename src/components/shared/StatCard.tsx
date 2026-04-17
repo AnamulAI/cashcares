@@ -15,7 +15,7 @@ interface StatCardProps {
 export function StatCard({ icon, label, value, trend, trendType = "neutral", className, iconBg = "bg-accent", prominent }: StatCardProps) {
   return (
     <div className={cn(
-      "finance-card p-5",
+      "finance-card finance-card-hover p-5",
       prominent && "ring-1 ring-primary/10",
       className
     )}>
