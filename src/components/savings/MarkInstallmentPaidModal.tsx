@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useMarkInstallmentPaid, type SavingsInstallment } from "@/hooks/use-savings";
-import { formatCurrency } from "@/lib/formatters";
+import { formatAmount } from "@/lib/formatters";
+import { useAppContext } from "@/contexts/AppContext";
 
 interface Props {
   open: boolean;
@@ -17,6 +18,7 @@ interface Props {
 
 export function MarkInstallmentPaidModal({ open, onOpenChange, installment }: Props) {
   const { data: accounts = [] } = useAccounts();
+  const { currency } = useAppContext();
   const markPaid = useMarkInstallmentPaid();
   const [paidDate, setPaidDate] = useState(new Date().toISOString().slice(0, 10));
   const [paidAmount, setPaidAmount] = useState(0);
@@ -66,7 +68,7 @@ export function MarkInstallmentPaidModal({ open, onOpenChange, installment }: Pr
                 <SelectItem value="none">None — record only</SelectItem>
                 {accounts.map((a: any) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name} — {formatCurrency(a.balance)}
+                    {a.name} — {formatAmount(Number(a.balance), currency)}
                   </SelectItem>
                 ))}
               </SelectContent>
