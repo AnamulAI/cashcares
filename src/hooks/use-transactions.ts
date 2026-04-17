@@ -134,6 +134,7 @@ export function useUpdateTransaction() {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["category-usage"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Transaction updated");
     },
