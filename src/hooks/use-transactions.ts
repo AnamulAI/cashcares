@@ -27,10 +27,11 @@ async function adjustBalance(accountId: string, amount: number) {
   }
 }
 
-async function incrementUsage(categoryId: string) {
+async function incrementUsage(categoryId: string, delta = 1) {
   const { data } = await supabase.from("categories").select("usage_count").eq("id", categoryId).single();
   if (data) {
-    await supabase.from("categories").update({ usage_count: (data.usage_count || 0) + 1 }).eq("id", categoryId);
+    const next = Math.max(0, (data.usage_count || 0) + delta);
+    await supabase.from("categories").update({ usage_count: next }).eq("id", categoryId);
   }
 }
 
