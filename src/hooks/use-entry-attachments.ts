@@ -89,7 +89,10 @@ export function useDeleteAttachment() {
   });
 }
 
-export function getAttachmentUrl(filePath: string) {
-  const { data } = supabase.storage.from("ledger-attachments").getPublicUrl(filePath);
-  return data.publicUrl;
+export async function getAttachmentUrl(filePath: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from("ledger-attachments")
+    .createSignedUrl(filePath, 3600);
+  if (error || !data) return "";
+  return data.signedUrl;
 }
