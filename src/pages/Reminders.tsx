@@ -19,6 +19,7 @@ import { useReminders, useCreateReminder, useUpdateReminder, useDeleteReminder, 
 import { useReceivables } from "@/hooks/use-receivables";
 import { usePayables } from "@/hooks/use-payables";
 import { useLoans } from "@/hooks/use-loans";
+import { useAllInstallments, useSavingsPlans } from "@/hooks/use-savings";
 import { useTranslation } from "@/i18n/useTranslation";
 import { parseISO, isToday, isBefore, addDays, isWithinInterval, startOfDay, endOfDay, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
