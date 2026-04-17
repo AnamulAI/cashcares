@@ -175,7 +175,7 @@ export default function Reports() {
     <div className="space-y-6">
       {/* Print-only header */}
       <div className="print-only hidden mb-4">
-        <h1 className="text-xl font-bold">Cash Care — Financial Report</h1>
+        <h1 className="text-xl font-bold">MahBook — Financial Report</h1>
         <p className="text-sm text-muted-foreground">
           {format(dateRange.from, "MMM d, yyyy")} — {format(dateRange.to, "MMM d, yyyy")}
         </p>

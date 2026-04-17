@@ -97,10 +97,10 @@ export function AppSidebar() {
                             to={item.url}
                             end
                             className={cn(
-                              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                              "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
+                              "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
                             )}
-                            activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                            activeClassName="bg-gradient-to-r from-primary/10 to-violet-500/5 text-primary font-medium border-l-2 border-primary !pl-[10px]"
                           >
                             <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-primary" : item.color)} />
                             {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
@@ -142,10 +142,10 @@ export function AppSidebar() {
                       to="/admin"
                       end
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
+                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
                       )}
-                      activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                      activeClassName="bg-gradient-to-r from-primary/10 to-violet-500/5 text-primary font-medium border-l-2 border-primary !pl-[10px]"
                     >
                       <ShieldCheck className={cn("h-[18px] w-[18px] shrink-0", location.pathname === "/admin" ? "text-primary" : "text-warning")} />
                       {!collapsed && <span className="truncate">Admin Dashboard</span>}
@@ -170,10 +170,10 @@ export function AppSidebar() {
                       to={item.url}
                       end
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
+                        "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
                       )}
-                      activeClassName="bg-primary/8 text-primary font-medium !hover:bg-primary/10"
+                      activeClassName="bg-gradient-to-r from-primary/10 to-violet-500/5 text-primary font-medium border-l-2 border-primary !pl-[10px]"
                     >
                       <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-primary" : item.color)} />
                       {!collapsed && <span className="truncate">{t(item.titleKey)}</span>}
