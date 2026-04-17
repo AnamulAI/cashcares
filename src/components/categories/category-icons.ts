@@ -17,6 +17,16 @@ import {
   TabletSmartphone, Monitor,
   // More hand / debt variations
   HandMetal, Hand, HeartHandshake, Grab, Fingerprint,
+  // Shopping
+  ShoppingBag, Store, Percent, BadgePercent,
+  // Helping hand
+  HandHeart, HelpingHand, Sprout, UsersRound,
+  // Medicine
+  Pill, Stethoscope, Syringe, Cross, Bandage, Activity,
+  // Travel
+  Map, Luggage, Tent, Mountain, Ship, TrainFront,
+  // Fast Food
+  Pizza, Sandwich, Beef, IceCream, Cookie, Soup,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -122,6 +132,42 @@ export const CATEGORY_ICONS: CategoryIconOption[] = [
   { key: "baby", icon: Baby, label: "Kids", group: "Lifestyle" },
   { key: "music", icon: Music, label: "Music", group: "Lifestyle" },
   { key: "gamepad-2", icon: Gamepad2, label: "Gaming", group: "Lifestyle" },
+
+  // Shopping (extended)
+  { key: "shopping-bag", icon: ShoppingBag, label: "Shopping Bag", group: "Shopping" },
+  { key: "store", icon: Store, label: "Store", group: "Shopping" },
+  { key: "percent", icon: Percent, label: "Discount", group: "Shopping" },
+  { key: "badge-percent", icon: BadgePercent, label: "Offer", group: "Shopping" },
+
+  // Fast Food
+  { key: "pizza", icon: Pizza, label: "Pizza", group: "Food" },
+  { key: "sandwich", icon: Sandwich, label: "Sandwich", group: "Food" },
+  { key: "beef", icon: Beef, label: "Burger", group: "Food" },
+  { key: "ice-cream", icon: IceCream, label: "Ice Cream", group: "Food" },
+  { key: "cookie", icon: Cookie, label: "Cookie", group: "Food" },
+  { key: "soup", icon: Soup, label: "Soup", group: "Food" },
+
+  // Helping hand / Charity
+  { key: "hand-heart", icon: HandHeart, label: "Charity", group: "Helping" },
+  { key: "helping-hand", icon: HelpingHand, label: "Helping Hand", group: "Helping" },
+  { key: "sprout", icon: Sprout, label: "Donation", group: "Helping" },
+  { key: "users-round", icon: UsersRound, label: "Community", group: "Helping" },
+
+  // Medicine / Health
+  { key: "pill", icon: Pill, label: "Medicine", group: "Health" },
+  { key: "stethoscope", icon: Stethoscope, label: "Doctor", group: "Health" },
+  { key: "syringe", icon: Syringe, label: "Injection", group: "Health" },
+  { key: "cross", icon: Cross, label: "Hospital", group: "Health" },
+  { key: "bandage", icon: Bandage, label: "First Aid", group: "Health" },
+  { key: "activity", icon: Activity, label: "Vitals", group: "Health" },
+
+  // Travel (extended)
+  { key: "map", icon: Map, label: "Map", group: "Travel" },
+  { key: "luggage", icon: Luggage, label: "Luggage", group: "Travel" },
+  { key: "tent", icon: Tent, label: "Camping", group: "Travel" },
+  { key: "mountain", icon: Mountain, label: "Mountain", group: "Travel" },
+  { key: "ship", icon: Ship, label: "Cruise", group: "Travel" },
+  { key: "train-front", icon: TrainFront, label: "Train", group: "Travel" },
 
   // General
   { key: "folder-open", icon: FolderOpen, label: "General", group: "General" },

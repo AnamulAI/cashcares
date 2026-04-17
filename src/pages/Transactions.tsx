@@ -13,6 +13,9 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useAppContext } from "@/contexts/AppContext";
+import { formatAmount } from "@/lib/formatters";
+import { parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 export default function Transactions() {
   const [incomeOpen, setIncomeOpen] = useState(false);
@@ -23,7 +26,8 @@ export default function Transactions() {
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
   const [editTxn, setEditTxn] = useState<any>(null);
   const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const { currency } = useAppContext();
 
   const { data: transactions = [], isLoading } = useTransactions();
 
@@ -48,6 +52,13 @@ export default function Transactions() {
     if (filters.status !== "all") {
       result = result.filter((t: any) => t.status === filters.status);
     }
+    if (filters.dateFrom || filters.dateTo) {
+      const from = filters.dateFrom ? startOfDay(parseISO(filters.dateFrom)) : new Date(0);
+      const to = filters.dateTo ? endOfDay(parseISO(filters.dateTo)) : new Date(8640000000000000);
+      result = result.filter((t: any) => {
+        try { return isWithinInterval(parseISO(t.date), { start: from, end: to }); } catch { return true; }
+      });
+    }
     if (filters.search.trim()) {
       const q = filters.search.toLowerCase();
       result = result.filter((t: any) => {
@@ -61,7 +72,18 @@ export default function Transactions() {
     return result;
   }, [transactions, activeTab, filters]);
 
-  const hasActiveFilters = filters.search || filters.type !== "all" || filters.categoryId !== "all" || filters.accountId !== "all" || filters.status !== "all";
+  const totals = useMemo(() => {
+    let income = 0, expense = 0;
+    filtered.forEach((t: any) => {
+      if (t.type === "income") income += Number(t.amount);
+      else if (t.type === "expense") expense += Number(t.amount);
+    });
+    return { income, expense, net: income - expense };
+  }, [filtered]);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+
+  const hasActiveFilters = filters.search || filters.type !== "all" || filters.categoryId !== "all" || filters.accountId !== "all" || filters.status !== "all" || filters.dateFrom || filters.dateTo;
+  const showSummary = hasActiveFilters && filtered.length > 0;
 
   const handleViewDetails = (txn: any) => {
     setSelectedTxn(txn);
@@ -115,6 +137,23 @@ export default function Transactions() {
       />
 
       <TransactionFilters filters={filters} onChange={setFilters} />
+
+      {showSummary && (
+        <div className="finance-card-static p-3 grid grid-cols-3 gap-3">
+          <div>
+            <p className="text-[11px] text-muted-foreground">Income</p>
+            <p className="text-sm font-semibold text-positive">{fmt(totals.income)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Expense</p>
+            <p className="text-sm font-semibold text-negative">{fmt(totals.expense)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Net</p>
+            <p className={`text-sm font-semibold ${totals.net >= 0 ? "text-positive" : "text-negative"}`}>{fmt(totals.net)}</p>
+          </div>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-1">

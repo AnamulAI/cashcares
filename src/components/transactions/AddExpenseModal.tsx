@@ -7,17 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArrowUpRight, Plus, X } from "lucide-react";
+import { ArrowUpRight, Plus, X, AlertCircle } from "lucide-react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreateTransaction, useUpdateTransaction } from "@/hooks/use-transactions";
 import { useTranslation } from "@/i18n/useTranslation";
+import { toast } from "sonner";
 
 interface AddExpenseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editTransaction?: any;
 }
+
+interface SplitRow { id: number; accountId: string; amount: string }
 
 export function AddExpenseModal({ open, onOpenChange, editTransaction }: AddExpenseModalProps) {
   const { data: accounts = [] } = useAccounts();
@@ -36,7 +39,7 @@ export function AddExpenseModal({ open, onOpenChange, editTransaction }: AddExpe
   const [note, setNote] = useState("");
   const [tags, setTags] = useState("");
   const [splitEnabled, setSplitEnabled] = useState(false);
-  const [splits, setSplits] = useState([{ id: 1 }]);
+  const [splits, setSplits] = useState<SplitRow[]>([{ id: 1, accountId: "", amount: "" }]);
 
   useEffect(() => {
     if (editTransaction && open) {
@@ -50,11 +53,49 @@ export function AddExpenseModal({ open, onOpenChange, editTransaction }: AddExpe
       setCategoryId(""); setAccountId(""); setAmount(""); setNote(""); setTags("");
       setDate(new Date().toISOString().split("T")[0]);
       setSplitEnabled(false);
+      setSplits([{ id: 1, accountId: "", amount: "" }]);
     }
   }, [editTransaction, open]);
 
+  const splitTotal = splits.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const splitMismatch = splitEnabled && Math.abs(splitTotal - Number(amount || 0)) > 0.001;
+  const splitInvalid = splitEnabled && (splits.some(r => !r.accountId || !r.amount) || splitMismatch);
+
   const handleSubmit = async () => {
-    if (!accountId || !amount) return;
+    if (!amount) return;
+
+    if (splitEnabled && !isEdit) {
+      if (splitInvalid) {
+        toast.error(splitMismatch
+          ? `Splits total (${splitTotal}) doesn't match amount (${amount})`
+          : "Fill account and amount for every split row");
+        return;
+      }
+      const tag = `split:${Date.now()}`;
+      const baseTags = tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+      try {
+        for (const row of splits) {
+          await createTxn.mutateAsync({
+            type: "expense" as const,
+            category_id: categoryId || null,
+            account_id: row.accountId,
+            to_account_id: null,
+            amount: Number(row.amount),
+            date,
+            note: note || null,
+            tags: [...baseTags, tag],
+            status: "completed",
+            transfer_fee: 0,
+          });
+        }
+        onOpenChange(false);
+      } catch (e) {
+        // toast handled by mutation
+      }
+      return;
+    }
+
+    if (!accountId) return;
     const payload = {
       type: "expense" as const,
       category_id: categoryId || null,
@@ -84,15 +125,16 @@ export function AddExpenseModal({ open, onOpenChange, editTransaction }: AddExpe
     } else {
       await createTxn.mutateAsync(payload);
     }
-    setCategoryId(""); setAccountId(""); setAmount(""); setNote(""); setTags(""); setSplitEnabled(false);
     onOpenChange(false);
   };
 
   const isPending = isEdit ? updateTxn.isPending : createTxn.isPending;
+  const activeAccounts = accounts.filter(a => a.is_active);
+  const acctLabel = (a: any) => `${a.name} — ${Number(a.balance).toLocaleString()}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-negative/10 flex items-center justify-center">
@@ -112,8 +154,9 @@ export function AddExpenseModal({ open, onOpenChange, editTransaction }: AddExpe
               </Select>
             </FieldGroup>
             <FieldGroup label={t("table.account")}>
-              <Select value={accountId} onValueChange={setAccountId}><SelectTrigger className="h-9"><SelectValue placeholder={t("transactions.selectAccount")} /></SelectTrigger>
-                <SelectContent>{accounts.filter(a => a.is_active).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+              <Select value={accountId} onValueChange={setAccountId} disabled={splitEnabled}>
+                <SelectTrigger className="h-9"><SelectValue placeholder={splitEnabled ? "Using splits" : t("transactions.selectAccount")} /></SelectTrigger>
+                <SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{acctLabel(a)}</SelectItem>)}</SelectContent>
               </Select>
             </FieldGroup>
           </div>
@@ -126,29 +169,38 @@ export function AddExpenseModal({ open, onOpenChange, editTransaction }: AddExpe
           <Separator />
           <div className="flex items-center justify-between">
             <div><Label className="text-sm">{t("transactions.splitPayment")}</Label><p className="text-[11px] text-muted-foreground">{t("transactions.splitPaymentDesc")}</p></div>
-            <Switch checked={splitEnabled} onCheckedChange={v => { setSplitEnabled(v); if (!v) setSplits([{ id: 1 }]); }} />
+            <Switch checked={splitEnabled} disabled={isEdit} onCheckedChange={v => { setSplitEnabled(v); if (!v) setSplits([{ id: 1, accountId: "", amount: "" }]); }} />
           </div>
           {splitEnabled && (
             <div className="space-y-2 rounded-lg bg-accent/40 p-3">
               {splits.map((s, i) => (
                 <div key={s.id} className="flex items-center gap-2">
-                  <Select><SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder={t("table.account")} /></SelectTrigger>
-                    <SelectContent>{accounts.filter(a => a.is_active).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                  <Select value={s.accountId} onValueChange={v => setSplits(splits.map((r, j) => j === i ? { ...r, accountId: v } : r))}>
+                    <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder={t("table.account")} /></SelectTrigger>
+                    <SelectContent>{activeAccounts.map(a => <SelectItem key={a.id} value={a.id}>{acctLabel(a)}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Input type="number" placeholder="0.00" className="h-8 w-24 text-xs" />
+                  <Input type="number" placeholder="0.00" className="h-8 w-24 text-xs" value={s.amount} onChange={e => setSplits(splits.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))} />
                   {splits.length > 1 && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSplits(splits.filter((_, j) => j !== i))}><X className="h-3 w-3" /></Button>}
                 </div>
               ))}
-              <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-primary" onClick={() => setSplits([...splits, { id: Date.now() }])}>
+              <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-primary" onClick={() => setSplits([...splits, { id: Date.now(), accountId: "", amount: "" }])}>
                 <Plus className="h-3 w-3" /> {t("transactions.addSplit")}
               </Button>
+              <div className={`flex items-center justify-between text-[11px] pt-1 border-t border-border/40 ${splitMismatch ? "text-negative" : "text-muted-foreground"}`}>
+                <span className="flex items-center gap-1">
+                  {splitMismatch && <AlertCircle className="h-3 w-3" />}
+                  Split total
+                </span>
+                <span className="font-semibold">{splitTotal.toLocaleString()} / {Number(amount || 0).toLocaleString()}</span>
+              </div>
+              {isEdit && <p className="text-[11px] text-muted-foreground">Split editing disabled. Delete and re-create to change splits.</p>}
             </div>
           )}
           <div className="flex items-center justify-between">
             <div><Label className="text-sm">{t("transactions.recurring")}</Label><p className="text-[11px] text-muted-foreground">{t("transactions.recurringDesc")}</p></div>
             <Switch />
           </div>
-          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !accountId || !amount}>
+          <Button className="w-full h-10 font-medium" onClick={handleSubmit} disabled={isPending || !amount || (!splitEnabled && !accountId) || (splitEnabled && splitInvalid)}>
             {isPending ? t("action.saving") : isEdit ? t("action.save") : t("action.addExpense")}
           </Button>
         </div>

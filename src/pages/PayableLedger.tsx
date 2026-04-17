@@ -282,7 +282,7 @@ export default function PayableLedger() {
                 <Label className="text-xs">Account</Label>
                 <Select value={form.linked_account_id} onValueChange={v => setForm(f => ({ ...f, linked_account_id: v }))}>
                   <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name} — {fmt(Number(a.balance))}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
@@ -318,7 +318,7 @@ export default function PayableLedger() {
               <Label className="text-xs">{t("module.debitFromAccount")}</Label>
               <Select value={payAcct} onValueChange={setPayAcct}>
                 <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name} — {fmt(Number(a.balance))}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
