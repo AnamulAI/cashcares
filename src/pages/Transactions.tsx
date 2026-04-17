@@ -27,6 +27,8 @@ export default function Transactions() {
   const [editTxn, setEditTxn] = useState<any>(null);
   const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
   const { t } = useTranslation();
+  const { currency, language } = useAppContext() as any;
+  const lang = language || "en";
 
   const { data: transactions = [], isLoading } = useTransactions();
 
@@ -51,6 +53,13 @@ export default function Transactions() {
     if (filters.status !== "all") {
       result = result.filter((t: any) => t.status === filters.status);
     }
+    if (filters.dateFrom || filters.dateTo) {
+      const from = filters.dateFrom ? startOfDay(parseISO(filters.dateFrom)) : new Date(0);
+      const to = filters.dateTo ? endOfDay(parseISO(filters.dateTo)) : new Date(8640000000000000);
+      result = result.filter((t: any) => {
+        try { return isWithinInterval(parseISO(t.date), { start: from, end: to }); } catch { return true; }
+      });
+    }
     if (filters.search.trim()) {
       const q = filters.search.toLowerCase();
       result = result.filter((t: any) => {
@@ -64,7 +73,18 @@ export default function Transactions() {
     return result;
   }, [transactions, activeTab, filters]);
 
-  const hasActiveFilters = filters.search || filters.type !== "all" || filters.categoryId !== "all" || filters.accountId !== "all" || filters.status !== "all";
+  const totals = useMemo(() => {
+    let income = 0, expense = 0;
+    filtered.forEach((t: any) => {
+      if (t.type === "income") income += Number(t.amount);
+      else if (t.type === "expense") expense += Number(t.amount);
+    });
+    return { income, expense, net: income - expense };
+  }, [filtered]);
+  const fmt = (n: number) => formatAmount(n, currency, lang);
+
+  const hasActiveFilters = filters.search || filters.type !== "all" || filters.categoryId !== "all" || filters.accountId !== "all" || filters.status !== "all" || filters.dateFrom || filters.dateTo;
+  const showSummary = hasActiveFilters && filtered.length > 0;
 
   const handleViewDetails = (txn: any) => {
     setSelectedTxn(txn);
