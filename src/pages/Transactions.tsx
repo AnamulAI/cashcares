@@ -138,6 +138,23 @@ export default function Transactions() {
 
       <TransactionFilters filters={filters} onChange={setFilters} />
 
+      {showSummary && (
+        <div className="finance-card-static p-3 grid grid-cols-3 gap-3">
+          <div>
+            <p className="text-[11px] text-muted-foreground">Income</p>
+            <p className="text-sm font-semibold text-positive">{fmt(totals.income)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Expense</p>
+            <p className="text-sm font-semibold text-negative">{fmt(totals.expense)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Net</p>
+            <p className={`text-sm font-semibold ${totals.net >= 0 ? "text-positive" : "text-negative"}`}>{fmt(totals.net)}</p>
+          </div>
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-1">
           <TabsTrigger value="all" className="text-xs px-4 py-1.5 rounded-lg data-[state=active]:shadow-sm">{t("transactions.all")}</TabsTrigger>
