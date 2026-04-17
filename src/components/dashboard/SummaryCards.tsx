@@ -8,6 +8,7 @@ import { useAllPayableEntries } from "@/hooks/use-payable-entries";
 import { useLoans } from "@/hooks/use-loans";
 import { useAssets } from "@/hooks/use-assets";
 import { useInvestments } from "@/hooks/use-investments";
+import { useSavingsPlans } from "@/hooks/use-savings";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatPercent } from "@/lib/formatters";
 
@@ -20,11 +21,12 @@ export function SummaryCards() {
   const { data: loans = [] } = useLoans();
   const { data: assets = [] } = useAssets();
   const { data: investments = [] } = useInvestments();
+  const { data: savingsPlans = [] } = useSavingsPlans();
   const { t, lang } = useTranslation();
 
   const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
-  // Net Worth = accounts + assets + investments + receivables - payables - debt
+  // Net Worth = accounts + assets + investments + savings + receivables - payables - debt
   const totalReceivable = receivableEntries
     .filter((r: any) => r.status !== "collected")
     .reduce((s: number, r: any) => s + (Number(r.amount) - Number(r.collected_amount)), 0);
@@ -34,8 +36,9 @@ export function SummaryCards() {
   const totalDebt = loans.filter(l => l.status !== "paid_off").reduce((s, l) => s + (Number(l.principal_amount) - Number(l.paid_amount)), 0);
   const totalAssets = assets.filter(a => a.status === "active").reduce((s, a) => s + Number(a.current_value), 0);
   const totalInvestments = investments.filter(i => i.status === "active").reduce((s, i) => s + Number(i.current_value), 0);
+  const totalSavings = savingsPlans.filter(p => p.status !== "paused").reduce((s, p) => s + Number(p.total_saved), 0);
 
-  const netWorth = totalBalance + totalAssets + totalInvestments + totalReceivable - totalPayable - totalDebt;
+  const netWorth = totalBalance + totalAssets + totalInvestments + totalSavings + totalReceivable - totalPayable - totalDebt;
 
   const now = new Date();
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
