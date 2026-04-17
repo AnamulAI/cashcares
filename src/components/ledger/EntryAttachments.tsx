@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X, FileText, Image, Download, Loader2 } from "lucide-react";
 import { useEntryAttachments, useUploadAttachment, useDeleteAttachment, getAttachmentUrl, EntryAttachment } from "@/hooks/use-entry-attachments";
@@ -94,14 +94,19 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
 }
 
 function AttachmentRow({ att, readOnly, onDelete, deleting }: { att: EntryAttachment; readOnly?: boolean; onDelete: () => void; deleting: boolean }) {
-  const url = getAttachmentUrl(att.file_path);
+  const [url, setUrl] = useState<string>("");
+  useEffect(() => {
+    let mounted = true;
+    getAttachmentUrl(att.file_path).then(u => { if (mounted) setUrl(u); });
+    return () => { mounted = false; };
+  }, [att.file_path]);
   return (
     <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs bg-muted/30">
       <FileIcon mime={att.mime_type} />
       <span className="truncate flex-1 font-medium">{att.file_name}</span>
       <span className="text-muted-foreground shrink-0">{formatSize(att.file_size)}</span>
-      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0">
-        <Button type="button" variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3 w-3" /></Button>
+      <a href={url || "#"} target="_blank" rel="noopener noreferrer" className="shrink-0" onClick={(e) => { if (!url) e.preventDefault(); }}>
+        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={!url}><Download className="h-3 w-3" /></Button>
       </a>
       {!readOnly && (
         <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete} disabled={deleting}>

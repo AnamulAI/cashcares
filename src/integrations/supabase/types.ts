@@ -1226,11 +1226,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_balance: {
-        Args: { account_uuid: string; amount_val: number }
-        Returns: undefined
-      }
-      increment_usage: { Args: { cat_uuid: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user" | "manager" | "support"
