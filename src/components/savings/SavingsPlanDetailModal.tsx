@@ -4,11 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trash2, Pause, Play, CheckCircle2 } from "lucide-react";
+import { Trash2, Pause, Play, CheckCircle2, Plus } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MarkInstallmentPaidModal } from "./MarkInstallmentPaidModal";
 import {
-  useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan,
+  useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
   type SavingsPlan, type SavingsInstallment
 } from "@/hooks/use-savings";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
@@ -25,6 +25,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   const { data: installments = [] } = useSavingsInstallments(plan?.id);
   const del = useDeleteSavingsPlan();
   const upd = useUpdateSavingsPlan();
+  const generate = useGenerateMoreInstallments();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paidModal, setPaidModal] = useState<SavingsInstallment | null>(null);
 
@@ -150,6 +151,14 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                   </div>
                 ))}
               </div>
+              {plan.plan_type === "open" && plan.status === "active" && (
+                <div className="pt-3 mt-3 border-t flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Open-ended plan — extend the schedule when needed.</p>
+                  <Button size="sm" variant="outline" onClick={() => generate.mutate({ plan, count: 12 })} disabled={generate.isPending}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> {generate.isPending ? "Generating…" : "Generate next 12"}
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="history" className="pt-3">
