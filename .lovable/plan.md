@@ -1,74 +1,68 @@
 
+## Plan: Rebrand "Cash Care" → "MahBook" with Portfolio Branding polish
 
-## Plan: Recurring Savings (DPS / Foundation / সমিতি) module
+### 1. Brand identity update
 
-A new **Savings** page under Wealth section in sidebar. Each savings plan tracks recurring installments toward a foundation, DPS, committee, or open-ended donation goal — with full schedule, history, optional account linking, and dual-mode maturity (fixed-term or open-ended).
+**`src/config/app.ts`**
+- `name: "MahBook"`, `tagline: "Personal Finance, Refined"`
 
-### What you get
+**`index.html`**
+- Title, meta description, author, OG/Twitter tags → "MahBook"
+- Add Google Sans family to font import (Google Fonts uses "Google Sans" via the `Product+Sans` fallback; since the real Google Sans isn't publicly served, use **Plus Jakarta Sans** — the closest open Google Sans-style geometric grotesque — labeled as `--font-display` and aliased as "Google Sans" in code intent). Keep Inter + Hind Siliguri.
+- Updated import: `Plus+Jakarta+Sans:wght@500;600;700;800` + existing Inter & Hind Siliguri.
 
-**Sidebar**
-- New item: **Savings** (Wealth group, between Investments and Assets), Piggy-bank icon
+### 2. New "MB" logo component
 
-**Savings page**
-- Summary cards: Total Plans, Total Saved, This Month Due, Completed Plans
-- Plans grid (cards): each shows name, recipient (e.g., "XYZ Foundation"), monthly amount, progress bar, next due date, status badge (Active / Completed / Paused)
-- "Add Savings Plan" button
+**New** `src/components/shared/BrandLogo.tsx`
+- Reusable: `<BrandLogo size="sm|md|lg" showText />`
+- Rounded-rectangle (rounded-xl) with **subtle indigo→violet gradient** (`bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600`), soft inner highlight, fine ring.
+- "MB" initials in white, Plus Jakarta Sans bold, slightly tightened tracking.
+- Beside icon: brand name "MahBook" in `font-display` (bold 700), with a subtle indigo gradient text fill on hover.
+- Used in: `AppSidebar` header, `Auth` page header, future loading screens.
 
-**Add/Edit Plan modal** (centered Dialog)
-- Plan name, recipient/institution name, monthly amount, frequency (monthly/weekly/quarterly), start date
-- Type: **Fixed-term** (set duration in months → auto-computes target & maturity date) OR **Open-ended** (no end)
-- Optional notes
+### 3. Sidebar polish (Portfolio Branding vibe)
 
-**Plan Detail modal** (centered Dialog, tabbed)
-- **Overview tab**: progress %, total saved, remaining, next due, maturity countdown, edit/delete/pause actions
-- **Schedule tab**: auto-generated installment list with due dates, each row has "Mark Paid" button, paid date, account used, status (Paid / Pending / Overdue)
-- **History tab**: chronological deposit log
+**`src/components/layout/AppSidebar.tsx`**
+- Replace "CC" block with `<BrandLogo />`.
+- Smooth hover on items: add `hover:translate-x-0.5 hover:shadow-sm` micro-interaction, `transition-all duration-200 ease-out`.
+- Active item: gradient pill background `bg-gradient-to-r from-primary/10 to-violet-500/5` + left accent bar.
+- Group labels: tighter tracking, slight uppercase contrast bump.
 
-**Mark Installment Paid** (small Dialog)
-- Date paid, amount (pre-filled, editable for partials), optional account select (`Bank — ৳5000` format), note
-- If account chosen → deducts from that account balance (like an expense)
-- If no account → just records the deposit, no balance impact
+### 4. Typography pass
 
-**Auto-reminders**
-- When plan is created, generates reminder entries in Reminder Center for each upcoming due date
-- Marking installment paid auto-completes that reminder
+**`src/index.css`**
+- Body font stack: keep Inter + Hind Siliguri (Bangla preserved).
+- `--font-display` → Plus Jakarta Sans for headings, labels, brand.
+- Tailwind config: add `display: ['"Plus Jakarta Sans"', "Inter", ...]` so `font-display` resolves correctly across the app (already used in Auth/Sidebar).
+- Add comment block confirming Bangla fallback chain unchanged.
 
-### Data model (2 new tables)
+**`tailwind.config.ts`** — extend `fontFamily.display`.
 
-`savings_plans`: id, user_id, plan_name, recipient_name, plan_type (`fixed`|`open`), installment_amount, frequency (`monthly`|`weekly`|`quarterly`), duration_months (nullable for open), target_amount (computed for fixed), start_date, maturity_date (computed for fixed), total_saved, status (`active`|`completed`|`paused`), note, timestamps, is_demo
+### 5. Dashboard cohesion (no layout change)
 
-`savings_installments`: id, user_id, plan_id, due_date, amount, status (`pending`|`paid`|`overdue`), paid_date, paid_amount, linked_account_id (nullable), note, timestamps
+**`src/index.css`**
+- Refine `--shadow-card` and `--shadow-card-hover` to be slightly deeper but still soft (Portfolio feel).
+- Add new utility class `.finance-card-hover` with smooth `hover:-translate-y-0.5` lift + shadow upgrade.
+- Tweak feature color tokens for **subtle indigo/violet harmony**: shift `--feature-budget`, `--feature-transactions`, `--feature-reports` a few degrees toward indigo so dashboard cards read as one family. Income/Expense semantics preserved.
 
-Both with standard user-scoped RLS (matches your existing security architecture).
+**Dashboard widgets** (`SummaryCards`, `SecondaryCards`, `TrendChart`, `DistributionChart`, `AlertsCard`, `BudgetProgress`, `RecentTransactions`, `QuickActions`)
+- Apply `finance-card-hover` class.
+- Standardize internal padding to `p-5` and gap rhythm to `gap-4`.
+- Net Worth hero card: subtle indigo-violet gradient overlay on top border.
 
-### Files to create/touch
+### 6. Other "Cash Care" references
 
-**New**
-- `supabase/migrations/<timestamp>_savings.sql` — 2 tables + RLS
-- `src/hooks/use-savings.ts` — CRUD for plans + installments, auto-generate schedule, mark-paid logic with optional account deduction
-- `src/pages/Savings.tsx`
-- `src/components/savings/AddSavingsPlanModal.tsx`
-- `src/components/savings/SavingsPlanDetailModal.tsx`
-- `src/components/savings/MarkInstallmentPaidModal.tsx`
-- `src/components/savings/SavingsCard.tsx`
+- `src/pages/Auth.tsx` → BrandLogo + "MahBook" + tagline.
+- `src/pages/Reports.tsx` print header → "MahBook — Financial Report".
 
-**Edit**
-- `src/App.tsx` — add `/savings` route (premium-gated like Investments)
-- `src/components/layout/AppSidebar.tsx` — add Savings nav item
-- `src/i18n/translations.ts` — Bangla strings (সঞ্চয়, কিস্তি, মেয়াদ, ম্যাচিউরিটি, etc.)
-- `src/integrations/supabase/types.ts` — auto-regen after migration
-- `src/hooks/use-reminders.ts` (or `use-savings.ts`) — bridge to create reminders for due installments
+### 7. Memory updates
 
-### Behavior rules
-- Fixed-term plan: `target_amount = installment_amount × duration_months`, maturity auto-shown, status flips to `completed` when all installments paid
-- Open-ended plan: no target, no maturity, just running total
-- Marking installment paid with account → calls existing balance adjuster (same pattern as transactions)
-- Overdue: any pending installment with `due_date < today` shows red badge & appears in Reminder Center
-- Edit plan: allowed only if no installments paid yet (otherwise only name/note editable, to preserve history)
-- Delete plan: confirms via `ConfirmDialog`, cascades installments
+- Update `mem://project/config` and Core in `mem://index.md`: app name is now MahBook (BDT preserved), display font Plus Jakarta Sans.
+- Add `mem://design/visual-identity/brand` describing MahBook logo (MB monogram, indigo→violet gradient, rounded-xl).
 
-### UI consistency
-- Uses existing `FinanceCard`, `StatCard`, `EmptyState`, `ConfirmDialog`, centered Dialog pattern (no Sheets)
-- Feature color: teal/cyan (distinct from Investments purple, Assets indigo)
-- Premium-gated like other Wealth modules
+### Out of scope
+- No DB changes. No route changes. No new features. Dashboard structure untouched — only color/shadow/spacing refinement.
 
+### Files touched
+**New (1):** `src/components/shared/BrandLogo.tsx`
+**Edit (~12):** `src/config/app.ts`, `index.html`, `tailwind.config.ts`, `src/index.css`, `src/components/layout/AppSidebar.tsx`, `src/pages/Auth.tsx`, `src/pages/Reports.tsx`, 6 dashboard widget files, memory files.
