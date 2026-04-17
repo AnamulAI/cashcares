@@ -26,9 +26,8 @@ export default function Transactions() {
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
   const [editTxn, setEditTxn] = useState<any>(null);
   const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
-  const { t } = useTranslation();
-  const { currency, language } = useAppContext() as any;
-  const lang = language || "en";
+  const { t, lang } = useTranslation();
+  const { currency } = useAppContext();
 
   const { data: transactions = [], isLoading } = useTransactions();
 
