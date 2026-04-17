@@ -29,7 +29,7 @@ export function QuickActions() {
   ];
 
   return (
-    <div className="finance-card-static p-5">
+    <div className="finance-card-static finance-card-hover p-5">
       <SectionHeader title={t("dashboard.quickActions")} />
       <div className="mt-4 grid grid-cols-2 gap-2.5">
         {actions.map((action) => (

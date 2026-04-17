@@ -39,7 +39,7 @@ export function DistributionChart() {
   const hasData = distributionData.length > 0;
 
   return (
-    <div className="finance-card-static p-6">
+    <div className="finance-card-static finance-card-hover p-6">
       <SectionHeader title={t("dashboard.accountDistribution")} />
       <div className="mt-5 flex flex-col items-center">
         {!hasData ? (

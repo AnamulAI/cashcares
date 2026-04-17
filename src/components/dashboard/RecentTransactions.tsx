@@ -110,7 +110,7 @@ export function RecentTransactions() {
   };
 
   return (
-    <div className="finance-card-static overflow-hidden">
+    <div className="finance-card-static finance-card-hover overflow-hidden">
       <div className="p-5 pb-0">
         <SectionHeader title={t("dashboard.recentTransactions")} action={<Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground h-8" onClick={() => navigate("/transactions")}>{t("action.viewAll")} →</Button>} />
       </div>

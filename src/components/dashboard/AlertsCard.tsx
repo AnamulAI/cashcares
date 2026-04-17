@@ -77,7 +77,7 @@ export function AlertsCard() {
   }, [reminders, budgets, transactions]);
 
   return (
-    <div className="finance-card-static p-5">
+    <div className="finance-card-static finance-card-hover p-5">
       <SectionHeader title={t("dashboard.alertsReminders")} />
       <div className="mt-4 space-y-2.5">
         {alerts.length === 0 ? (

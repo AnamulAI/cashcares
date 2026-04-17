@@ -41,7 +41,7 @@ export function BudgetProgress() {
   }, [budgets, transactions]);
 
   return (
-    <div className="finance-card-static p-5">
+    <div className="finance-card-static finance-card-hover p-5">
       <SectionHeader title={t("dashboard.budgetProgress")} />
       <div className="mt-5 space-y-5">
         {budgetItems.length === 0 ? (
