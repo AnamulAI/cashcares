@@ -300,3 +300,6 @@ export default function Receivables() {
         />
       )}
       <ImportLedgerModal open={importOpen} onOpenChange={setImportOpen} type="receivable" />
+    </div>
+  );
+}

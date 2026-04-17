@@ -296,3 +296,6 @@ export default function Payables() {
         />
       )}
       <ImportLedgerModal open={importOpen} onOpenChange={setImportOpen} type="payable" />
+    </div>
+  );
+}
