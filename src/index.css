@@ -42,20 +42,20 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Feature color system */
+    /* Feature color system — indigo/violet harmonized family */
     --feature-income: 152 69% 36%;
     --feature-expense: 0 65% 55%;
     --feature-savings: 205 78% 48%;
-    --feature-budget: 262 60% 52%;
+    --feature-budget: 250 60% 56%;
     --feature-accounts: 199 72% 45%;
-    --feature-categories: 280 50% 55%;
-    --feature-transactions: 220 65% 50%;
+    --feature-categories: 270 52% 58%;
+    --feature-transactions: 245 60% 56%;
     --feature-receivables: 340 65% 55%;
     --feature-payables: 172 60% 38%;
     --feature-debt: 25 85% 50%;
-    --feature-assets: 270 55% 58%;
+    --feature-assets: 268 55% 60%;
     --feature-investments: 160 65% 40%;
-    --feature-reports: 230 62% 52%;
+    --feature-reports: 240 62% 56%;
     --feature-reminders: 32 80% 50%;
     --feature-partnerships: 190 55% 42%;
     --feature-settings: 220 12% 50%;
@@ -70,10 +70,10 @@
     --sidebar-border: 240 10% 92%;
     --sidebar-ring: 245 58% 51%;
 
-    /* Premium shadow tokens */
-    --shadow-card: 0 1px 3px 0 hsl(240 10% 10% / 0.04), 0 1px 2px -1px hsl(240 10% 10% / 0.03);
-    --shadow-card-hover: 0 4px 12px 0 hsl(240 10% 10% / 0.06), 0 1px 3px -1px hsl(240 10% 10% / 0.04);
-    --shadow-elevated: 0 8px 24px 0 hsl(240 10% 10% / 0.08), 0 2px 6px -1px hsl(240 10% 10% / 0.04);
+    /* Premium shadow tokens — refined depth */
+    --shadow-card: 0 1px 3px 0 hsl(245 30% 20% / 0.05), 0 1px 2px -1px hsl(245 30% 20% / 0.04);
+    --shadow-card-hover: 0 8px 24px -8px hsl(245 40% 30% / 0.12), 0 2px 6px -2px hsl(245 30% 20% / 0.06);
+    --shadow-elevated: 0 12px 32px -8px hsl(245 40% 30% / 0.16), 0 4px 10px -2px hsl(245 30% 20% / 0.08);
   }
 
   .dark {
@@ -156,8 +156,10 @@
     font-size: 14.5px;
     line-height: 1.5;
   }
+  /* Headings use the display family (Plus Jakarta Sans — Google Sans-style geometric grotesque).
+     Bangla fallback chain remains intact via Hind Siliguri. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Inter", "Hind Siliguri", system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans", "Inter", "Hind Siliguri", system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -222,6 +224,14 @@
   .finance-card-static {
     @apply rounded-xl border bg-card;
     box-shadow: var(--shadow-card);
+  }
+  /* Portfolio Branding lift on hover for dashboard widgets */
+  .finance-card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  .finance-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
   }
 }
 

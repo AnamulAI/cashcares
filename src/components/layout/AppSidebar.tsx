@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
-import { APP_CONFIG } from "@/config/app";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -75,17 +75,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="px-4 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
-            CC
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="font-semibold text-[15px] font-display tracking-tight">{APP_CONFIG.name}</p>
-              <p className="text-[11px] text-muted-foreground/70 leading-none mt-0.5">{APP_CONFIG.tagline}</p>
-            </div>
-          )}
-        </div>
+        <BrandLogo size="md" showText={!collapsed} />
       </SidebarHeader>
 
       <SidebarContent className="px-3 mt-1">
