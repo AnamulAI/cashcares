@@ -27,6 +27,7 @@ import PayableLedger from "./pages/PayableLedger";
 import DebtLoans from "./pages/DebtLoans";
 import Assets from "./pages/Assets";
 import Investments from "./pages/Investments";
+import Savings from "./pages/Savings";
 import Partnerships from "./pages/Partnerships";
 import PartnershipLedger from "./pages/PartnershipLedger";
 import Reminders from "./pages/Reminders";
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/debt-loans" element={<PremiumRoute><DebtLoans /></PremiumRoute>} />
             <Route path="/assets" element={<PremiumRoute><Assets /></PremiumRoute>} />
             <Route path="/investments" element={<PremiumRoute><Investments /></PremiumRoute>} />
+            <Route path="/savings" element={<PremiumRoute><Savings /></PremiumRoute>} />
             <Route path="/partnerships" element={<PremiumRoute><Partnerships /></PremiumRoute>} />
             <Route path="/partnerships/:id" element={<PremiumRoute><PartnershipLedger /></PremiumRoute>} />
             <Route path="/reminders" element={<Reminders />} />
