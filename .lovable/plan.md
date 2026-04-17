@@ -1,58 +1,74 @@
 
 
-## Plan: 12 Cash Care fixes & enhancements
+## Plan: Recurring Savings (DPS / Foundation / সমিতি) module
 
-I've reviewed the codebase. Here's what I'll do, grouped into 4 batches.
+A new **Savings** page under Wealth section in sidebar. Each savings plan tracks recurring installments toward a foundation, DPS, committee, or open-ended donation goal — with full schedule, history, optional account linking, and dual-mode maturity (fixed-term or open-ended).
 
-### A. Bug fixes
-1. **Transactions edit → category count not live updating** — `useUpdateTransaction` doesn't invalidate the `categories` query. Fix: invalidate `categories` cache after create/update/delete.
-2. **Payable/Receivable add entry → account select doesn't show amount** — Account dropdown shows only name. Fix: show `Account name — ৳balance` in `PayableLedger` & `ReceivableLedger` entry modals (and Record Payment/Collection modals).
-3. **Reports → chart shows only on Overview tab** — Add a relevant chart at the top of each tab (Income, Expense, Budget, Savings, Receivables, Payables, Debt, Assets, Investments) above the existing summary list.
-4. **Split Payment not working** — In `AddExpenseModal`, the split rows are unwired (no state, not saved). Fix: wire splits to state, validate sum equals total, save as multiple linked expense transactions sharing a tag.
-5. **Transactions: no date search** — Add a from/to date picker (popover with calendar) to `TransactionFilters` and apply in filtering logic.
-6. **Transactions: when category selected, show that category's totals** — Add a small summary strip above the transactions table showing filtered Total Income / Total Expense / Net for the active filters.
+### What you get
 
-### B. Bangla wording rename
-7. Person-context only: replace **পাওনা → পাওনাদার** and **দেনা → দেনাদার** in subtitles, ledger headers, person-list section labels. Keep noun money usage (`receivables.title = পাওনা`, `dashboard.payables = দেনা`) intact since those mean the money, not the person.
+**Sidebar**
+- New item: **Savings** (Wealth group, between Investments and Assets), Piggy-bank icon
 
-### C. New icons (extend `category-icons.ts`)
-8. **Shopping**: ShoppingBag, Store, Tag, Percent, BadgePercent
-9. **Helping hand**: HandHeart, HelpingHand, Sprout, UsersRound
-10. **Medicine**: Pill, Stethoscope, Syringe, Cross, Bandage, Activity
-11. **Travel**: MapPin, Map, Luggage, Tent, Mountain, Ship, TrainFront, Bike
-12. **Fast Food**: Pizza, Sandwich, Beef, IceCream, Cookie, Soup
+**Savings page**
+- Summary cards: Total Plans, Total Saved, This Month Due, Completed Plans
+- Plans grid (cards): each shows name, recipient (e.g., "XYZ Foundation"), monthly amount, progress bar, next due date, status badge (Active / Completed / Paused)
+- "Add Savings Plan" button
 
-### D. Import file upload for Payables / Receivables
-13. New `ImportLedgerModal.tsx` (CSV) accessible from Payables and Receivables main page header. Columns: `Person Name, Phone, Description, Amount, Due Date`. Bulk-creates books + opening entries. Same UX pattern as existing `ImportDataModal`.
+**Add/Edit Plan modal** (centered Dialog)
+- Plan name, recipient/institution name, monthly amount, frequency (monthly/weekly/quarterly), start date
+- Type: **Fixed-term** (set duration in months → auto-computes target & maturity date) OR **Open-ended** (no end)
+- Optional notes
 
----
+**Plan Detail modal** (centered Dialog, tabbed)
+- **Overview tab**: progress %, total saved, remaining, next due, maturity countdown, edit/delete/pause actions
+- **Schedule tab**: auto-generated installment list with due dates, each row has "Mark Paid" button, paid date, account used, status (Paid / Pending / Overdue)
+- **History tab**: chronological deposit log
 
-### Files to touch
-- `src/hooks/use-transactions.ts` — invalidate categories
-- `src/components/transactions/TransactionFilters.tsx` — date range
-- `src/pages/Transactions.tsx` — date-range filter + category totals strip
-- `src/components/transactions/AddExpenseModal.tsx` — wire split payments
-- `src/pages/PayableLedger.tsx`, `src/pages/ReceivableLedger.tsx` — account dropdown w/ balance
-- `src/pages/Reports.tsx` — per-tab charts
-- `src/components/categories/category-icons.ts` — new icons
-- `src/i18n/translations.ts` — পাওনাদার/দেনাদার rewording
-- `src/pages/Payables.tsx`, `src/pages/Receivables.tsx` + new `src/components/shared/ImportLedgerModal.tsx`
+**Mark Installment Paid** (small Dialog)
+- Date paid, amount (pre-filled, editable for partials), optional account select (`Bank — ৳5000` format), note
+- If account chosen → deducts from that account balance (like an expense)
+- If no account → just records the deposit, no balance impact
 
-No DB migration needed.
+**Auto-reminders**
+- When plan is created, generates reminder entries in Reminder Center for each upcoming due date
+- Marking installment paid auto-completes that reminder
 
-### 3 quick clarifications
+### Data model (2 new tables)
 
-**Q1 — Split Payment storage:**
-A) Save as multiple separate expense transactions sharing a tag (recommended — each shows in account properly)
-B) Save as one transaction with split details inside note text
+`savings_plans`: id, user_id, plan_name, recipient_name, plan_type (`fixed`|`open`), installment_amount, frequency (`monthly`|`weekly`|`quarterly`), duration_months (nullable for open), target_amount (computed for fixed), start_date, maturity_date (computed for fixed), total_saved, status (`active`|`completed`|`paused`), note, timestamps, is_demo
 
-**Q2 — Reports per-tab chart style:**
-A) Auto-pick (Pie for breakdowns, Bar for budget, Line for trend) — recommended
-B) Bar chart everywhere for consistency
+`savings_installments`: id, user_id, plan_id, due_date, amount, status (`pending`|`paid`|`overdue`), paid_date, paid_amount, linked_account_id (nullable), note, timestamps
 
-**Q3 — Import file format:**
-A) CSV only (lighter, simpler) — recommended
-B) CSV + Excel (.xlsx)
+Both with standard user-scoped RLS (matches your existing security architecture).
 
-Reply with `1A 2A 3A` (or your choices) and I'll implement everything.
+### Files to create/touch
+
+**New**
+- `supabase/migrations/<timestamp>_savings.sql` — 2 tables + RLS
+- `src/hooks/use-savings.ts` — CRUD for plans + installments, auto-generate schedule, mark-paid logic with optional account deduction
+- `src/pages/Savings.tsx`
+- `src/components/savings/AddSavingsPlanModal.tsx`
+- `src/components/savings/SavingsPlanDetailModal.tsx`
+- `src/components/savings/MarkInstallmentPaidModal.tsx`
+- `src/components/savings/SavingsCard.tsx`
+
+**Edit**
+- `src/App.tsx` — add `/savings` route (premium-gated like Investments)
+- `src/components/layout/AppSidebar.tsx` — add Savings nav item
+- `src/i18n/translations.ts` — Bangla strings (সঞ্চয়, কিস্তি, মেয়াদ, ম্যাচিউরিটি, etc.)
+- `src/integrations/supabase/types.ts` — auto-regen after migration
+- `src/hooks/use-reminders.ts` (or `use-savings.ts`) — bridge to create reminders for due installments
+
+### Behavior rules
+- Fixed-term plan: `target_amount = installment_amount × duration_months`, maturity auto-shown, status flips to `completed` when all installments paid
+- Open-ended plan: no target, no maturity, just running total
+- Marking installment paid with account → calls existing balance adjuster (same pattern as transactions)
+- Overdue: any pending installment with `due_date < today` shows red badge & appears in Reminder Center
+- Edit plan: allowed only if no installments paid yet (otherwise only name/note editable, to preserve history)
+- Delete plan: confirms via `ConfirmDialog`, cascades installments
+
+### UI consistency
+- Uses existing `FinanceCard`, `StatCard`, `EmptyState`, `ConfirmDialog`, centered Dialog pattern (no Sheets)
+- Feature color: teal/cyan (distinct from Investments purple, Assets indigo)
+- Premium-gated like other Wealth modules
 
