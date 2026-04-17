@@ -127,6 +127,12 @@ export function useUpdateTransaction() {
         if (toAccountId) await adjustBalance(toAccountId, amount);
       }
 
+      // Adjust category usage if changed
+      if (newTxn.category_id !== undefined && newTxn.category_id !== oldTxn.category_id) {
+        if (oldTxn.category_id) await incrementUsage(oldTxn.category_id, -1);
+        if (newTxn.category_id) await incrementUsage(newTxn.category_id, 1);
+      }
+
       const { data, error } = await supabase.from("transactions").update(newTxn).eq("id", id).select().single();
       if (error) throw error;
       return data;
@@ -159,6 +165,8 @@ export function useDeleteTransaction() {
         }
       }
 
+      if (txn.category_id) await incrementUsage(txn.category_id, -1);
+
       const { error } = await supabase.from("transactions").delete().eq("id", txn.id);
       if (error) throw error;
     },
@@ -166,6 +174,7 @@ export function useDeleteTransaction() {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["category-usage"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Transaction deleted");
     },
