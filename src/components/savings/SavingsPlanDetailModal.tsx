@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import {
   Trash2, Pause, Play, CheckCircle2, Plus, MoreHorizontal, Pencil,
-  RotateCcw, Calendar, Wallet, PiggyBank, TrendingUp, Clock, AlertTriangle, Target
+  RotateCcw, Calendar, Wallet, PiggyBank, TrendingUp, Clock, AlertTriangle, Target,
+  Printer, Download
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MarkInstallmentPaidModal } from "./MarkInstallmentPaidModal";
+import { EditSavingsPlanModal } from "./EditSavingsPlanModal";
 import {
   useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
   type SavingsPlan, type SavingsInstallment
@@ -24,6 +26,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface Props {
   open: boolean;
