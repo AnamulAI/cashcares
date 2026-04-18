@@ -218,12 +218,25 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                      <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Plan
+                    </DropdownMenuItem>
                     {plan.status !== "completed" && (
                       <DropdownMenuItem onClick={togglePause}>
                         {plan.status === "paused" ? <Play className="h-3.5 w-3.5 mr-2" /> : <Pause className="h-3.5 w-3.5 mr-2" />}
                         {plan.status === "paused" ? "Resume" : "Pause"}
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handlePrint}>
+                      <Printer className="h-3.5 w-3.5 mr-2" /> Print
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handlePrint}>
+                      <Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCSV}>
+                      <Download className="h-3.5 w-3.5 mr-2" /> Export CSV
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive" onClick={() => setConfirmOpen(true)}>
                       <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete Plan
