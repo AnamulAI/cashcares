@@ -56,18 +56,6 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteInstId, setDeleteInstId] = useState<string | null>(null);
 
-  if (!plan) return null;
-
-  const target = Number(plan.target_amount);
-  const saved = Number(plan.total_saved);
-  const remaining = Math.max(0, target - saved);
-  const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
-
-  const paidCount = installments.filter(i => i.status === "paid").length;
-  const pendingCount = installments.filter(i => i.status === "pending").length;
-  const overdueCount = installments.filter(i => i.status === "overdue").length;
-  const nextDue = installments.find(i => i.status !== "paid")?.due_date;
-
   const recentPaid = useMemo(() =>
     installments
       .filter(i => i.status === "paid")
@@ -80,6 +68,18 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
     installments.filter(i => statusFilter === "all" || i.status === statusFilter),
     [installments, statusFilter]
   );
+
+  if (!plan) return null;
+
+  const target = Number(plan.target_amount);
+  const saved = Number(plan.total_saved);
+  const remaining = Math.max(0, target - saved);
+  const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+
+  const paidCount = installments.filter(i => i.status === "paid").length;
+  const pendingCount = installments.filter(i => i.status === "pending").length;
+  const overdueCount = installments.filter(i => i.status === "overdue").length;
+  const nextDue = installments.find(i => i.status !== "paid")?.due_date;
 
   const fmt = (n: number) => formatAmount(n, currency);
   const accountName = (id: string | null) =>
