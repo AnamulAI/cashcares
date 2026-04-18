@@ -487,6 +487,12 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
         onOpenChange={(v) => !v && setPaidModal(null)}
         installment={paidModal}
       />
+
+      <EditSavingsPlanModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        plan={plan}
+      />
     </>
   );
 }
