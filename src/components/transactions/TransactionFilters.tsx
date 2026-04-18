@@ -1,13 +1,34 @@
-import { Search, X, CalendarIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, X, CalendarIcon, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCategories } from "@/hooks/use-categories";
 import { useAccounts } from "@/hooks/use-accounts";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import {
+  format,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  subDays,
+  subMonths,
+  subYears,
+} from "date-fns";
 import { cn } from "@/lib/utils";
 
 export interface TransactionFilterValues {
@@ -35,9 +56,75 @@ interface TransactionFiltersProps {
   onChange: (filters: TransactionFilterValues) => void;
 }
 
+type PresetKey =
+  | "all"
+  | "today"
+  | "yesterday"
+  | "thisWeek"
+  | "thisMonth"
+  | "lastMonth"
+  | "thisYear"
+  | "lastYear"
+  | "custom";
+
+const PRESET_LABELS: Record<PresetKey, string> = {
+  all: "All Time",
+  today: "Today",
+  yesterday: "Yesterday",
+  thisWeek: "This Week",
+  thisMonth: "This Month",
+  lastMonth: "Last Month",
+  thisYear: "This Year",
+  lastYear: "Last Year",
+  custom: "Custom",
+};
+
+const fmt = (d: Date) => format(d, "yyyy-MM-dd");
+
+function rangeForPreset(preset: PresetKey): { from: string; to: string } {
+  const now = new Date();
+  switch (preset) {
+    case "today":
+      return { from: fmt(startOfDay(now)), to: fmt(endOfDay(now)) };
+    case "yesterday": {
+      const y = subDays(now, 1);
+      return { from: fmt(startOfDay(y)), to: fmt(endOfDay(y)) };
+    }
+    case "thisWeek":
+      return { from: fmt(startOfWeek(now, { weekStartsOn: 1 })), to: fmt(endOfWeek(now, { weekStartsOn: 1 })) };
+    case "thisMonth":
+      return { from: fmt(startOfMonth(now)), to: fmt(endOfMonth(now)) };
+    case "lastMonth": {
+      const lm = subMonths(now, 1);
+      return { from: fmt(startOfMonth(lm)), to: fmt(endOfMonth(lm)) };
+    }
+    case "thisYear":
+      return { from: fmt(startOfYear(now)), to: fmt(endOfYear(now)) };
+    case "lastYear": {
+      const ly = subYears(now, 1);
+      return { from: fmt(startOfYear(ly)), to: fmt(endOfYear(ly)) };
+    }
+    default:
+      return { from: "", to: "" };
+  }
+}
+
+function detectPreset(from: string, to: string): PresetKey {
+  if (!from && !to) return "all";
+  const presets: PresetKey[] = ["today", "yesterday", "thisWeek", "thisMonth", "lastMonth", "thisYear", "lastYear"];
+  for (const p of presets) {
+    const r = rangeForPreset(p);
+    if (r.from === from && r.to === to) return p;
+  }
+  return "custom";
+}
+
 export function TransactionFilters({ filters, onChange }: TransactionFiltersProps) {
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
+  const [customOpen, setCustomOpen] = useState(false);
+
+  const preset = detectPreset(filters.dateFrom, filters.dateTo);
 
   const activeCount = [
     filters.search,
@@ -51,9 +138,21 @@ export function TransactionFilters({ filters, onChange }: TransactionFiltersProp
 
   const set = (patch: Partial<TransactionFilterValues>) => onChange({ ...filters, ...patch });
 
-  const dateLabel = filters.dateFrom || filters.dateTo
-    ? `${filters.dateFrom ? format(new Date(filters.dateFrom), "MMM d") : "…"} – ${filters.dateTo ? format(new Date(filters.dateTo), "MMM d") : "…"}`
-    : "Date range";
+  const handlePreset = (p: PresetKey) => {
+    if (p === "custom") {
+      setCustomOpen(true);
+      return;
+    }
+    const r = rangeForPreset(p);
+    set({ dateFrom: r.from, dateTo: r.to });
+  };
+
+  const triggerLabel =
+    preset === "custom"
+      ? `${filters.dateFrom ? format(new Date(filters.dateFrom), "MMM d") : "…"} – ${filters.dateTo ? format(new Date(filters.dateTo), "MMM d") : "…"}`
+      : PRESET_LABELS[preset];
+
+  const isActive = preset !== "all";
 
   return (
     <div className="finance-card-static p-3 sticky top-0 z-10">
@@ -67,11 +166,45 @@ export function TransactionFilters({ filters, onChange }: TransactionFiltersProp
             onChange={(e) => set({ search: e.target.value })}
           />
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1.5 bg-background border-border/60", (filters.dateFrom || filters.dateTo) && "border-primary/40 text-primary")}>
-              <CalendarIcon className="h-3.5 w-3.5" /> {dateLabel}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-8 text-xs gap-1.5 bg-background border-border/60",
+                isActive && "border-primary/40 text-primary",
+              )}
+            >
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {triggerLabel}
+              <ChevronDown className="h-3 w-3 opacity-60" />
             </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {(["all", "today", "yesterday", "thisWeek", "thisMonth", "lastMonth", "thisYear", "lastYear"] as PresetKey[]).map((p) => (
+              <DropdownMenuItem
+                key={p}
+                onClick={() => handlePreset(p)}
+                className={cn("text-xs cursor-pointer", preset === p && "bg-accent text-accent-foreground font-medium")}
+              >
+                {PRESET_LABELS[p]}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => handlePreset("custom")}
+              className={cn("text-xs cursor-pointer", preset === "custom" && "bg-accent text-accent-foreground font-medium")}
+            >
+              Custom…
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Popover open={customOpen} onOpenChange={setCustomOpen}>
+          <PopoverTrigger asChild>
+            <span className="sr-only" aria-hidden />
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
@@ -89,13 +222,17 @@ export function TransactionFilters({ filters, onChange }: TransactionFiltersProp
               numberOfMonths={2}
               className={cn("p-3 pointer-events-auto")}
             />
-            <div className="flex justify-end p-2 border-t">
+            <div className="flex justify-between p-2 border-t">
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => set({ dateFrom: "", dateTo: "" })}>
-                Clear dates
+                Clear
+              </Button>
+              <Button size="sm" className="h-7 text-xs" onClick={() => setCustomOpen(false)}>
+                Done
               </Button>
             </div>
           </PopoverContent>
         </Popover>
+
         <Select value={filters.type} onValueChange={(v) => set({ type: v })}>
           <SelectTrigger className="w-[120px] h-8 text-xs bg-background border-border/60"><SelectValue placeholder="Type" /></SelectTrigger>
           <SelectContent>
