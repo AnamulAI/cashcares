@@ -97,7 +97,7 @@ export function AlertsCard() {
     items.sort((a, b) => (priority[a.type] ?? 9) - (priority[b.type] ?? 9));
 
     return items.slice(0, 6);
-  }, [reminders, budgets, transactions]);
+  }, [reminders, budgets, transactions, installments, plans]);
 
   return (
     <div className="finance-card-static finance-card-hover p-5">
