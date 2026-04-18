@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import {
   Trash2, Pause, Play, CheckCircle2, Plus, MoreHorizontal, Pencil,
-  RotateCcw, Calendar, Wallet, PiggyBank, TrendingUp, Clock, AlertTriangle, Target
+  RotateCcw, Calendar, Wallet, PiggyBank, TrendingUp, Clock, AlertTriangle, Target,
+  Printer, Download
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MarkInstallmentPaidModal } from "./MarkInstallmentPaidModal";
+import { EditSavingsPlanModal } from "./EditSavingsPlanModal";
 import {
   useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
   type SavingsPlan, type SavingsInstallment
@@ -24,6 +26,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface Props {
   open: boolean;
@@ -55,6 +58,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   const [paidModal, setPaidModal] = useState<SavingsInstallment | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteInstId, setDeleteInstId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const recentPaid = useMemo(() =>
     installments
@@ -149,6 +153,31 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
     }
   }
 
+  const handlePrint = () => window.print();
+
+  const handleCSV = () => {
+    if (!plan) return;
+    const headerLine = `Plan: ${plan.plan_name} | Recipient: ${plan.recipient_name || "—"} | Frequency: ${plan.frequency} | Target: ${plan.plan_type === "fixed" ? target : "Open-ended"}`;
+    const headers = ["#", "Due Date", "Amount", "Paid Date", "Paid Amount", "Account", "Status", "Note"];
+    const rows = installments.map((ins, idx) => [
+      idx + 1,
+      ins.due_date,
+      Number(ins.amount),
+      ins.paid_date || "",
+      Number(ins.paid_amount),
+      accountName(ins.linked_account_id),
+      ins.status,
+      (ins.note || "").replace(/[\r\n,]/g, " "),
+    ]);
+    const csv = [headerLine, "", headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${plan.plan_name.replace(/[^a-z0-9]/gi, "-")}-installments-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -189,12 +218,25 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                      <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Plan
+                    </DropdownMenuItem>
                     {plan.status !== "completed" && (
                       <DropdownMenuItem onClick={togglePause}>
                         {plan.status === "paused" ? <Play className="h-3.5 w-3.5 mr-2" /> : <Pause className="h-3.5 w-3.5 mr-2" />}
                         {plan.status === "paused" ? "Resume" : "Pause"}
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handlePrint}>
+                      <Printer className="h-3.5 w-3.5 mr-2" /> Print
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handlePrint}>
+                      <Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCSV}>
+                      <Download className="h-3.5 w-3.5 mr-2" /> Export CSV
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive" onClick={() => setConfirmOpen(true)}>
                       <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete Plan
@@ -444,6 +486,12 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
         open={!!paidModal}
         onOpenChange={(v) => !v && setPaidModal(null)}
         installment={paidModal}
+      />
+
+      <EditSavingsPlanModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        plan={plan}
       />
     </>
   );
