@@ -72,6 +72,26 @@ export function AlertsCard() {
       });
     });
 
+    // Savings installment alerts (overdue or due within 7 days)
+    const sevenDaysOut = new Date(now);
+    sevenDaysOut.setDate(sevenDaysOut.getDate() + 7);
+    const sevenStr = sevenDaysOut.toISOString().slice(0, 10);
+    const planMap = new Map(plans.map(p => [p.id, p]));
+    installments
+      .filter(i => i.status !== "paid" && i.due_date <= sevenStr)
+      .forEach(i => {
+        const plan = planMap.get(i.plan_id);
+        if (!plan || plan.status !== "active") return;
+        const isOverdue = i.due_date < today;
+        items.push({
+          id: `sav-${i.id}`,
+          type: isOverdue ? "danger" : "info",
+          title: isOverdue ? `${plan.plan_name} installment overdue` : `${plan.plan_name} installment due`,
+          description: `Due ${i.due_date}`,
+          date: i.due_date,
+        });
+      });
+
     // Sort: danger first, then warning, then info
     const priority: Record<string, number> = { danger: 0, warning: 1, info: 2, success: 3 };
     items.sort((a, b) => (priority[a.type] ?? 9) - (priority[b.type] ?? 9));
