@@ -58,6 +58,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   const [paidModal, setPaidModal] = useState<SavingsInstallment | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteInstId, setDeleteInstId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const recentPaid = useMemo(() =>
     installments
@@ -152,6 +153,31 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
     }
   }
 
+  const handlePrint = () => window.print();
+
+  const handleCSV = () => {
+    if (!plan) return;
+    const headerLine = `Plan: ${plan.plan_name} | Recipient: ${plan.recipient_name || "—"} | Frequency: ${plan.frequency} | Target: ${plan.plan_type === "fixed" ? target : "Open-ended"}`;
+    const headers = ["#", "Due Date", "Amount", "Paid Date", "Paid Amount", "Account", "Status", "Note"];
+    const rows = installments.map((ins, idx) => [
+      idx + 1,
+      ins.due_date,
+      Number(ins.amount),
+      ins.paid_date || "",
+      Number(ins.paid_amount),
+      accountName(ins.linked_account_id),
+      ins.status,
+      (ins.note || "").replace(/[\r\n,]/g, " "),
+    ]);
+    const csv = [headerLine, "", headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${plan.plan_name.replace(/[^a-z0-9]/gi, "-")}-installments-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
