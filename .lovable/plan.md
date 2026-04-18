@@ -1,31 +1,64 @@
 
-## Plan: Replace date range picker with quick-select date filter dropdown
 
-Replace the current calendar range popover on the Transactions filter bar with a dropdown of preset date ranges (matching the uploaded design).
+## Plan: Savings — Payables-style list + Partnerships-style detail view
 
-### Dropdown options
-- **All Time** (default)
-- **Today**
-- **Yesterday**
-- **This Week**
-- **This Month**
-- **Last Month**
-- **This Year**
-- **Last Year**
-- **Custom…** → opens the existing range Calendar popover for custom from/to
+দুই layer-এ Savings পেজকে redesign করা হবে:
 
-### Behavior
-- Selecting any preset computes `dateFrom`/`dateTo` via `date-fns` (`startOfDay`, `endOfDay`, `startOfWeek`, `startOfMonth`, `subMonths`, `startOfYear`, `subYears`) and writes them into the existing `filters.dateFrom` / `filters.dateTo` state — so all downstream filtering logic in `Transactions.tsx` stays untouched.
-- Trigger button shows the selected preset label (e.g. "All Time", "This Month") with a calendar icon and chevron, matching the screenshot.
-- "Custom" preset shows the formatted date range (e.g. "Nov 1 – Nov 15") on the trigger and opens the Calendar range popover.
-- Active state (anything other than "All Time") tints the trigger with primary border/text — consistent with current pattern.
+### 1. Outer list (Savings.tsx) — Payables-style book rows
+- ৩-কলাম card grid বাদ → full-width row list
+- প্রতি row: Checkbox · `PiggyBank` icon tile (`bg-feature-savings/10 rounded-xl`) · Plan name + status badge · recipient/meta line · right-side mini totals (Capital/Saved/Remaining) · ⋯ menu
+- উপরে existing 4 StatCards অপরিবর্তিত
+- Search + Status filter (All/Active/Paused/Completed) + Sort (Latest) — Partnerships-এর pattern অনুসরণ
+- BulkActionBar (Delete) যোগ
+- Row click → `SavingsPlanDetailModal` খুলবে (এখন full-screen Dialog হিসেবে — নিচে দেখুন)
 
-### Implementation
-- Edit only `src/components/transactions/TransactionFilters.tsx`.
-- Use shadcn `DropdownMenu` for the preset list, keep `Popover` + `Calendar` for the Custom case.
-- Add a small internal `preset` state derived from `filters.dateFrom`/`dateTo` so the label stays in sync (and resets to "All Time" when Reset is clicked).
-- No changes to `TransactionFilterValues` shape, no changes to `Transactions.tsx`, no DB or API changes.
+### 2. Detail view (SavingsPlanDetailModal) — Partnerships-style premium layout
+
+বর্তমানে modal-টা compact। সেটাকে Partnerships detail-এর মতো একটা **wide, full-page-style Dialog** এ রূপান্তর করা হবে (max-w-6xl, max-h-[92vh], overflow-y-auto)।
+
+**Header**:
+- Plan name (text-2xl bold) + status badge inline
+- Subtitle: `Recipient · Frequency · Type · Note` muted line
+- Right side: `+ Add Installment` (gradient primary button, যদি open-ended বা extendable) + `⋯` menu (Edit/Delete/Export)
+
+**Stats row (6 cards, Partnerships-এর মতো)**:
+1. Total Target (or "Open-ended")
+2. Total Saved
+3. Remaining
+4. Paid Installments (count)
+5. Pending Installments
+6. Next Due Date
+
+প্রতিটা card: small icon tile + uppercase muted label + bold value (Partnerships ss-এর exact style)।
+
+**Progress section** (নতুন, Partnerships-এর partner cards-এর জায়গায়):
+- দুটো side-by-side card:
+  - **Schedule Overview**: Total installments, Paid, Pending, Overdue counts; thin progress bar
+  - **Recent Activity**: শেষ ৩-৪ paid installments summary
+
+**Filters bar**:
+- Status filter (All / Pending / Paid / Overdue)
+- Date range filter (optional) — Partnerships-এর "All Types/All Partners" dropdown style
+
+**Installments table** (Partnerships entries table-এর exact structure):
+| Date | Installment # | Amount | Paid Amount | Account | Status | Actions |
+
+- Status badge: Paid (green soft) / Pending (muted) / Overdue (red soft)
+- Actions ⋯: Mark Paid / Edit / Delete / Reverse (যদি paid)
+- Empty state row যদি কোনো installment না থাকে
+- Open-ended plan হলে নিচে "Generate next 12 installments" button (existing functionality preserve)
+
+### Files to edit
+- `src/pages/Savings.tsx` — list redesign + filters + bulk actions
+- `src/components/savings/SavingsPlanDetailModal.tsx` — full Partnerships-style detail layout
+
+### Untouched
+- `AddSavingsPlanModal`, `MarkInstallmentPaidModal`, all hooks, DB schema
+- `SavingsCard.tsx` থাকবে (orphan হলেও safe)
+- 4 outer StatCards untouched
+- Reminder/NetWorth integration untouched
 
 ### Out of scope
-- Other filters (Type, Category, Account, Status) untouched.
-- Search input and Reset button untouched.
+- নতুন route বা schema change নেই
+- Partnership-specific 2-partner concept Savings-এ আসবে না
+
