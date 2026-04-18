@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useReminders } from "@/hooks/use-reminders";
 import { useBudgets } from "@/hooks/use-budgets";
 import { useTransactions } from "@/hooks/use-transactions";
+import { useAllInstallments, useSavingsPlans } from "@/hooks/use-savings";
 import { useMemo } from "react";
 
 interface AlertItem {
@@ -34,6 +35,8 @@ export function AlertsCard() {
   const { data: reminders = [] } = useReminders();
   const { data: budgets = [] } = useBudgets();
   const { data: transactions = [] } = useTransactions();
+  const { data: installments = [] } = useAllInstallments();
+  const { data: plans = [] } = useSavingsPlans();
 
   const alerts: AlertItem[] = useMemo(() => {
     const items: AlertItem[] = [];
