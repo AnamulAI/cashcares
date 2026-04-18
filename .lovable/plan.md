@@ -1,64 +1,60 @@
 
 
-## Plan: Savings — Payables-style list + Partnerships-style detail view
+## Plan: Dashboard sync + Edit Plan + CSV/Print + Dashboard savings reminders
 
-দুই layer-এ Savings পেজকে redesign করা হবে:
+### 1. Fix dashboard staleness on book/entry delete
 
-### 1. Outer list (Savings.tsx) — Payables-style book rows
-- ৩-কলাম card grid বাদ → full-width row list
-- প্রতি row: Checkbox · `PiggyBank` icon tile (`bg-feature-savings/10 rounded-xl`) · Plan name + status badge · recipient/meta line · right-side mini totals (Capital/Saved/Remaining) · ⋯ menu
-- উপরে existing 4 StatCards অপরিবর্তিত
-- Search + Status filter (All/Active/Paused/Completed) + Sort (Latest) — Partnerships-এর pattern অনুসরণ
-- BulkActionBar (Delete) যোগ
-- Row click → `SavingsPlanDetailModal` খুলবে (এখন full-screen Dialog হিসেবে — নিচে দেখুন)
+**Problem:** `useDeletePayableBook` / `useDeleteReceivableBook` only invalidate `*_books`. Dashboard's `SecondaryCards` reads from `payable_entries_all` / `receivable_entries_all`, which aren't invalidated → stale totals after book deletion (DB cascades the entries but cache doesn't know).
 
-### 2. Detail view (SavingsPlanDetailModal) — Partnerships-style premium layout
+**Fix in `src/hooks/use-payable-books.ts` & `src/hooks/use-receivable-books.ts`:**
+- On delete success, also invalidate: `payable_entries`, `payable_entries_all` (and receivable equivalents), plus `accounts` (in case linked accounts had pending balances logically tied).
 
-বর্তমানে modal-টা compact। সেটাকে Partnerships detail-এর মতো একটা **wide, full-page-style Dialog** এ রূপান্তর করা হবে (max-w-6xl, max-h-[92vh], overflow-y-auto)।
+Entry-level deletes already invalidate the right keys — confirmed correct.
 
-**Header**:
-- Plan name (text-2xl bold) + status badge inline
-- Subtitle: `Recipient · Frequency · Type · Note` muted line
-- Right side: `+ Add Installment` (gradient primary button, যদি open-ended বা extendable) + `⋯` menu (Edit/Delete/Export)
+### 2. Edit Plan modal
 
-**Stats row (6 cards, Partnerships-এর মতো)**:
-1. Total Target (or "Open-ended")
-2. Total Saved
-3. Remaining
-4. Paid Installments (count)
-5. Pending Installments
-6. Next Due Date
+**New file `src/components/savings/EditSavingsPlanModal.tsx`**
+- Centered Dialog (max-w-lg). Mirrors `AddSavingsPlanModal` field set:
+  - Plan name, Recipient, Installment amount, Frequency (weekly/monthly/quarterly), Note
+- **Locked fields** (to preserve schedule integrity): Plan type, Start date, Duration, Target amount — shown read-only with helper "Cannot be changed after creation"
+- Saves via existing `useUpdateSavingsPlan` (already invalidates `savings_plans`)
+- Triggered from detail modal's `⋯` dropdown → new "Edit Plan" item (above Pause/Delete)
 
-প্রতিটা card: small icon tile + uppercase muted label + bold value (Partnerships ss-এর exact style)।
+### 3. CSV + Print export for a plan's installment schedule
 
-**Progress section** (নতুন, Partnerships-এর partner cards-এর জায়গায়):
-- দুটো side-by-side card:
-  - **Schedule Overview**: Total installments, Paid, Pending, Overdue counts; thin progress bar
-  - **Recent Activity**: শেষ ৩-৪ paid installments summary
+In `SavingsPlanDetailModal.tsx` header actions area, add a `⋯`-adjacent **Export** dropdown (or fold into existing `⋯`) with:
+- **Print** → `window.print()`
+- **PDF (Print)** → `window.print()`
+- **CSV** → builds rows: `[#, Due Date, Amount, Paid Date, Paid Amount, Account, Status, Note]` with a header line containing plan name/recipient/frequency/target. Filename: `{plan_name}-installments-{yyyy-MM-dd}.csv`.
 
-**Filters bar**:
-- Status filter (All / Pending / Paid / Overdue)
-- Date range filter (optional) — Partnerships-এর "All Types/All Partners" dropdown style
+Pattern follows `PayableLedger.handleCSV` exactly (Blob + anchor download).
 
-**Installments table** (Partnerships entries table-এর exact structure):
-| Date | Installment # | Amount | Paid Amount | Account | Status | Actions |
+### 4. Dashboard: savings progress + next due
 
-- Status badge: Paid (green soft) / Pending (muted) / Overdue (red soft)
-- Actions ⋯: Mark Paid / Edit / Delete / Reverse (যদি paid)
-- Empty state row যদি কোনো installment না থাকে
-- Open-ended plan হলে নিচে "Generate next 12 installments" button (existing functionality preserve)
+Two changes:
 
-### Files to edit
-- `src/pages/Savings.tsx` — list redesign + filters + bulk actions
-- `src/components/savings/SavingsPlanDetailModal.tsx` — full Partnerships-style detail layout
+**a) New widget `SavingsProgressCard` (`src/components/dashboard/SavingsProgressCard.tsx`)**
+- Lists active savings plans (top 4 by next-due) with:
+  - Plan name + recipient (muted)
+  - Mini progress bar (fixed plans) or "Open-ended · ৳X saved"
+  - Next due date + amount
+- Empty state: "No active savings plans"
+- Click → navigates to `/savings`
 
-### Untouched
-- `AddSavingsPlanModal`, `MarkInstallmentPaidModal`, all hooks, DB schema
-- `SavingsCard.tsx` থাকবে (orphan হলেও safe)
-- 4 outer StatCards untouched
-- Reminder/NetWorth integration untouched
+**b) Inject upcoming installments into `AlertsCard.tsx`**
+- Pull `useAllInstallments()` + `useSavingsPlans()`
+- Build alert items for installments due within next 7 days or overdue:
+  - Overdue → `danger` "{plan_name} installment overdue"
+  - Due today/soon → `info` "{plan_name} due {date}"
+- Merged with existing budget/reminder alerts; same priority sort & top-6 cap.
+
+**Dashboard layout (`src/pages/Dashboard.tsx`)**
+- Place `SavingsProgressCard` next to `BudgetProgress` in the bottom row, e.g. swap last row to: `RecentTransactions` (3 cols) | stacked `BudgetProgress` + `SavingsProgressCard` (2 cols).
+
+### Files touched
+**New (2):** `src/components/savings/EditSavingsPlanModal.tsx`, `src/components/dashboard/SavingsProgressCard.tsx`
+**Edit (5):** `src/hooks/use-payable-books.ts`, `src/hooks/use-receivable-books.ts`, `src/components/savings/SavingsPlanDetailModal.tsx`, `src/components/dashboard/AlertsCard.tsx`, `src/pages/Dashboard.tsx`
 
 ### Out of scope
-- নতুন route বা schema change নেই
-- Partnership-specific 2-partner concept Savings-এ আসবে না
+- No DB/schema changes. No changes to plan_type/start_date/duration logic. Reminder Center auto-creation already exists from prior turn — just surfacing them on dashboard.
 
