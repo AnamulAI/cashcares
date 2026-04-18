@@ -83,7 +83,13 @@ export function useDeleteReceivableBook() {
       const { error } = await (supabase as any).from("receivable_books").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["receivable_books"] }); toast.success("Book deleted"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["receivable_books"] });
+      qc.invalidateQueries({ queryKey: ["receivable_entries"] });
+      qc.invalidateQueries({ queryKey: ["receivable_entries_all"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Book deleted");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 }
