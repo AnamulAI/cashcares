@@ -38,6 +38,12 @@ interface PrintStatementHeaderProps {
   summaryCaption?: React.ReactNode;
   /** Section heading for the table that follows in the page (default: "Transaction History") */
   scheduleTitle?: string;
+  /**
+   * Diagonal watermark behind statement content. Pass false to disable.
+   * Default: user's company_name (uppercased) or "CONFIDENTIAL" if no company.
+   * Common values: "DRAFT", "PAID", "COPY", "ORIGINAL", "VOID", "OVERDUE".
+   */
+  watermark?: string | false;
 }
 
 /**
@@ -59,6 +65,7 @@ export function PrintStatementHeader({
   summary,
   summaryCaption,
   scheduleTitle = "Transaction History",
+  watermark,
 }: PrintStatementHeaderProps) {
   const { user, profile } = useAuth();
   const { settings } = useAppContext();
@@ -66,12 +73,19 @@ export function PrintStatementHeader({
   const fmtD = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
   const periodEndStr = periodEnd ? fmtD(periodEnd) : format(new Date(), "dd MMM, yyyy");
   const periodStartStr = periodStart ? fmtD(periodStart) : "—";
-  const watermarkText = (profile?.company_name || "Confidential").toUpperCase();
+
+  // Resolve watermark: explicit prop wins; false disables; otherwise fall back to company name / "Confidential"
+  const resolvedWatermark =
+    watermark === false
+      ? null
+      : (watermark ?? profile?.company_name ?? "Confidential").toUpperCase();
 
   return (
     <div className="print-only relative">
       {/* Diagonal watermark behind all statement content */}
-      <div className="print-watermark" aria-hidden="true">{watermarkText}</div>
+      {resolvedWatermark && (
+        <div className="print-watermark" aria-hidden="true">{resolvedWatermark}</div>
+      )}
 
       {/* 1. Brand bar */}
       <div className="flex items-start justify-between pb-3 mb-4 border-b-2 border-foreground/80">
