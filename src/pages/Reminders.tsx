@@ -22,6 +22,8 @@ import { useLoans } from "@/hooks/use-loans";
 import { useAllInstallments, useSavingsPlans } from "@/hooks/use-savings";
 import { useTranslation } from "@/i18n/useTranslation";
 import { parseISO, isToday, isBefore, addDays, isWithinInterval, startOfDay, endOfDay, format } from "date-fns";
+import { useAppContext } from "@/contexts/AppContext";
+import { formatAppDate } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
