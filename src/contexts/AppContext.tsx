@@ -129,6 +129,7 @@ export interface AppSettings {
   language: string;
   dateFormat: string;
   timezone: string;
+  relativeTime: boolean;
   defaultDashboardRange: DatePreset;
   theme: "light" | "dark" | "system";
   notifications: {
@@ -144,6 +145,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   dateFormat: "dmy",
   timezone: "dhaka",
+  relativeTime: false,
   defaultDashboardRange: "this_month",
   theme: "light",
   notifications: {

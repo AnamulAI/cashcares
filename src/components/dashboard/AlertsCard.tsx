@@ -6,6 +6,8 @@ import { useReminders } from "@/hooks/use-reminders";
 import { useBudgets } from "@/hooks/use-budgets";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useAllInstallments, useSavingsPlans } from "@/hooks/use-savings";
+import { useAppContext } from "@/contexts/AppContext";
+import { formatAppDateAuto } from "@/lib/formatters";
 import { useMemo } from "react";
 
 interface AlertItem {
@@ -31,12 +33,15 @@ const alertStyles = {
 };
 
 export function AlertsCard() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const { settings } = useAppContext();
   const { data: reminders = [] } = useReminders();
   const { data: budgets = [] } = useBudgets();
   const { data: transactions = [] } = useTransactions();
   const { data: installments = [] } = useAllInstallments();
   const { data: plans = [] } = useSavingsPlans();
+
+  const fmtDate = (d: string) => formatAppDateAuto(d, { dateFormat: settings.dateFormat, timezone: settings.timezone, lang, relative: settings.relativeTime });
 
   const alerts: AlertItem[] = useMemo(() => {
     const items: AlertItem[] = [];
@@ -67,7 +72,7 @@ export function AlertsCard() {
         id: `rem-${r.id}`,
         type: isOverdue ? "danger" : "info",
         title: r.title,
-        description: r.note || (isOverdue ? "Overdue" : `Due ${r.due_date}`),
+        description: r.note || (isOverdue ? "Overdue" : `Due ${fmtDate(r.due_date)}`),
         date: r.due_date,
       });
     });
@@ -87,7 +92,7 @@ export function AlertsCard() {
           id: `sav-${i.id}`,
           type: isOverdue ? "danger" : "info",
           title: isOverdue ? `${plan.plan_name} installment overdue` : `${plan.plan_name} installment due`,
-          description: `Due ${i.due_date}`,
+          description: `Due ${fmtDate(i.due_date)}`,
           date: i.due_date,
         });
       });
@@ -97,7 +102,7 @@ export function AlertsCard() {
     items.sort((a, b) => (priority[a.type] ?? 9) - (priority[b.type] ?? 9));
 
     return items.slice(0, 6);
-  }, [reminders, budgets, transactions, installments, plans]);
+  }, [reminders, budgets, transactions, installments, plans, settings.dateFormat, settings.timezone, settings.relativeTime, lang]);
 
   return (
     <div className="finance-card-static finance-card-hover p-5">
@@ -121,7 +126,7 @@ export function AlertsCard() {
                   <p className="text-sm font-medium leading-tight">{alert.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{alert.description}</p>
                 </div>
-                {alert.date && <span className="text-[10px] text-muted-foreground/70 whitespace-nowrap mt-0.5 font-medium">{alert.date}</span>}
+                {alert.date && <span className="text-[10px] text-muted-foreground/70 whitespace-nowrap mt-0.5 font-medium">{fmtDate(alert.date)}</span>}
               </div>
             );
           })

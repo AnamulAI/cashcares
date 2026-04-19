@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { User, Mail, Phone, Calendar, Wallet, ArrowLeftRight, CreditCard, Shield, MapPin, Building2, Crown } from "lucide-react";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 
 export interface UserDetail {
   id: string;
@@ -38,9 +41,12 @@ const statusColors: Record<string, string> = {
 };
 
 export function UserDetailModal({ user, open, onOpenChange, onEditRole, onEditPlan }: UserDetailModalProps) {
+  const { settings } = useAppContext();
+  const { lang } = useTranslation();
   if (!user) return null;
 
   const initial = (user.full_name || user.email || "?").charAt(0).toUpperCase();
+  const fmtDate = (d: string | Date) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,7 +106,7 @@ export function UserDetailModal({ user, open, onOpenChange, onEditRole, onEditPl
             )}
             <div className="flex items-center gap-3 text-xs">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span>Joined {new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+              <span>Joined {fmtDate(user.created_at)}</span>
             </div>
           </div>
 

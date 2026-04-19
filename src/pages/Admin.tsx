@@ -22,6 +22,9 @@ import { UpdatePlanModal } from "@/components/admin/UpdatePlanModal";
 import { AdminUpgradeRequests } from "@/components/admin/AdminUpgradeRequests";
 import { toast } from "sonner";
 import { startOfMonth } from "date-fns";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 
 // ---- Types ----
 interface AdminStats {
@@ -55,6 +58,9 @@ interface AdminUser {
 export default function Admin() {
   const { isAdmin, user: currentUser } = useAuth();
   const navigate = useNavigate();
+  const { settings } = useAppContext();
+  const { lang } = useTranslation();
+  const fmtDate = (d: string | Date) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [planDist, setPlanDist] = useState<PlanDist>({ free: 0, monthly: 0, yearly: 0, lifetime: 0 });
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -336,7 +342,7 @@ export default function Admin() {
                             <span className={`text-[10px] font-medium ${statusColor(u.status)}`}>{u.status}</span>
                           </td>
                           <td className="py-2.5 text-xs text-muted-foreground text-center hidden sm:table-cell">
-                            {new Date(u.created_at).toLocaleDateString()}
+                            {fmtDate(u.created_at)}
                           </td>
                           <td className="py-2.5 text-right">
                             <DropdownMenu>

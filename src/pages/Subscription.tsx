@@ -7,6 +7,7 @@ import { Check, X, Crown, Zap, Star, ChevronDown, ChevronUp, HelpCircle, Clock, 
 import { cn } from "@/lib/utils";
 import { useAppContext, type PlanType } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useMyUpgradeRequests, useSubmitUpgradeRequest } from "@/hooks/use-upgrade-requests";
@@ -49,9 +50,10 @@ function FeatureCell({ value }: { value: boolean | string }) {
 }
 
 export default function Subscription() {
-  const { plan, isPremium, currency } = useAppContext();
+  const { plan, isPremium, currency, settings } = useAppContext();
   const { isAdmin } = useAuth();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const fmtDate = (d: string | Date) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -140,7 +142,7 @@ export default function Subscription() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">Upgrade Request Pending</p>
               <p className="text-xs text-muted-foreground">
-                You requested <span className="font-medium text-foreground">{planLabels[pendingRequest.requested_plan as PlanType] || pendingRequest.requested_plan}</span> on {new Date(pendingRequest.created_at).toLocaleDateString()}. Awaiting admin approval.
+                You requested <span className="font-medium text-foreground">{planLabels[pendingRequest.requested_plan as PlanType] || pendingRequest.requested_plan}</span> on {fmtDate(pendingRequest.created_at)}. Awaiting admin approval.
               </p>
             </div>
             <Badge variant="outline" className="text-[10px] text-warning border-warning/40 shrink-0">Pending</Badge>
