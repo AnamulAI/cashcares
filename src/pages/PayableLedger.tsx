@@ -186,26 +186,28 @@ export default function PayableLedger() {
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/payables")}><ArrowLeft className="h-4 w-4" /> Back</Button>
       </div>
 
-      <PageHeader
-        title={book.person_name}
-        subtitle={book.description || "Payable ledger"}
-        actions={
-          <div className="flex items-center gap-2 no-print">
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => { const entry = processed.find(e => e.status !== "paid"); if (entry) { setPayModal({ ...entry, bookLevel: true }); setPayAmt(""); setPayAcct(entry.linked_account_id || ""); } }}><DollarSign className="h-4 w-4" /> Record Payment</Button>
-            <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.print()}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        }
-      />
+      <div className="no-print">
+        <PageHeader
+          title={book.person_name}
+          subtitle={book.description || "Payable ledger"}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => { const entry = processed.find(e => e.status !== "paid"); if (entry) { setPayModal({ ...entry, bookLevel: true }); setPayAmt(""); setPayAcct(entry.linked_account_id || ""); } }}><DollarSign className="h-4 w-4" /> Record Payment</Button>
+              <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => window.print()}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        />
+      </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
         <FinanceCard icon={<CreditCard className="h-5 w-5 text-feature-payables" />} iconBg="bg-feature-payables/10" label={t("module.totalPayable")} value={fmt(totalAmount)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label="Total Paid" value={fmt(totalPaid)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label="Remaining" value={fmt(remaining > 0 ? remaining : 0)} />
