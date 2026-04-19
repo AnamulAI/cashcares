@@ -173,12 +173,24 @@ export function useDeleteSavingsPlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Refund all paid installments before destroying the plan
+      const { data: paidInstallments } = await (supabase as any)
+        .from("savings_installments")
+        .select("linked_account_id, paid_amount")
+        .eq("plan_id", id)
+        .eq("status", "paid");
+      for (const ins of (paidInstallments || [])) {
+        if (ins.linked_account_id && Number(ins.paid_amount) > 0) {
+          await adjustBalance(ins.linked_account_id, Number(ins.paid_amount));
+        }
+      }
       const { error } = await (supabase as any).from("savings_plans").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["savings_plans"] });
       qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Plan deleted");
     },
     onError: (e: Error) => toast.error(e.message),
