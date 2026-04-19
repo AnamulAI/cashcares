@@ -45,7 +45,9 @@ const priorityColors: Record<string, string> = {
 const REMINDER_TYPES = ["budget_alert", "receivable_followup", "payable_due", "loan_due", "savings_due", "credit_card_due", "custom"];
 
 export default function Reminders() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const { settings } = useAppContext();
+  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const { data: reminders = [], isLoading } = useReminders();
   const { data: receivables = [] } = useReceivables();
   const { data: payables = [] } = usePayables();
@@ -275,7 +277,7 @@ export default function Reminders() {
                   </TableCell>
                   <TableCell className="text-xs font-medium">{r.title}{r.isAuto && <Badge variant="outline" className="ml-2 text-[9px] py-0">Auto</Badge>}</TableCell>
                   <TableCell className="text-xs text-muted-foreground capitalize">{r.reminder_type.replace(/_/g, " ")}</TableCell>
-                  <TableCell className="text-xs">{r.due_date ? format(parseISO(r.due_date), "dd MMM yyyy") : "—"}</TableCell>
+                  <TableCell className="text-xs">{r.due_date ? fmtDate(r.due_date) : "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className={`text-[10px] capitalize ${priorityColors[r.priority] || ""}`}>{r.priority}</Badge></TableCell>
                   <TableCell><Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[r.status] || ""}`}>{r.status}</Badge></TableCell>
                   <TableCell className="text-right">
