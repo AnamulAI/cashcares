@@ -21,7 +21,7 @@ import { useReceivableEntries, useCreateReceivableEntry, useUpdateReceivableEntr
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO, isAfter, format } from "date-fns";
 import { ReceivableEntryDetailModal } from "@/components/ledger/ReceivableEntryDetailModal";
 import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";

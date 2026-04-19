@@ -19,7 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { usePartnership, usePartnershipEntries, useCreatePartnershipEntry, useUpdatePartnershipEntry, useDeletePartnershipEntry, DbPartnershipEntry } from "@/hooks/use-partnerships";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { format } from "date-fns";
 
 const ENTRY_TYPES = [
