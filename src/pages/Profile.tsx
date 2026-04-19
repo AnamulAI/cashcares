@@ -19,7 +19,7 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
 import { useBudgets } from "@/hooks/use-budgets";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatNumber } from "@/lib/formatters";
+import { formatNumber, formatAppDate } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
