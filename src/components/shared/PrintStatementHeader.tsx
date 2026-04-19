@@ -103,6 +103,25 @@ export function PrintStatementHeader({
             <span>: {profile.phone}</span>
           </div>
         )}
+        {profile?.company_name && (
+          <div className="flex gap-2">
+            <span className="text-muted-foreground w-24 shrink-0">Organization</span>
+            <span className="font-semibold">
+              : {profile.company_name}
+              {profile.role_title ? ` · ${profile.role_title}` : ""}
+            </span>
+          </div>
+        )}
+        {profile?.address && (
+          <div className="flex gap-2 col-span-2">
+            <span className="text-muted-foreground w-24 shrink-0">Address</span>
+            <span>
+              : {profile.address}
+              {profile.state_division ? `, ${profile.state_division}` : ""}
+              {profile.country ? `, ${profile.country}` : ""}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 3. Subject details */}
