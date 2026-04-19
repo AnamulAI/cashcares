@@ -438,7 +438,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                             {ins.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right no-print">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-7 w-7">
