@@ -224,64 +224,66 @@ export default function SavingsLedger() {
         </Button>
       </div>
 
-      <PageHeader
-        title={plan.plan_name}
-        subtitle={[
-          plan.recipient_name,
-          plan.frequency,
-          plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended",
-          plan.note,
-        ].filter(Boolean).join(" · ") || "Savings plan"}
-        actions={
-          <div className="flex items-center gap-2 no-print">
-            <Badge variant="secondary" className={`text-[10px] capitalize ${statusBadge[plan.status] || ""}`}>
-              {plan.status}
-            </Badge>
-            {plan.plan_type === "open" && plan.status === "active" && (
-              <Button
-                size="sm"
-                className="gap-1"
-                onClick={() => generate.mutate({ plan, count: 12 })}
-                disabled={generate.isPending}
-              >
-                <Plus className="h-4 w-4" /> {generate.isPending ? "Generating…" : "Add Installments"}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 w-9 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
+      <div className="no-print">
+        <PageHeader
+          title={plan.plan_name}
+          subtitle={[
+            plan.recipient_name,
+            plan.frequency,
+            plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended",
+            plan.note,
+          ].filter(Boolean).join(" · ") || "Savings plan"}
+          actions={
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className={`text-[10px] capitalize ${statusBadge[plan.status] || ""}`}>
+                {plan.status}
+              </Badge>
+              {plan.plan_type === "open" && plan.status === "active" && (
+                <Button
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => generate.mutate({ plan, count: 12 })}
+                  disabled={generate.isPending}
+                >
+                  <Plus className="h-4 w-4" /> {generate.isPending ? "Generating…" : "Add Installments"}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                  <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Plan
-                </DropdownMenuItem>
-                {plan.status !== "completed" && (
-                  <DropdownMenuItem onClick={togglePause}>
-                    {plan.status === "paused" ? <Play className="h-3.5 w-3.5 mr-2" /> : <Pause className="h-3.5 w-3.5 mr-2" />}
-                    {plan.status === "paused" ? "Resume" : "Pause"}
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                    <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Plan
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handlePrint}>
-                  <Printer className="h-3.5 w-3.5 mr-2" /> Print
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePrint}>
-                  <Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCSV}>
-                  <Download className="h-3.5 w-3.5 mr-2" /> Export CSV
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={() => setConfirmOpen(true)}>
-                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete Plan
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        }
-      />
+                  {plan.status !== "completed" && (
+                    <DropdownMenuItem onClick={togglePause}>
+                      {plan.status === "paused" ? <Play className="h-3.5 w-3.5 mr-2" /> : <Pause className="h-3.5 w-3.5 mr-2" />}
+                      {plan.status === "paused" ? "Resume" : "Pause"}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handlePrint}>
+                    <Printer className="h-3.5 w-3.5 mr-2" /> Print
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePrint}>
+                    <Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCSV}>
+                    <Download className="h-3.5 w-3.5 mr-2" /> Export CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-destructive" onClick={() => setConfirmOpen(true)}>
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete Plan
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        />
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 no-print">
