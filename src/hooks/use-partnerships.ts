@@ -1,6 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adjustBalance } from "./_account-balance";
+
+/**
+ * Cash impact of a partnership entry on its linked account.
+ *  - initial_invest / new_invest / reinvest → outflow (-amount): money sent into business
+ *  - withdraw / profit_distribution         → inflow  (+amount): money returned to partner
+ *  - working_contribution                   → no cash move (labor only)
+ */
+function partnershipEntryDelta(entryType: string, amount: number): number {
+  switch (entryType) {
+    case "initial_invest":
+    case "new_invest":
+    case "reinvest":
+      return -amount;
+    case "withdraw":
+    case "profit_distribution":
+      return amount;
+    default:
+      return 0;
+  }
+}
 
 export interface DbPartnership {
   id: string;
