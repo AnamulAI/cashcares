@@ -6,6 +6,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { SidebarSyncBadge } from "@/components/shared/SidebarSyncBadge";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -159,6 +160,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="px-3 pb-5 border-t border-sidebar-border pt-3">
+        <SidebarSyncBadge />
         <SidebarMenu>
           {systemItems.map((item) => {
             const isActive = location.pathname === item.url;
