@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useUpdateInstallment, type SavingsInstallment } from "@/hooks/use-savings";
 import { useAccounts } from "@/hooks/use-accounts";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 
 interface Props {
   open: boolean;
@@ -92,6 +93,7 @@ export function EditInstallmentModal({ open, onOpenChange, installment }: Props)
             <Label>Note</Label>
             <Textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Optional note" />
           </div>
+          <EntryAttachments entryId={installment.id} entryType="savings_installment" />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

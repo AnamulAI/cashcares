@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useDeleteTransaction, useCreateTransaction } from "@/hooks/use-transactions";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 import { toast } from "sonner";
 
 const typeIcons: Record<string, any> = { income: ArrowDownLeft, expense: ArrowUpRight, transfer: ArrowLeftRight };

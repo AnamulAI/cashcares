@@ -445,6 +445,7 @@ export default function PartnershipLedger() {
               <Label className="text-xs">Note</Label>
               <Textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} className="mt-1 text-sm" rows={2} />
             </div>
+            {editingEntry && <EntryAttachments entryId={editingEntry.id} entryType="partnership_entry" />}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => { setEntryModal(false); setEditingEntry(null); }}>Cancel</Button>
