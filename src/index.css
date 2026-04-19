@@ -284,4 +284,81 @@
     page-break-inside: avoid;
     break-inside: avoid;
   }
+
+  /* Dialog print mode — strip dialog chrome so the content prints as a clean page */
+  [role="dialog"].print-dialog,
+  [data-radix-dialog-content].print-dialog {
+    position: static !important;
+    transform: none !important;
+    inset: auto !important;
+    left: 0 !important;
+    top: 0 !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    z-index: auto !important;
+  }
+
+  /* Hide the dialog overlay/backdrop while printing */
+  [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+
+  /* Hide everything else on the page so only the dialog prints */
+  body > *:not([data-radix-portal]):not(script):not(style) {
+    display: none !important;
+  }
+  [data-radix-portal] {
+    position: static !important;
+  }
+
+  /* Print-only header — hidden on screen, shown when printing */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Tables print clean inside print dialog */
+  .print-dialog table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+  }
+  .print-dialog table th,
+  .print-dialog table td {
+    border: 1px solid #d4d4d4 !important;
+    padding: 6px 8px !important;
+    color: black !important;
+  }
+  .print-dialog table thead th {
+    background: #f5f5f5 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Force semantic colors to print-friendly equivalents */
+  .print-dialog .text-positive { color: #15803d !important; }
+  .print-dialog .text-negative,
+  .print-dialog .text-destructive { color: #b91c1c !important; }
+  .print-dialog .text-warning { color: #b45309 !important; }
+  .print-dialog .text-muted-foreground { color: #525252 !important; }
+  .print-dialog .text-primary { color: #1e293b !important; }
+
+  /* Badges as outlined pills in print */
+  .print-dialog [data-slot="badge"],
+  .print-dialog .badge {
+    background: transparent !important;
+    border: 1px solid #999 !important;
+    color: black !important;
+  }
+}
+
+/* Print-only blocks are hidden on screen */
+.print-only {
+  display: none;
 }
