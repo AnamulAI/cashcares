@@ -123,7 +123,7 @@ export default function Settings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div><Label className="text-xs font-medium">{t("settings.dateFormat")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.dateFormatDesc")}</p></div>
-              <Select value={settings.dateFormat} onValueChange={handleDateFormatChange}><SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="dmy">DD/MM/YYYY</SelectItem><SelectItem value="mdy">MM/DD/YYYY</SelectItem><SelectItem value="ymd">YYYY-MM-DD</SelectItem></SelectContent></Select>
+              <Select value={settings.dateFormat} onValueChange={handleDateFormatChange}><SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="dmy">14 Feb, 2026</SelectItem><SelectItem value="mdy">Feb 14, 2026</SelectItem><SelectItem value="ymd">2026 Feb 14</SelectItem></SelectContent></Select>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
