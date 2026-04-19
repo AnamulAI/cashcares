@@ -35,22 +35,60 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
   const uploadMut = useUploadAttachment();
   const deleteMut = useDeleteAttachment();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !entryId) return;
+  const processFiles = useCallback((files: FileList | File[]) => {
+    if (!entryId) return;
+    let rejected = 0;
     Array.from(files).forEach(file => {
-      if (!ALLOWED_TYPES.includes(file.type)) return;
-      if (file.size > 10 * 1024 * 1024) return;
+      if (!ALLOWED_TYPES.includes(file.type)) { rejected++; return; }
+      if (file.size > 10 * 1024 * 1024) { rejected++; return; }
       uploadMut.mutate({ file, entryId, entryType });
     });
+    if (rejected > 0) toast.error(`${rejected} file(s) skipped (unsupported type or >10MB)`);
+  }, [entryId, entryType, uploadMut]);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) processFiles(e.target.files);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    if (readOnly) return;
+    dragCounter.current++;
+    if (e.dataTransfer.types.includes("Files")) setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current <= 0) { setIsDragging(false); dragCounter.current = 0; }
+  };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragging(false);
+    if (readOnly) return;
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) processFiles(files);
   };
 
   if (!entryId) return null;
 
   return (
-    <div className="space-y-2">
+    <div
+      className={cn(
+        "space-y-2 rounded-md transition-colors relative",
+        !readOnly && "p-2 -m-2 border border-transparent",
+        isDragging && "border-primary border-dashed bg-primary/5"
+      )}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold flex items-center gap-1.5">
           <Paperclip className="h-4 w-4 text-muted-foreground" /> Attachments
@@ -84,12 +122,23 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading...</p>
       ) : attachments.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No attachments</p>
+        <p className="text-xs text-muted-foreground">
+          {readOnly ? "No attachments" : "No attachments — drag & drop files here or click Attach"}
+        </p>
       ) : (
         <div className="space-y-1.5">
           {attachments.map(att => (
             <AttachmentRow key={att.id} att={att} readOnly={readOnly} onDelete={() => deleteMut.mutate(att)} deleting={deleteMut.isPending} />
           ))}
+        </div>
+      )}
+
+      {isDragging && !readOnly && (
+        <div className="absolute inset-0 rounded-md bg-primary/10 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-1.5 text-primary">
+            <UploadCloud className="h-6 w-6" />
+            <span className="text-xs font-semibold">Drop files to upload</span>
+          </div>
         </div>
       )}
     </div>
