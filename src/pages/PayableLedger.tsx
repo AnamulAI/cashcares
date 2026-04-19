@@ -78,6 +78,7 @@ export default function PayableLedger() {
   }), [processed, statusFilter]);
 
   const { data: attachmentCounts = {} } = useAttachmentCounts(filtered.map(e => e.id), "payable");
+  const pendingIds = usePendingEntryIds();
 
   const totalAmount = processed.reduce((s, e) => s + Number(e.amount), 0);
   const totalPaid = processed.reduce((s, e) => s + Number(e.paid_amount), 0);

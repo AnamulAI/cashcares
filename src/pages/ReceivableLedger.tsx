@@ -78,6 +78,7 @@ export default function ReceivableLedger() {
   }), [processed, statusFilter]);
 
   const { data: attachmentCounts = {} } = useAttachmentCounts(filtered.map(e => e.id), "receivable");
+  const pendingIds = usePendingEntryIds();
 
   const totalAmount = processed.reduce((s, e) => s + Number(e.amount), 0);
   const totalCollected = processed.reduce((s, e) => s + Number(e.collected_amount), 0);
