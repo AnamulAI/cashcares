@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, DollarSign, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, HandCoins, CheckCircle2, AlertTriangle, Clock, Eye } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
+import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/PrintStatementHeader";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,7 +21,7 @@ import { useReceivableEntries, useCreateReceivableEntry, useUpdateReceivableEntr
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { parseISO, isAfter, format } from "date-fns";
 import { ReceivableEntryDetailModal } from "@/components/ledger/ReceivableEntryDetailModal";
 import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
@@ -158,37 +159,56 @@ export default function ReceivableLedger() {
 
   return (
     <div className="space-y-6">
-      {/* Print header */}
-      <div className="hidden print-only">
-        <h1 className="text-xl font-bold">{book.person_name} — Receivable Ledger</h1>
-        <p className="text-sm text-muted-foreground">{book.description || ""}</p>
-        <p className="text-xs text-muted-foreground mt-1">Generated: {formatAppDateTime(new Date(), settings.dateFormat, settings.timezone, lang)}</p>
-      </div>
+      <PrintStatementHeader
+        documentTitle="Receivable Ledger Statement"
+        subjectId={book.id}
+        subjectIdLabel="Book ID"
+        detailsTitle="Receivable Details"
+        scheduleTitle="Receivable Entries"
+        details={[
+          { label: "Person", value: book.person_name },
+          { label: "Status", value: book.status || "active" },
+          ...(book.phone ? [{ label: "Phone", value: book.phone }] : []),
+          ...(book.email ? [{ label: "Email", value: book.email }] : []),
+          { label: "Opening Bal.", value: fmt(Number(book.opening_balance || 0)) },
+          { label: "Total Entries", value: String(processed.length) },
+          ...(book.description ? [{ label: "Description", value: book.description, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Total Receivable", value: fmt(totalAmount) },
+          { label: "Total Collected", value: fmt(totalCollected) },
+          { label: "Remaining", value: fmt(remaining > 0 ? remaining : 0) },
+          { label: "Overdue", value: String(overdueCount) },
+        ]}
+      />
+
 
       <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/receivables")}><ArrowLeft className="h-4 w-4" /> Back</Button>
       </div>
 
-      <PageHeader
-        title={book.person_name}
-        subtitle={book.description || "Receivable ledger"}
-        actions={
-          <div className="flex items-center gap-2 no-print">
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => { const entry = processed.find(e => e.status !== "collected"); if (entry) { setCollectModal({ ...entry, bookLevel: true }); setCollectAmt(""); setCollectAcct(entry.linked_account_id || ""); } }}><DollarSign className="h-4 w-4" /> Record Collection</Button>
-            <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePDF}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        }
-      />
+      <div className="no-print">
+        <PageHeader
+          title={book.person_name}
+          subtitle={book.description || "Receivable ledger"}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => { const entry = processed.find(e => e.status !== "collected"); if (entry) { setCollectModal({ ...entry, bookLevel: true }); setCollectAmt(""); setCollectAcct(entry.linked_account_id || ""); } }}><DollarSign className="h-4 w-4" /> Record Collection</Button>
+              <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePDF}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        />
+      </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
         <FinanceCard icon={<HandCoins className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("module.totalReceivable")} value={fmt(totalAmount)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label="Total Collected" value={fmt(totalCollected)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label="Remaining" value={fmt(remaining > 0 ? remaining : 0)} />
@@ -346,6 +366,8 @@ export default function ReceivableLedger() {
         formatAmount={fmt}
         formatDate={fmtDate}
       />
+
+      <PrintStatementFooter />
     </div>
   );
 }

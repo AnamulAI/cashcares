@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Printer, Download, Pencil, Trash2, Copy, MoreHorizontal, Users, DollarSign, TrendingDown, PiggyBank, RotateCcw, Eye, Landmark, Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
+import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/PrintStatementHeader";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { usePartnership, usePartnershipEntries, useCreatePartnershipEntry, useUpdatePartnershipEntry, useDeletePartnershipEntry, DbPartnershipEntry } from "@/hooks/use-partnerships";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount, formatAppDate, formatAppDateTime } from "@/lib/formatters";
+import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { format } from "date-fns";
 
 const ENTRY_TYPES = [
@@ -204,37 +205,59 @@ export default function PartnershipLedger() {
 
   return (
     <div className="space-y-6">
-      {/* Print header */}
-      <div className="hidden print-only">
-        <h1 className="text-xl font-bold">{partnership.partnership_name} — Partnership Ledger</h1>
-        <p className="text-sm text-muted-foreground">{p1Name} ({partnership.partner_1_share}%) · {p2Name} ({partnership.partner_2_share}%)</p>
-        <p className="text-xs text-muted-foreground mt-1">Generated: {formatAppDateTime(new Date(), settings.dateFormat, settings.timezone, lang)}</p>
-      </div>
+      <PrintStatementHeader
+        documentTitle="Partnership Ledger Statement"
+        subjectId={partnership.id}
+        subjectIdLabel="Partnership ID"
+        periodStart={partnership.start_date || undefined}
+        detailsTitle="Partnership Details"
+        scheduleTitle="Ledger Entries"
+        details={[
+          { label: "Business", value: partnership.partnership_name },
+          { label: "Status", value: partnership.status },
+          { label: p1Name, value: `${partnership.partner_1_share}% · ${ROLE_LABELS[partnership.partner_1_role] || partnership.partner_1_role} · ${NATURE_LABELS[partnership.partner_1_contribution_nature] || partnership.partner_1_contribution_nature}` },
+          { label: p2Name, value: `${partnership.partner_2_share}% · ${ROLE_LABELS[partnership.partner_2_role] || partnership.partner_2_role} · ${NATURE_LABELS[partnership.partner_2_contribution_nature] || partnership.partner_2_contribution_nature}` },
+          ...(partnership.start_date ? [{ label: "Started", value: fmtDate(partnership.start_date) }] : []),
+          { label: "Total Entries", value: String(entries.length) },
+          ...(partnership.note ? [{ label: "Note", value: partnership.note, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Total Capital", value: fmt(totalCapital) },
+          { label: `${p1Name} Contrib.`, value: fmt(p1Contrib) },
+          { label: `${p2Name} Contrib.`, value: fmt(p2Contrib) },
+          { label: "Withdrawn", value: fmt(totalWithdrawn) },
+          { label: "Profit Dist.", value: fmt(profitDist) },
+          { label: "Reinvested", value: fmt(reinvested) },
+        ]}
+      />
+
 
       <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/partnerships")}><ArrowLeft className="h-4 w-4" /> Back</Button>
       </div>
 
-      <PageHeader
-        title={partnership.partnership_name}
-        subtitle={`${p1Name} (${ROLE_LABELS[partnership.partner_1_role] || partnership.partner_1_role}, ${partnership.partner_1_share}%) · ${p2Name} (${ROLE_LABELS[partnership.partner_2_role] || partnership.partner_2_role}, ${partnership.partner_2_share}%)${partnership.note ? " — " + partnership.note : ""}`}
-        actions={
-          <div className="flex items-center gap-2 no-print">
-            <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => window.print()}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        }
-      />
+      <div className="no-print">
+        <PageHeader
+          title={partnership.partnership_name}
+          subtitle={`${p1Name} (${ROLE_LABELS[partnership.partner_1_role] || partnership.partner_1_role}, ${partnership.partner_1_share}%) · ${p2Name} (${ROLE_LABELS[partnership.partner_2_role] || partnership.partner_2_role}, ${partnership.partner_2_share}%)${partnership.note ? " — " + partnership.note : ""}`}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button size="sm" className="gap-1" onClick={() => openEntryModal()}><Plus className="h-4 w-4" /> Add Entry</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => window.print()}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        />
+      </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 no-print">
         <FinanceCard icon={<Landmark className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" label="Total Capital" value={fmt(totalCapital)} />
         <FinanceCard icon={<DollarSign className="h-5 w-5 text-feature-income" />} iconBg="bg-feature-income/10" label={`${p1Name}'s Contrib.`} value={fmt(p1Contrib)} />
         <FinanceCard icon={<DollarSign className="h-5 w-5 text-feature-partnerships" />} iconBg="bg-feature-partnerships/10" label={`${p2Name}'s Contrib.`} value={fmt(p2Contrib)} />
@@ -244,7 +267,7 @@ export default function PartnershipLedger() {
       </div>
 
       {/* Partner Breakdown */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 no-print">
         {[
           { name: p1Name, data: breakdown.p1, net: breakdown.p1Net, share: partnership.partner_1_share, role: partnership.partner_1_role, nature: partnership.partner_1_contribution_nature },
           { name: p2Name, data: breakdown.p2, net: breakdown.p2Net, share: partnership.partner_2_share, role: partnership.partner_2_role, nature: partnership.partner_2_contribution_nature }
@@ -464,6 +487,8 @@ export default function PartnershipLedger() {
         description="This will permanently delete this entry and recalculate totals."
         onConfirm={() => { if (deleteId && id) { deleteMut.mutate({ entryId: deleteId, partnershipId: id }); setDeleteId(null); } }}
       />
+
+      <PrintStatementFooter />
     </div>
   );
 }
