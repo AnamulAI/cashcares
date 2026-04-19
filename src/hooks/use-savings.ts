@@ -302,17 +302,31 @@ export function useUpdateInstallment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ installment, updates }: { installment: SavingsInstallment; updates: Partial<SavingsInstallment> }) => {
-      // If installment is paid and paid_amount is changing, reconcile balance
-      if (installment.status === "paid" && updates.paid_amount !== undefined &&
-          installment.linked_account_id && Number(updates.paid_amount) !== Number(installment.paid_amount)) {
-        const delta = Number(installment.paid_amount) - Number(updates.paid_amount); // positive = refund extra
-        await adjustBalance(installment.linked_account_id, delta);
-        // Reflect on plan total
-        const { data: p } = await (supabase as any)
-          .from("savings_plans").select("total_saved").eq("id", installment.plan_id).single();
-        if (p) {
-          const newTotal = Math.max(0, Number(p.total_saved) - delta);
-          await (supabase as any).from("savings_plans").update({ total_saved: newTotal }).eq("id", installment.plan_id);
+      // Reconcile balances + plan total when editing a paid installment
+      if (installment.status === "paid") {
+        const oldAccount = installment.linked_account_id;
+        const oldAmt = Number(installment.paid_amount) || 0;
+        const newAccount = updates.linked_account_id !== undefined ? updates.linked_account_id : oldAccount;
+        const newAmt = updates.paid_amount !== undefined ? Number(updates.paid_amount) : oldAmt;
+
+        if (oldAccount !== newAccount) {
+          // Account changed: refund old, deduct from new
+          if (oldAccount && oldAmt) await adjustBalance(oldAccount, oldAmt);
+          if (newAccount && newAmt) await adjustBalance(newAccount, -newAmt);
+        } else if (oldAmt !== newAmt && oldAccount) {
+          // Same account, amount changed: apply delta (positive delta = refund extra)
+          const delta = oldAmt - newAmt;
+          await adjustBalance(oldAccount, delta);
+        }
+
+        // Reflect amount change on plan total
+        if (oldAmt !== newAmt) {
+          const { data: p } = await (supabase as any)
+            .from("savings_plans").select("total_saved").eq("id", installment.plan_id).single();
+          if (p) {
+            const newTotal = Math.max(0, Number(p.total_saved) + (newAmt - oldAmt));
+            await (supabase as any).from("savings_plans").update({ total_saved: newTotal }).eq("id", installment.plan_id);
+          }
         }
       }
       const { error } = await (supabase as any).from("savings_installments").update(updates).eq("id", installment.id);
