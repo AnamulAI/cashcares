@@ -83,7 +83,9 @@ export function PrintStatementHeader({
   return (
     <div className="print-only relative">
       {/* Diagonal watermark behind all statement content */}
-      <div className="print-watermark" aria-hidden="true">{watermarkText}</div>
+      {resolvedWatermark && (
+        <div className="print-watermark" aria-hidden="true">{resolvedWatermark}</div>
+      )}
 
       {/* 1. Brand bar */}
       <div className="flex items-start justify-between pb-3 mb-4 border-b-2 border-foreground/80">
