@@ -30,7 +30,7 @@ export default function Profile() {
   const [editOpen, setEditOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { plan, isPremium } = useAppContext();
+  const { plan, isPremium, settings } = useAppContext();
   const { profile, refreshProfile, user } = useAuth();
   const { t, lang } = useTranslation();
   const { data: accounts = [] } = useAccounts();
@@ -187,7 +187,7 @@ export default function Profile() {
   const completionPct = Math.round((completedCount / completionFields.length) * 100);
 
   const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    ? formatAppDate(profile.created_at, settings.dateFormat, settings.timezone, lang)
     : "—";
 
   return (
