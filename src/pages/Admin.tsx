@@ -22,6 +22,9 @@ import { UpdatePlanModal } from "@/components/admin/UpdatePlanModal";
 import { AdminUpgradeRequests } from "@/components/admin/AdminUpgradeRequests";
 import { toast } from "sonner";
 import { startOfMonth } from "date-fns";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 
 // ---- Types ----
 interface AdminStats {
