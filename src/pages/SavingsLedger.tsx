@@ -27,6 +27,8 @@ import {
 import { useAccounts } from "@/hooks/use-accounts";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { useAppContext } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { APP_CONFIG } from "@/config/app";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
