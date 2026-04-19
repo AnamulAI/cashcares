@@ -181,8 +181,32 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto print-dialog">
+          {/* Print-only clean header */}
+          <div className="print-only mb-4 pb-3 border-b">
+            <h1 className="text-xl font-bold">{plan.plan_name}</h1>
+            <p className="text-sm mt-1">
+              {[
+                plan.recipient_name && `Recipient: ${plan.recipient_name}`,
+                `Frequency: ${plan.frequency}`,
+                `Type: ${plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended"}`,
+                `Status: ${plan.status}`,
+              ].filter(Boolean).join("  •  ")}
+            </p>
+            <div className="grid grid-cols-4 gap-3 mt-3 text-xs">
+              <div><span className="text-muted-foreground">Target:</span> <strong>{plan.plan_type === "fixed" ? fmt(target) : "Open-ended"}</strong></div>
+              <div><span className="text-muted-foreground">Saved:</span> <strong>{fmt(saved)}</strong></div>
+              <div><span className="text-muted-foreground">Remaining:</span> <strong>{plan.plan_type === "fixed" ? fmt(remaining) : "—"}</strong></div>
+              <div><span className="text-muted-foreground">Next Due:</span> <strong>{nextDue ? formatAppDate(nextDue) : "—"}</strong></div>
+              <div><span className="text-muted-foreground">Paid:</span> <strong>{paidCount}</strong></div>
+              <div><span className="text-muted-foreground">Pending:</span> <strong>{pendingCount}</strong></div>
+              <div><span className="text-muted-foreground">Overdue:</span> <strong>{overdueCount}</strong></div>
+              <div><span className="text-muted-foreground">Started:</span> <strong>{formatAppDate(plan.start_date)}</strong></div>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3">Printed on {format(new Date(), "PPP")}</p>
+          </div>
+
+          <DialogHeader className="no-print">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
