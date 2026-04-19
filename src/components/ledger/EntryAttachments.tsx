@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, X, FileText, Image, Download, Loader2 } from "lucide-react";
+import { Paperclip, X, FileText, Image as ImageIcon, Download, Loader2 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useEntryAttachments, useUploadAttachment, useDeleteAttachment, getAttachmentUrl, EntryAttachment, type EntryType } from "@/hooks/use-entry-attachments";
 
 const ALLOWED_TYPES = [
