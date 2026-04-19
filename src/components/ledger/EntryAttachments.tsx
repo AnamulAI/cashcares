@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X, FileText, Image, Download, Loader2 } from "lucide-react";
-import { useEntryAttachments, useUploadAttachment, useDeleteAttachment, getAttachmentUrl, EntryAttachment } from "@/hooks/use-entry-attachments";
+import { useEntryAttachments, useUploadAttachment, useDeleteAttachment, getAttachmentUrl, EntryAttachment, type EntryType } from "@/hooks/use-entry-attachments";
 
 const ALLOWED_TYPES = [
   "image/jpeg", "image/png", "image/webp", "image/gif",
@@ -12,7 +12,7 @@ const ALLOWED_TYPES = [
 
 interface Props {
   entryId: string | undefined;
-  entryType: "payable" | "receivable";
+  entryType: EntryType;
   readOnly?: boolean;
 }
 

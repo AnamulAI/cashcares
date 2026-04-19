@@ -44,7 +44,7 @@ export function useEntryAttachments(entryId: string | undefined, entryType: Entr
 export function useUploadAttachment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ file, entryId, entryType }: { file: File; entryId: string; entryType: "payable" | "receivable" }) => {
+    mutationFn: async ({ file, entryId, entryType }: { file: File; entryId: string; entryType: EntryType }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
