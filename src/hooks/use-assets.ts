@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adjustBalance } from "./_account-balance";
 
 export interface DbAsset {
   id: string;
@@ -41,9 +42,17 @@ export function useCreateAsset() {
     mutationFn: async (a: AssetInsert) => {
       const { data, error } = await (supabase as any).from("assets").insert(a).select().single();
       if (error) throw error;
+      // Buying an asset = cash OUT from linked account
+      if (a.linked_account_id && Number(a.purchase_value) > 0) {
+        await adjustBalance(a.linked_account_id, -Number(a.purchase_value));
+      }
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assets"] }); toast.success("Asset added"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Asset added");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -52,11 +61,28 @@ export function useUpdateAsset() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<AssetInsert> & { id: string }) => {
+      const { data: current, error: fErr } = await (supabase as any)
+        .from("assets").select("*").eq("id", id).single();
+      if (fErr) throw fErr;
+
+      const oldAcct = current.linked_account_id as string | null;
+      const oldPv = Number(current.purchase_value || 0);
+      const newAcct = (updates.linked_account_id !== undefined ? updates.linked_account_id : oldAcct) as string | null;
+      const newPv = updates.purchase_value !== undefined ? Number(updates.purchase_value) : oldPv;
+
+      // Reverse old outflow (+) then apply new outflow (-)
+      if (oldAcct && oldPv > 0) await adjustBalance(oldAcct, oldPv);
+      if (newAcct && newPv > 0) await adjustBalance(newAcct, -newPv);
+
       const { data, error } = await (supabase as any).from("assets").update(updates).eq("id", id).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assets"] }); toast.success("Asset updated"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Asset updated");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -65,10 +91,20 @@ export function useDeleteAsset() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: current } = await (supabase as any)
+        .from("assets").select("linked_account_id, purchase_value").eq("id", id).single();
       const { error } = await (supabase as any).from("assets").delete().eq("id", id);
       if (error) throw error;
+      // Refund cash back to linked account
+      if (current?.linked_account_id && Number(current.purchase_value) > 0) {
+        await adjustBalance(current.linked_account_id, Number(current.purchase_value));
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assets"] }); toast.success("Asset deleted"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Asset deleted");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 }

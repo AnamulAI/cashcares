@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adjustBalance } from "./_account-balance";
 
 export interface ReceivableEntry {
   id: string;
@@ -72,12 +73,18 @@ export function useCreateReceivableEntry() {
     mutationFn: async (e: ReceivableEntryInsert) => {
       const { data, error } = await (supabase as any).from("receivable_entries").insert(e).select().single();
       if (error) throw error;
+      // Apply collected_amount inflow on linked account (money received)
+      const collected = Number(e.collected_amount || 0);
+      if (e.linked_account_id && collected > 0) {
+        await adjustBalance(e.linked_account_id, collected);
+      }
       return data;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["receivable_entries", vars.book_id] });
       qc.invalidateQueries({ queryKey: ["receivable_entries_all"] });
       qc.invalidateQueries({ queryKey: ["receivable_books"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Entry added");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -88,6 +95,20 @@ export function useUpdateReceivableEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ReceivableEntryInsert> & { id: string }) => {
+      // Fetch current row to compute reversal
+      const { data: current, error: fErr } = await (supabase as any)
+        .from("receivable_entries").select("*").eq("id", id).single();
+      if (fErr) throw fErr;
+
+      const oldAcct = current.linked_account_id as string | null;
+      const oldCollected = Number(current.collected_amount || 0);
+      const newAcct = (updates.linked_account_id !== undefined ? updates.linked_account_id : oldAcct) as string | null;
+      const newCollected = updates.collected_amount !== undefined ? Number(updates.collected_amount) : oldCollected;
+
+      // Reverse old impact, apply new impact
+      if (oldAcct && oldCollected > 0) await adjustBalance(oldAcct, -oldCollected);
+      if (newAcct && newCollected > 0) await adjustBalance(newAcct, newCollected);
+
       const { data, error } = await (supabase as any).from("receivable_entries").update(updates).eq("id", id).select().single();
       if (error) throw error;
       return data;
@@ -96,6 +117,7 @@ export function useUpdateReceivableEntry() {
       qc.invalidateQueries({ queryKey: ["receivable_entries"] });
       qc.invalidateQueries({ queryKey: ["receivable_entries_all"] });
       qc.invalidateQueries({ queryKey: ["receivable_books"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Entry updated");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -106,22 +128,24 @@ export function useDeleteReceivableEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Fetch first so we can reverse balance impact
+      const { data: current } = await (supabase as any)
+        .from("receivable_entries").select("linked_account_id, collected_amount").eq("id", id).single();
       const { error } = await (supabase as any).from("receivable_entries").delete().eq("id", id);
       if (error) throw error;
+      if (current?.linked_account_id && Number(current.collected_amount) > 0) {
+        await adjustBalance(current.linked_account_id, -Number(current.collected_amount));
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receivable_entries"] });
       qc.invalidateQueries({ queryKey: ["receivable_entries_all"] });
       qc.invalidateQueries({ queryKey: ["receivable_books"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Entry deleted");
     },
     onError: (e: Error) => toast.error(e.message),
   });
-}
-
-async function adjustBalance(accountId: string, amount: number) {
-  const { data } = await supabase.from("accounts").select("balance").eq("id", accountId).single();
-  if (data) await supabase.from("accounts").update({ balance: Number(data.balance) + amount }).eq("id", accountId);
 }
 
 export function useRecordEntryCollection() {
