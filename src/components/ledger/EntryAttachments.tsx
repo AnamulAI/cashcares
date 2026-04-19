@@ -96,24 +96,48 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
 
 function AttachmentRow({ att, readOnly, onDelete, deleting }: { att: EntryAttachment; readOnly?: boolean; onDelete: () => void; deleting: boolean }) {
   const [url, setUrl] = useState<string>("");
+  const [preview, setPreview] = useState(false);
+  const isImage = att.mime_type.startsWith("image/");
   useEffect(() => {
     let mounted = true;
     getAttachmentUrl(att.file_path).then(u => { if (mounted) setUrl(u); });
     return () => { mounted = false; };
   }, [att.file_path]);
   return (
-    <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs bg-muted/30">
-      <FileIcon mime={att.mime_type} />
-      <span className="truncate flex-1 font-medium">{att.file_name}</span>
-      <span className="text-muted-foreground shrink-0">{formatSize(att.file_size)}</span>
-      <a href={url || "#"} target="_blank" rel="noopener noreferrer" className="shrink-0" onClick={(e) => { if (!url) e.preventDefault(); }}>
-        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={!url}><Download className="h-3 w-3" /></Button>
-      </a>
-      {!readOnly && (
-        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete} disabled={deleting}>
-          <X className="h-3 w-3" />
-        </Button>
+    <>
+      <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs bg-muted/30">
+        {isImage && url ? (
+          <button
+            type="button"
+            onClick={() => setPreview(true)}
+            className="shrink-0 h-10 w-10 rounded overflow-hidden border bg-background hover:ring-2 hover:ring-primary/40 transition"
+            aria-label={`Preview ${att.file_name}`}
+          >
+            <img src={url} alt={att.file_name} className="h-full w-full object-cover" loading="lazy" />
+          </button>
+        ) : (
+          <div className="shrink-0 h-10 w-10 rounded border bg-background flex items-center justify-center">
+            <FileIcon mime={att.mime_type} />
+          </div>
+        )}
+        <span className="truncate flex-1 font-medium">{att.file_name}</span>
+        <span className="text-muted-foreground shrink-0">{formatSize(att.file_size)}</span>
+        <a href={url || "#"} target="_blank" rel="noopener noreferrer" className="shrink-0" onClick={(e) => { if (!url) e.preventDefault(); }}>
+          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={!url}><Download className="h-3 w-3" /></Button>
+        </a>
+        {!readOnly && (
+          <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete} disabled={deleting}>
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      {isImage && (
+        <Dialog open={preview} onOpenChange={setPreview}>
+          <DialogContent className="max-w-3xl p-2 bg-background">
+            <img src={url} alt={att.file_name} className="w-full h-auto max-h-[80vh] object-contain rounded" />
+          </DialogContent>
+        </Dialog>
       )}
-    </div>
+    </>
   );
 }
