@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useUpdateInstallment, type SavingsInstallment } from "@/hooks/use-savings";
+import { useAccounts } from "@/hooks/use-accounts";
 
 interface Props {
   open: boolean;
@@ -15,14 +17,17 @@ interface Props {
 
 export function EditInstallmentModal({ open, onOpenChange, installment }: Props) {
   const update = useUpdateInstallment();
+  const { data: accounts = [] } = useAccounts();
   const [dueDate, setDueDate] = useState("");
   const [amount, setAmount] = useState(0);
+  const [accountId, setAccountId] = useState<string>("none");
   const [note, setNote] = useState("");
 
   useEffect(() => {
     if (installment) {
       setDueDate(installment.due_date);
       setAmount(Number(installment.amount));
+      setAccountId(installment.linked_account_id ?? "none");
       setNote(installment.note || "");
     }
   }, [installment]);
@@ -34,10 +39,16 @@ export function EditInstallmentModal({ open, onOpenChange, installment }: Props)
     if (!dueDate) return toast.error("Due date is required");
     if (!amount || amount <= 0) return toast.error("Amount must be greater than 0");
 
-    const updates: Partial<SavingsInstallment> = { note: note || null };
-    if (!isPaid) {
-      updates.due_date = dueDate;
-      updates.amount = Number(amount);
+    const linkedAccountId = accountId === "none" ? null : accountId;
+    const updates: Partial<SavingsInstallment> = {
+      due_date: dueDate,
+      amount: Number(amount),
+      linked_account_id: linkedAccountId,
+      note: note || null,
+    };
+    if (isPaid) {
+      // Ensure reconciliation path runs in the hook
+      updates.paid_amount = Number(amount);
     }
     try {
       await update.mutateAsync({ installment: installment!, updates });
@@ -54,26 +65,28 @@ export function EditInstallmentModal({ open, onOpenChange, installment }: Props)
         <div className="space-y-4 py-2">
           {isPaid && (
             <p className="text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
-              This installment is already paid. Only the note can be edited. Reverse it first to change due date or amount.
+              Editing a paid installment will adjust the linked account balance and plan total automatically.
             </p>
           )}
           <div>
             <Label>Due Date</Label>
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              disabled={isPaid}
-            />
+            <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
           </div>
           <div>
             <Label>Amount</Label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={e => setAmount(Number(e.target.value))}
-              disabled={isPaid}
-            />
+            <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} />
+          </div>
+          <div>
+            <Label>Account</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None — record only</SelectItem>
+                {accounts.map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Note</Label>
