@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { QuickAddModal } from "./QuickAddModal";
+import { OfflineIndicator } from "@/components/shared/OfflineIndicator";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -93,6 +94,7 @@ export function AppHeader() {
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
+          <OfflineIndicator />
           {/* Currency Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
