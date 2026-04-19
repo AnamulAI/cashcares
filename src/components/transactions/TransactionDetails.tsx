@@ -143,13 +143,7 @@ export function TransactionDetails({ transaction, open, onOpenChange }: Transact
           )}
 
           <Separator />
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">{t("transactions.attachments")}</p>
-            <div className="rounded-lg border-2 border-dashed border-border/60 p-6 text-center">
-              <Paperclip className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">{t("transactions.noAttachments")}</p>
-            </div>
-          </div>
+          <EntryAttachments entryId={transaction.id} entryType="transaction" />
 
           <Separator />
           <div className="text-[11px] text-muted-foreground space-y-1">

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssets, useCreateAsset, useUpdateAsset, useDeleteAsset, AssetInsert } from "@/hooks/use-assets";
 import { useAccounts } from "@/hooks/use-accounts";
