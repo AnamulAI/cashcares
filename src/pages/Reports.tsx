@@ -23,7 +23,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { parseISO, format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount, formatPercent } from "@/lib/formatters";
+import { formatAmount, formatPercent, formatAppDate, formatAppDateTime } from "@/lib/formatters";
 
 function DataSummaryTab({ icon: Icon, title, items, noDataText }: { icon: React.ElementType; title: string; items: { label: string; value: string; color?: string }[]; noDataText: string }) {
   return (
@@ -51,8 +51,9 @@ function DataSummaryTab({ icon: Icon, title, items, noDataText }: { icon: React.
 }
 
 export default function Reports() {
-  const { currency, dateRange } = useAppContext();
+  const { currency, dateRange, settings } = useAppContext();
   const { t, lang } = useTranslation();
+  const fmtDate = (d: Date) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const { data: transactionsRaw = [] } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: categoriesRaw = [] } = useCategories();
@@ -177,9 +178,9 @@ export default function Reports() {
       <div className="print-only hidden mb-4">
         <h1 className="text-xl font-bold">MahBook — Financial Report</h1>
         <p className="text-sm text-muted-foreground">
-          {format(dateRange.from, "MMM d, yyyy")} — {format(dateRange.to, "MMM d, yyyy")}
+          {fmtDate(dateRange.from)} — {fmtDate(dateRange.to)}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">Generated: {format(new Date(), "PPpp")}</p>
+        <p className="text-xs text-muted-foreground mt-1">Generated: {formatAppDateTime(new Date(), settings.dateFormat, settings.timezone, lang)}</p>
       </div>
 
       <PageHeader
