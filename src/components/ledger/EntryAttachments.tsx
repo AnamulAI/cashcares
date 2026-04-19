@@ -18,7 +18,7 @@ interface Props {
 }
 
 function FileIcon({ mime }: { mime: string }) {
-  if (mime.startsWith("image/")) return <Image className="h-3.5 w-3.5 text-primary" />;
+  if (mime.startsWith("image/")) return <ImageIcon className="h-3.5 w-3.5 text-primary" />;
   return <FileText className="h-3.5 w-3.5 text-muted-foreground" />;
 }
 
