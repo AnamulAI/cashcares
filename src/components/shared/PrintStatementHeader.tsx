@@ -71,7 +71,20 @@ export function PrintStatementHeader({
     <div className="print-only">
       {/* 1. Brand bar */}
       <div className="flex items-start justify-between pb-3 mb-4 border-b-2 border-foreground/80">
-        <BrandLogo size="md" />
+        <div className="flex items-center gap-3">
+          <BrandLogo size="md" />
+          {profile?.avatar_url && (
+            <>
+              <span className="text-muted-foreground/50 text-lg leading-none">·</span>
+              <Avatar className="h-10 w-10 border border-border">
+                <AvatarImage src={profile.avatar_url} alt={profile.full_name || "User"} />
+                <AvatarFallback className="text-[11px] font-semibold">
+                  {(profile.full_name || profile.email || "U").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </>
+          )}
+        </div>
         <div className="text-right">
           <p className="text-[13px] font-bold tracking-wider uppercase">{documentTitle}</p>
           <p className="text-[10.5px] text-muted-foreground mt-0.5">
