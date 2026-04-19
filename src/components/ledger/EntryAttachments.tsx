@@ -108,10 +108,17 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
               size="sm"
               className="h-7 text-xs gap-1"
               onClick={() => fileRef.current?.click()}
-              disabled={uploadMut.isPending}
+              disabled={uploadMut.isPending || !online}
+              title={!online ? "Cannot upload while offline" : undefined}
             >
-              {uploadMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
-              Attach
+              {uploadMut.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : !online ? (
+                <CloudOff className="h-3 w-3" />
+              ) : (
+                <Paperclip className="h-3 w-3" />
+              )}
+              {!online ? "Offline" : "Attach"}
             </Button>
             <input
               ref={fileRef}
@@ -124,6 +131,13 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
           </>
         )}
       </div>
+
+      {!online && !readOnly && (
+        <div className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-[11px] text-warning">
+          <CloudOff className="h-3 w-3 shrink-0" />
+          <span>You're offline — file uploads will resume when you reconnect.</span>
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading...</p>
