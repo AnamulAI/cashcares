@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 
 interface AdminUpgradeRequestsProps {
   users: { id: string; full_name: string | null; email: string | null }[];
@@ -17,6 +20,9 @@ interface AdminUpgradeRequestsProps {
 
 export function AdminUpgradeRequests({ users, onPlanActivated }: AdminUpgradeRequestsProps) {
   const { user: currentUser } = useAuth();
+  const { settings } = useAppContext();
+  const { lang } = useTranslation();
+  const fmtDate = (d: string | Date) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
   const { data: requests = [], isLoading } = useAllUpgradeRequests();
   const reviewMutation = useReviewUpgradeRequest();
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
@@ -95,7 +101,7 @@ export function AdminUpgradeRequests({ users, onPlanActivated }: AdminUpgradeReq
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate">{getUserName(req.user_id)}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {req.current_plan} → <span className="font-medium text-foreground">{req.requested_plan}</span> · {new Date(req.created_at).toLocaleDateString()}
+                  {req.current_plan} → <span className="font-medium text-foreground">{req.requested_plan}</span> · {fmtDate(req.created_at)}
                 </p>
               </div>
               <Badge variant="outline" className="text-[10px] text-warning border-warning/40 shrink-0">Pending</Badge>
