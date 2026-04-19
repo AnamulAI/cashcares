@@ -66,9 +66,13 @@ export function PrintStatementHeader({
   const fmtD = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone);
   const periodEndStr = periodEnd ? fmtD(periodEnd) : format(new Date(), "dd MMM, yyyy");
   const periodStartStr = periodStart ? fmtD(periodStart) : "—";
+  const watermarkText = (profile?.company_name || "Confidential").toUpperCase();
 
   return (
-    <div className="print-only">
+    <div className="print-only relative">
+      {/* Diagonal watermark behind all statement content */}
+      <div className="print-watermark" aria-hidden="true">{watermarkText}</div>
+
       {/* 1. Brand bar */}
       <div className="flex items-start justify-between pb-3 mb-4 border-b-2 border-foreground/80">
         <div className="flex items-center gap-3">
