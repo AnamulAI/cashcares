@@ -159,12 +159,29 @@ export default function ReceivableLedger() {
 
   return (
     <div className="space-y-6">
-      {/* Print header */}
-      <div className="hidden print-only">
-        <h1 className="text-xl font-bold">{book.person_name} — Receivable Ledger</h1>
-        <p className="text-sm text-muted-foreground">{book.description || ""}</p>
-        <p className="text-xs text-muted-foreground mt-1">Generated: {formatAppDateTime(new Date(), settings.dateFormat, settings.timezone, lang)}</p>
-      </div>
+      <PrintStatementHeader
+        documentTitle="Receivable Ledger Statement"
+        subjectId={book.id}
+        subjectIdLabel="Book ID"
+        detailsTitle="Receivable Details"
+        scheduleTitle="Receivable Entries"
+        details={[
+          { label: "Person", value: book.person_name },
+          { label: "Status", value: book.status || "active" },
+          ...(book.phone ? [{ label: "Phone", value: book.phone }] : []),
+          ...(book.email ? [{ label: "Email", value: book.email }] : []),
+          { label: "Opening Bal.", value: fmt(Number(book.opening_balance || 0)) },
+          { label: "Total Entries", value: String(processed.length) },
+          ...(book.description ? [{ label: "Description", value: book.description, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Total Receivable", value: fmt(totalAmount) },
+          { label: "Total Collected", value: fmt(totalCollected) },
+          { label: "Remaining", value: fmt(remaining > 0 ? remaining : 0) },
+          { label: "Overdue", value: String(overdueCount) },
+        ]}
+      />
+
 
       <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/receivables")}><ArrowLeft className="h-4 w-4" /> Back</Button>

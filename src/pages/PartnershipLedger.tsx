@@ -205,12 +205,32 @@ export default function PartnershipLedger() {
 
   return (
     <div className="space-y-6">
-      {/* Print header */}
-      <div className="hidden print-only">
-        <h1 className="text-xl font-bold">{partnership.partnership_name} — Partnership Ledger</h1>
-        <p className="text-sm text-muted-foreground">{p1Name} ({partnership.partner_1_share}%) · {p2Name} ({partnership.partner_2_share}%)</p>
-        <p className="text-xs text-muted-foreground mt-1">Generated: {formatAppDateTime(new Date(), settings.dateFormat, settings.timezone, lang)}</p>
-      </div>
+      <PrintStatementHeader
+        documentTitle="Partnership Ledger Statement"
+        subjectId={partnership.id}
+        subjectIdLabel="Partnership ID"
+        periodStart={partnership.start_date || undefined}
+        detailsTitle="Partnership Details"
+        scheduleTitle="Ledger Entries"
+        details={[
+          { label: "Business", value: partnership.partnership_name },
+          { label: "Status", value: partnership.status },
+          { label: p1Name, value: `${partnership.partner_1_share}% · ${ROLE_LABELS[partnership.partner_1_role] || partnership.partner_1_role} · ${NATURE_LABELS[partnership.partner_1_contribution_nature] || partnership.partner_1_contribution_nature}` },
+          { label: p2Name, value: `${partnership.partner_2_share}% · ${ROLE_LABELS[partnership.partner_2_role] || partnership.partner_2_role} · ${NATURE_LABELS[partnership.partner_2_contribution_nature] || partnership.partner_2_contribution_nature}` },
+          ...(partnership.start_date ? [{ label: "Started", value: fmtDate(partnership.start_date) }] : []),
+          { label: "Total Entries", value: String(entries.length) },
+          ...(partnership.note ? [{ label: "Note", value: partnership.note, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Total Capital", value: fmt(totalCapital) },
+          { label: `${p1Name} Contrib.`, value: fmt(p1Contrib) },
+          { label: `${p2Name} Contrib.`, value: fmt(p2Contrib) },
+          { label: "Withdrawn", value: fmt(totalWithdrawn) },
+          { label: "Profit Dist.", value: fmt(profitDist) },
+          { label: "Reinvested", value: fmt(reinvested) },
+        ]}
+      />
+
 
       <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/partnerships")}><ArrowLeft className="h-4 w-4" /> Back</Button>
