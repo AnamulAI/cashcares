@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus, PiggyBank, Wallet, CheckCircle2, Calendar, Search, RotateCcw,
-  MoreHorizontal, Pencil, Trash2, Eye, Pause, Play
+  MoreHorizontal, Trash2, Eye, Pause, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,10 +18,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { AddSavingsPlanModal } from "@/components/savings/AddSavingsPlanModal";
-import { SavingsPlanDetailModal } from "@/components/savings/SavingsPlanDetailModal";
 import {
   useSavingsPlans, useAllInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan,
-  type SavingsPlan
 } from "@/hooks/use-savings";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { useAppContext } from "@/contexts/AppContext";
@@ -33,6 +32,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Savings() {
+  const navigate = useNavigate();
   const { currency } = useAppContext();
   const { data: plans = [], isLoading } = useSavingsPlans();
   const { data: allInstallments = [] } = useAllInstallments();
@@ -40,7 +40,6 @@ export default function Savings() {
   const upd = useUpdateSavingsPlan();
 
   const [addOpen, setAddOpen] = useState(false);
-  const [detailPlan, setDetailPlan] = useState<SavingsPlan | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
