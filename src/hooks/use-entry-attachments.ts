@@ -2,11 +2,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type EntryType =
+  | "payable"
+  | "receivable"
+  | "transaction"
+  | "loan"
+  | "investment"
+  | "asset"
+  | "savings_installment"
+  | "partnership_entry";
+
 export interface EntryAttachment {
   id: string;
   user_id: string;
   entry_id: string;
-  entry_type: "payable" | "receivable";
+  entry_type: EntryType;
   file_name: string;
   file_path: string;
   file_size: number;
@@ -14,7 +24,7 @@ export interface EntryAttachment {
   created_at: string;
 }
 
-export function useEntryAttachments(entryId: string | undefined, entryType: "payable" | "receivable") {
+export function useEntryAttachments(entryId: string | undefined, entryType: EntryType) {
   return useQuery({
     queryKey: ["entry_attachments", entryId, entryType],
     enabled: !!entryId,
