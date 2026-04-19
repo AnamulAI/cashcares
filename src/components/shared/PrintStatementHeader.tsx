@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppContext } from "@/contexts/AppContext";
 import { formatAppDate } from "@/lib/formatters";
