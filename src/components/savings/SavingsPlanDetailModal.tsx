@@ -272,7 +272,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
           </DialogHeader>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-2 no-print">
             <FinanceCard
               icon={<Target className="h-5 w-5 text-primary" />}
               iconBg="bg-primary/10"
