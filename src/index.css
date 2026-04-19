@@ -237,16 +237,20 @@
 
 /* Print styles */
 @media print {
-  /* Hide app shell */
+  /* Hide app shell — sidebar, top header, nav, toasts, popovers */
   [data-sidebar],
+  [data-sidebar="sidebar"],
+  [data-sidebar-wrapper],
   header,
   nav,
   .sidebar-trigger,
-  [data-radix-popper-content-wrapper] {
+  [data-sonner-toaster],
+  [data-radix-popper-content-wrapper],
+  [data-radix-dialog-overlay] {
     display: none !important;
   }
 
-  /* Reset layout */
+  /* Reset page surface */
   body, html {
     background: white !important;
     color: black !important;
@@ -257,6 +261,7 @@
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
+    width: 100% !important;
   }
 
   /* Cards print clean */
@@ -274,7 +279,7 @@
     display: none !important;
   }
 
-  /* Print header section */
+  /* Print-only blocks shown only when printing */
   .print-only {
     display: block !important;
   }
@@ -285,7 +290,7 @@
     break-inside: avoid;
   }
 
-  /* Dialog print mode — strip dialog chrome so the content prints as a clean page */
+  /* Dialog print mode — strip dialog chrome so modal content prints as a clean page */
   [role="dialog"].print-dialog,
   [data-radix-dialog-content].print-dialog {
     position: static !important;
@@ -306,52 +311,38 @@
     z-index: auto !important;
   }
 
-  /* Hide the dialog overlay/backdrop while printing */
-  [data-radix-dialog-overlay] {
-    display: none !important;
-  }
-
-  /* Hide everything else on the page so only the dialog prints */
-  body > *:not([data-radix-portal]):not(script):not(style) {
-    display: none !important;
-  }
   [data-radix-portal] {
     position: static !important;
   }
 
-  /* Print-only header — hidden on screen, shown when printing */
-  .print-only {
-    display: block !important;
-  }
-
-  /* Tables print clean inside print dialog */
-  .print-dialog table {
+  /* Tables print clean — applies to both modal and full-page prints */
+  table {
     width: 100% !important;
     border-collapse: collapse !important;
     font-size: 11px !important;
   }
-  .print-dialog table th,
-  .print-dialog table td {
+  table th,
+  table td {
     border: 1px solid #d4d4d4 !important;
     padding: 6px 8px !important;
     color: black !important;
   }
-  .print-dialog table thead th {
+  table thead th {
     background: #f5f5f5 !important;
     font-weight: 600 !important;
   }
 
-  /* Force semantic colors to print-friendly equivalents */
-  .print-dialog .text-positive { color: #15803d !important; }
-  .print-dialog .text-negative,
-  .print-dialog .text-destructive { color: #b91c1c !important; }
-  .print-dialog .text-warning { color: #b45309 !important; }
-  .print-dialog .text-muted-foreground { color: #525252 !important; }
-  .print-dialog .text-primary { color: #1e293b !important; }
+  /* Force semantic colors to print-friendly equivalents — global in print */
+  .text-positive { color: #15803d !important; }
+  .text-negative,
+  .text-destructive { color: #b91c1c !important; }
+  .text-warning { color: #b45309 !important; }
+  .text-muted-foreground { color: #525252 !important; }
+  .text-primary { color: #1e293b !important; }
 
   /* Badges as outlined pills in print */
-  .print-dialog [data-slot="badge"],
-  .print-dialog .badge {
+  [data-slot="badge"],
+  .badge {
     background: transparent !important;
     border: 1px solid #999 !important;
     color: black !important;
