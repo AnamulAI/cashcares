@@ -365,6 +365,8 @@ export default function PayableLedger() {
         formatAmount={fmt}
         formatDate={fmtDate}
       />
+
+      <PrintStatementFooter />
     </div>
   );
 }

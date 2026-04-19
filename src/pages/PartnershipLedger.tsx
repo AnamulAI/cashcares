@@ -487,6 +487,8 @@ export default function PartnershipLedger() {
         description="This will permanently delete this entry and recalculate totals."
         onConfirm={() => { if (deleteId && id) { deleteMut.mutate({ entryId: deleteId, partnershipId: id }); setDeleteId(null); } }}
       />
+
+      <PrintStatementFooter />
     </div>
   );
 }

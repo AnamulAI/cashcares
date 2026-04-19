@@ -366,6 +366,8 @@ export default function ReceivableLedger() {
         formatAmount={fmt}
         formatDate={fmtDate}
       />
+
+      <PrintStatementFooter />
     </div>
   );
 }
