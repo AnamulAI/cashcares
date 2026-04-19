@@ -50,6 +50,7 @@ export default function SavingsLedger() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currency } = useAppContext();
+  const { user, profile } = useAuth();
   const qc = useQueryClient();
   const { data: plans = [], isLoading: plansLoading } = useSavingsPlans();
   const plan = useMemo(() => plans.find(p => p.id === id) || null, [plans, id]);
