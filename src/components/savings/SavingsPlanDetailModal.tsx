@@ -417,7 +417,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInstId(ins.id)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInstTarget(ins)}>
                                 <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -460,11 +460,11 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
       />
 
       <ConfirmDialog
-        open={!!deleteInstId}
-        onOpenChange={() => setDeleteInstId(null)}
+        open={!!deleteInstTarget}
+        onOpenChange={(v) => !v && setDeleteInstTarget(null)}
         title="Delete this installment?"
-        description="This permanently removes the installment from the schedule."
-        onConfirm={() => deleteInstId && handleDeleteInstallment(deleteInstId)}
+        description="This permanently removes the installment from the schedule. If it was paid, the linked account will be refunded."
+        onConfirm={() => deleteInstTarget && handleDeleteInstallment(deleteInstTarget)}
       />
 
       <MarkInstallmentPaidModal
