@@ -160,6 +160,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="px-3 pb-5 border-t border-sidebar-border pt-3">
+        <SidebarSyncBadge />
         <SidebarMenu>
           {systemItems.map((item) => {
             const isActive = location.pathname === item.url;
