@@ -26,6 +26,8 @@ import { parseISO, isAfter, format } from "date-fns";
 import { PayableEntryDetailModal } from "@/components/ledger/PayableEntryDetailModal";
 import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
 import { EntryAttachments } from "@/components/ledger/EntryAttachments";
+import { useAttachmentCounts } from "@/hooks/use-attachment-counts";
+import { AttachmentBadge } from "@/components/shared/AttachmentBadge";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
@@ -71,6 +73,8 @@ export default function PayableLedger() {
     if (statusFilter !== "all" && e.status !== statusFilter) return false;
     return true;
   }), [processed, statusFilter]);
+
+  const { data: attachmentCounts = {} } = useAttachmentCounts(filtered.map(e => e.id), "payable");
 
   const totalAmount = processed.reduce((s, e) => s + Number(e.amount), 0);
   const totalPaid = processed.reduce((s, e) => s + Number(e.paid_amount), 0);
@@ -256,7 +260,12 @@ export default function PayableLedger() {
                 return (
                   <TableRow key={e.id}>
                     <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
-                    <TableCell className="text-xs">{e.description || "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      <span className="inline-flex items-center gap-1.5">
+                        {e.description || "—"}
+                        <AttachmentBadge count={attachmentCounts[e.id] || 0} />
+                      </span>
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{e.category || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{e.linked_account?.name || "—"}</TableCell>
                     <TableCell className="text-xs text-right font-semibold">{fmt(Number(e.amount))}</TableCell>
