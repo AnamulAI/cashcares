@@ -27,6 +27,8 @@ import {
 import { useAccounts } from "@/hooks/use-accounts";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { useAppContext } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { APP_CONFIG } from "@/config/app";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -48,6 +50,7 @@ export default function SavingsLedger() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currency } = useAppContext();
+  const { user, profile } = useAuth();
   const qc = useQueryClient();
   const { data: plans = [], isLoading: plansLoading } = useSavingsPlans();
   const plan = useMemo(() => plans.find(p => p.id === id) || null, [plans, id]);
@@ -191,31 +194,123 @@ export default function SavingsLedger() {
 
   return (
     <div className="space-y-6">
-      {/* Print-only clean header */}
-      <div className="print-only mb-4 pb-3 border-b">
-        <div className="mb-3 pb-2 border-b">
-          <BrandLogo size="sm" />
+      {/* ============ INDUSTRY-GRADE PRINT LAYOUT ============ */}
+      <div className="print-only">
+        {/* 1. Brand bar */}
+        <div className="flex items-start justify-between pb-3 mb-4 border-b-2 border-foreground/80">
+          <BrandLogo size="md" />
+          <div className="text-right">
+            <p className="text-[13px] font-bold tracking-wider uppercase">Savings Plan Statement</p>
+            <p className="text-[10.5px] text-muted-foreground mt-0.5">
+              Generated: {format(new Date(), "dd MMM, yyyy · HH:mm")}
+            </p>
+          </div>
         </div>
-        <h1 className="text-xl font-bold">{plan.plan_name}</h1>
-        <p className="text-sm mt-1">
-          {[
-            plan.recipient_name && `Recipient: ${plan.recipient_name}`,
-            `Frequency: ${plan.frequency}`,
-            `Type: ${plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended"}`,
-            `Status: ${plan.status}`,
-          ].filter(Boolean).join("  •  ")}
-        </p>
-        <div className="grid grid-cols-4 gap-3 mt-3 text-xs">
-          <div><span className="text-muted-foreground">Target:</span> <strong>{plan.plan_type === "fixed" ? fmt(target) : "Open-ended"}</strong></div>
-          <div><span className="text-muted-foreground">Saved:</span> <strong>{fmt(saved)}</strong></div>
-          <div><span className="text-muted-foreground">Remaining:</span> <strong>{plan.plan_type === "fixed" ? fmt(remaining) : "—"}</strong></div>
-          <div><span className="text-muted-foreground">Next Due:</span> <strong>{nextDue ? formatAppDate(nextDue) : "—"}</strong></div>
-          <div><span className="text-muted-foreground">Paid:</span> <strong>{paidCount}</strong></div>
-          <div><span className="text-muted-foreground">Pending:</span> <strong>{pendingCount}</strong></div>
-          <div><span className="text-muted-foreground">Overdue:</span> <strong>{overdueCount}</strong></div>
-          <div><span className="text-muted-foreground">Started:</span> <strong>{formatAppDate(plan.start_date)}</strong></div>
+
+        {/* 2. Holder strip */}
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1 mb-5 pb-3 border-b text-[11px]">
+          <div className="flex gap-2">
+            <span className="text-muted-foreground w-24 shrink-0">Account Holder</span>
+            <span className="font-semibold">: {profile?.full_name || "—"}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="text-muted-foreground w-24 shrink-0">Plan ID</span>
+            <span className="font-mono">: {plan.id.slice(0, 8).toUpperCase()}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="text-muted-foreground w-24 shrink-0">Email</span>
+            <span>: {profile?.email || user?.email || "—"}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="text-muted-foreground w-24 shrink-0">Period</span>
+            <span>: {formatAppDate(plan.start_date)} — {format(new Date(), "dd MMM, yyyy")}</span>
+          </div>
+          {profile?.phone && (
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Phone</span>
+              <span>: {profile.phone}</span>
+            </div>
+          )}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-3">Printed on {format(new Date(), "PPP")}</p>
+
+        {/* 3. Plan Details */}
+        <div className="mb-5">
+          <h3 className="print-section-title">Plan Details</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-[11px]">
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Plan Name</span>
+              <span className="font-semibold">: {plan.plan_name}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Type</span>
+              <span className="font-semibold capitalize">: {plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended"}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Recipient</span>
+              <span className="font-semibold">: {plan.recipient_name || "Self"}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Frequency</span>
+              <span className="font-semibold capitalize">: {plan.frequency}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Status</span>
+              <span className="font-semibold capitalize">: {plan.status}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Started</span>
+              <span className="font-semibold">: {formatAppDate(plan.start_date)}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Installment</span>
+              <span className="font-semibold">: {fmt(Number(plan.installment_amount))}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-24 shrink-0">Maturity</span>
+              <span className="font-semibold">: {plan.maturity_date ? formatAppDate(plan.maturity_date) : "—"}</span>
+            </div>
+            {plan.note && (
+              <div className="flex gap-2 col-span-2">
+                <span className="text-muted-foreground w-24 shrink-0">Note</span>
+                <span>: {plan.note}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 4. Financial Summary */}
+        <div className="mb-5">
+          <h3 className="print-section-title">Financial Summary</h3>
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left">Target</th>
+                <th className="text-left">Saved</th>
+                <th className="text-left">Remaining</th>
+                <th className="text-left">Progress</th>
+                <th className="text-left">Next Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="font-semibold">{plan.plan_type === "fixed" ? fmt(target) : "Open-ended"}</td>
+                <td className="font-semibold">{fmt(saved)}</td>
+                <td className="font-semibold">{plan.plan_type === "fixed" ? fmt(remaining) : "—"}</td>
+                <td className="font-semibold">{plan.plan_type === "fixed" ? `${pct}%` : "—"}</td>
+                <td className="font-semibold">{nextDue ? formatAppDate(nextDue) : "—"}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            <span className="font-semibold text-foreground">{paidCount}</span> Paid &nbsp;·&nbsp;
+            <span className="font-semibold text-foreground">{pendingCount}</span> Pending &nbsp;·&nbsp;
+            <span className="font-semibold text-foreground">{overdueCount}</span> Overdue &nbsp;·&nbsp;
+            <span className="font-semibold text-foreground">{installments.length}</span> Total
+          </p>
+        </div>
+
+        {/* 5. Installment Schedule heading (table itself rendered below) */}
+        <h3 className="print-section-title">Installment Schedule</h3>
       </div>
 
       <div className="flex items-center gap-2 no-print">
@@ -538,6 +633,11 @@ export default function SavingsLedger() {
         onOpenChange={(v) => !v && setEditInst(null)}
         installment={editInst}
       />
+
+      {/* Print-only footer */}
+      <div className="print-only mt-6 pt-3 border-t text-center text-[10px] text-muted-foreground">
+        Generated by {APP_CONFIG.name} · {APP_CONFIG.tagline} · {format(new Date(), "dd MMM, yyyy HH:mm")}
+      </div>
     </div>
   );
 }
