@@ -7,6 +7,7 @@ import { Check, X, Crown, Zap, Star, ChevronDown, ChevronUp, HelpCircle, Clock, 
 import { cn } from "@/lib/utils";
 import { useAppContext, type PlanType } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useMyUpgradeRequests, useSubmitUpgradeRequest } from "@/hooks/use-upgrade-requests";
