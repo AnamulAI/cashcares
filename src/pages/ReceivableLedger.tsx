@@ -264,7 +264,11 @@ export default function ReceivableLedger() {
                 const balance = Number(e.amount) - Number(e.collected_amount);
                 const isPending = pendingIds.has(e.id);
                 return (
-                  <TableRow key={e.id} className={cn(isPending && pendingRowTint)}>
+                  <TableRow
+                    key={e.id}
+                    className={cn("cursor-pointer hover:bg-accent/40 transition-colors", isPending && pendingRowTint)}
+                    onClick={() => setDetailEntry(e)}
+                  >
                     <TableCell className="text-xs">
                       <span className="inline-flex items-center gap-1.5">
                         <PendingSyncIndicator pending={isPending} />
@@ -283,7 +287,7 @@ export default function ReceivableLedger() {
                     <TableCell className="text-xs text-right text-positive">{fmt(Number(e.collected_amount))}</TableCell>
                     <TableCell className="text-xs text-right">{fmt(balance)}</TableCell>
                     <TableCell><Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[e.status] || ""}`}>{e.status}</Badge></TableCell>
-                    <TableCell className="text-right no-print">
+                    <TableCell className="text-right no-print" onClick={(ev) => ev.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
