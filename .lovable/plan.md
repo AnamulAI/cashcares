@@ -1,49 +1,67 @@
 
 
-## Plan: Brand print header + Dashboard polish + Savings ledger page
+## Plan: Fix blank print on Savings Ledger page
 
-Four small, focused changes:
+### Root cause
+The print CSS in `src/index.css` (line 315) was written when Savings opened as a Dialog modal:
+```css
+body > *:not([data-radix-portal]):not(script):not(style) {
+  display: none !important;
+}
+```
+This hides every direct body child except Radix portals — perfect for printing modal content rendered in a portal.
 
-### 1. MahBook brand header in the print-only block
-**File:** `src/components/savings/SavingsPlanDetailModal.tsx`
-- Inject `<BrandLogo size="sm" />` (with text) at the top of the existing `.print-only` block, right above the plan name, separated by a thin border.
-- Same pattern can later extend to PayableLedger if needed (out of scope for now).
+But the Savings detail view is now a **full page** (`SavingsLedger.tsx`) rendered inside the app shell (sidebar + main), not in a portal. So this rule hides the entire `#root`, leaving a blank page. That's why print preview shows nothing.
 
-### 2. Hide Savings tile on main dashboard
-The user wants the **SAVINGS** tile (in the secondary 6-card row) removed since real savings live as plans, not raw account balances — its value of `৳0` looks misleading.
+The other `.print-dialog`-scoped rules (table styling, color overrides) also won't apply to the page content since the page has no `.print-dialog` class.
 
-**File:** `src/components/dashboard/SecondaryCards.tsx`
-- Remove the Savings `FinanceCard` and the `savings` calculation.
-- Change grid from `lg:grid-cols-6` → `lg:grid-cols-5` so remaining 5 cards (Receivables, Payables, Debt/Loans, Investments, Assets) fill the row evenly.
+### Fix — make print rules work for both modals AND full pages
 
-### 3. Remove "Savings Progress" widget from dashboard
-**File:** `src/pages/Dashboard.tsx`
-- Drop `<SavingsProgressCard />` and its import.
-- Replace the bottom row's right column (`BudgetProgress` + `SavingsProgressCard`) with just `<BudgetProgress />`.
-- Leave `SavingsProgressCard.tsx` file in place (orphan, safe to keep — no router or other imports).
-- Savings overdue/upcoming alerts in `AlertsCard` stay (still useful in the global Alerts widget).
+**File:** `src/index.css` (print block only)
 
-### 4. Open Savings book as a full page (Payables-style), not modal
+1. **Remove the body-children blanket hide.** Replace it with targeted hiding of just the app shell pieces (sidebar, header, toasts, top nav). The rest of the page content prints naturally.
+2. **Generalize table & color rules** so they apply to both `.print-dialog` content and any page wrapped in a `.print-page` class (or just globally inside `@media print`).
+3. **Keep `.no-print`, `.print-only`, and dialog chrome reset** intact so the existing `SavingsPlanDetailModal` (orphan but still used by other features later) and the new `SavingsLedger` page both print cleanly.
 
-Currently `setDetailPlan(plan)` opens `SavingsPlanDetailModal`. Switch to a routed full page like `/payables/:id`.
+Conceptually:
+```css
+@media print {
+  /* Hide app chrome */
+  [data-sidebar], header, nav, .sidebar-trigger,
+  [data-sonner-toaster], [data-radix-popper-content-wrapper] { display: none !important; }
 
-**Changes:**
-- **New file** `src/pages/SavingsLedger.tsx` — wraps existing detail layout content as a real page:
-  - `useParams` to get plan id, fetch via existing `useSavingsPlans()` (find by id) or a new lightweight `useSavingsPlan(id)` selector.
-  - Reuse the entire JSX body that lives inside `SavingsPlanDetailModal` (header, 6 stat cards, schedule + activity grid, filters, installments table, generate-12 footer) — but rendered as page content, not inside `<Dialog>`.
-  - Includes `← Back` button to `/savings` (mirrors `PayableLedger`).
-  - Same Print/CSV/Edit/Delete actions; on delete → navigate back to `/savings`.
-  - Keeps `MarkInstallmentPaidModal`, `EditSavingsPlanModal`, `ConfirmDialog` mounted within the page.
-- **Edit** `src/App.tsx` — add route `/savings/:id` → `<PremiumRoute><SavingsLedger /></PremiumRoute>`.
-- **Edit** `src/pages/Savings.tsx`:
-  - Replace `setDetailPlan(plan)` and "Open Plan" dropdown action with `navigate(\`/savings/${plan.id}\`)`.
-  - Remove `SavingsPlanDetailModal` import + usage + `detailPlan` state.
-- **Keep** `SavingsPlanDetailModal.tsx` file (now orphan but small risk of regressions if removed; can clean up later).
+  /* DO NOT blanket-hide body children anymore */
+
+  /* Make main fill the page */
+  main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+
+  /* Tables, colors, badges — apply globally inside print, not only inside .print-dialog */
+  table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
+  th, td { border: 1px solid #d4d4d4 !important; padding: 6px 8px !important; color: black !important; }
+  thead th { background: #f5f5f5 !important; font-weight: 600 !important; }
+
+  .text-positive { color: #15803d !important; }
+  .text-negative, .text-destructive { color: #b91c1c !important; }
+  .text-warning { color: #b45309 !important; }
+  .text-muted-foreground { color: #525252 !important; }
+}
+```
+
+### Also: hide on-screen page chrome from print
+
+**File:** `src/pages/SavingsLedger.tsx`
+- The `← Back` button row already has `no-print` ✓
+- The `PageHeader` actions row already has `no-print` ✓
+- The 6 summary `FinanceCard`s row has `no-print` ✓ (the print-only header replaces them)
+- The Schedule + Recent Activity grid has `no-print` ✓
+- The filters/installments table area is currently NOT marked — need to verify it prints. Looking at the code, the filter Select and "Installments" section need: `no-print` on the filter bar, and the **Actions** column hidden in print, plus the `<PageHeader title>` should also be hidden in print (since the print-only header already shows the plan name).
+
+Will add `no-print` to the on-screen `PageHeader` wrapper too, so only the clean print-only header + installments table show in print.
 
 ### Files touched
-**New (1):** `src/pages/SavingsLedger.tsx`
-**Edit (4):** `src/components/savings/SavingsPlanDetailModal.tsx` (brand header in print block — used by orphan file but harmless; SavingsLedger will reuse same print structure too), `src/components/dashboard/SecondaryCards.tsx`, `src/pages/Dashboard.tsx`, `src/pages/Savings.tsx`, `src/App.tsx`
+- `src/index.css` — rewrite the `@media print` block: remove body-children hide, generalize table/color rules
+- `src/pages/SavingsLedger.tsx` — wrap on-screen `PageHeader` in `no-print`; ensure installments table Actions column gets `no-print`
 
 ### Out of scope
-- No DB or hook changes. No removal of `SavingsProgressCard.tsx` or `SavingsPlanDetailModal.tsx` files. No changes to translations, AlertsCard, or print stylesheet.
+- No changes to `SavingsPlanDetailModal.tsx` (orphan), `PayableLedger`, `Reports.tsx`, or other print flows. Their existing `.print-dialog` / `print-section` classes continue to work because we keep those selectors and just remove the over-aggressive body hide.
 
