@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { User, Mail, Phone, Calendar, Wallet, ArrowLeftRight, CreditCard, Shield, MapPin, Building2, Crown } from "lucide-react";
+import { useAppContext } from "@/contexts/AppContext";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatAppDate } from "@/lib/formatters";
 
 export interface UserDetail {
   id: string;
