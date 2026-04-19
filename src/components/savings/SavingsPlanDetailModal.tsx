@@ -312,7 +312,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
           </div>
 
           {/* Schedule + Recent Activity */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 no-print">
             <Card className="finance-card-static p-4">
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-feature-savings/10">
