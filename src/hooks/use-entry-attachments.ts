@@ -73,6 +73,7 @@ export function useUploadAttachment() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["entry_attachments", data.entry_id] });
+      qc.invalidateQueries({ queryKey: ["entry_attachment_counts", data.entry_type] });
       toast.success("File uploaded");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -93,6 +94,7 @@ export function useDeleteAttachment() {
     },
     onSuccess: (att) => {
       qc.invalidateQueries({ queryKey: ["entry_attachments", att.entry_id] });
+      qc.invalidateQueries({ queryKey: ["entry_attachment_counts", att.entry_type] });
       toast.success("Attachment removed");
     },
     onError: (e: Error) => toast.error(e.message),
