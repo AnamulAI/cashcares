@@ -190,7 +190,7 @@ export default function Savings() {
               <Card
                 key={plan.id}
                 className="finance-card-static p-4 cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setDetailPlan(plan)}
+                onClick={() => navigate(`/savings/${plan.id}`)}
               >
                 <div className="flex items-center gap-3">
                   <Checkbox
@@ -238,7 +238,7 @@ export default function Savings() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={e => { e.stopPropagation(); setDetailPlan(plan); }}>
+                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/savings/${plan.id}`); }}>
                         <Eye className="h-3.5 w-3.5 mr-2" /> Open Plan
                       </DropdownMenuItem>
                       {plan.status !== "completed" && (
@@ -264,11 +264,6 @@ export default function Savings() {
       )}
 
       <AddSavingsPlanModal open={addOpen} onOpenChange={setAddOpen} />
-      <SavingsPlanDetailModal
-        open={!!detailPlan}
-        onOpenChange={(v) => !v && setDetailPlan(null)}
-        plan={detailPlan}
-      />
 
       <ConfirmDialog
         open={!!deleteId}
