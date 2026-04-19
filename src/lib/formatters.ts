@@ -34,9 +34,9 @@ export function formatPercent(value: number, lang: string = "en"): string {
 
 // --- Date Format ---
 const DATE_FORMAT_MAP: Record<string, string> = {
-  dmy: "dd/MM/yyyy",
-  mdy: "MM/dd/yyyy",
-  ymd: "yyyy-MM-dd",
+  dmy: "dd MMM, yyyy",
+  mdy: "MMM dd, yyyy",
+  ymd: "yyyy MMM dd",
 };
 
 const TIMEZONE_MAP: Record<string, string> = {
