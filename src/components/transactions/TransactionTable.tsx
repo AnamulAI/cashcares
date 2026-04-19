@@ -18,6 +18,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAttachmentCounts } from "@/hooks/use-attachment-counts";
 import { AttachmentBadge } from "@/components/shared/AttachmentBadge";
+import { usePendingEntryIds } from "@/hooks/use-pending-sync";
+import { PendingSyncIndicator, pendingRowTint } from "@/components/shared/PendingSyncIndicator";
 
 const typeIcons: Record<string, any> = { income: ArrowDownLeft, expense: ArrowUpRight, transfer: ArrowLeftRight };
 const typeColors: Record<string, string> = {
@@ -46,6 +48,7 @@ export function TransactionTable({ transactions, onViewDetails, onEdit }: Transa
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const { data: attachmentCounts = {} } = useAttachmentCounts(transactions.map((t: any) => t.id), "transaction");
+  const pendingIds = usePendingEntryIds();
 
   const allSelected = transactions.length > 0 && selected.size === transactions.length;
   const someSelected = selected.size > 0 && selected.size < transactions.length;
@@ -142,12 +145,18 @@ export function TransactionTable({ transactions, onViewDetails, onEdit }: Transa
             {transactions.map((txn: any) => {
               const Icon = typeIcons[txn.type] || ArrowUpRight;
               const isSelected = selected.has(txn.id);
+              const isPending = pendingIds.has(txn.id);
               return (
-                <TableRow key={txn.id} className={cn("group hover:bg-accent/40 transition-colors cursor-pointer border-border/40", isSelected && "bg-primary/5")} onClick={() => onViewDetails?.(txn)}>
+                <TableRow key={txn.id} className={cn("group hover:bg-accent/40 transition-colors cursor-pointer border-border/40", isSelected && "bg-primary/5", isPending && pendingRowTint)} onClick={() => onViewDetails?.(txn)}>
                   <TableCell className="py-3.5" onClick={e => e.stopPropagation()}>
                     <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(txn.id)} aria-label={`Select ${txn.id}`} />
                   </TableCell>
-                  <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap py-3.5">{fmtDate(txn.date)}</TableCell>
+                  <TableCell className="text-[13px] text-muted-foreground whitespace-nowrap py-3.5">
+                    <span className="inline-flex items-center gap-1.5">
+                      <PendingSyncIndicator pending={isPending} />
+                      {fmtDate(txn.date)}
+                    </span>
+                  </TableCell>
                   <TableCell className="py-3.5">
                     <div className="flex items-center gap-2">
                       <div className={cn("h-6 w-6 rounded-md flex items-center justify-center", typeColors[txn.type] || "")}>
