@@ -416,7 +416,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                     <TableHead className="text-xs text-right">Paid Amount</TableHead>
                     <TableHead className="text-xs">Account</TableHead>
                     <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
+                    <TableHead className="text-xs text-right no-print">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
