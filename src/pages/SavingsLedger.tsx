@@ -194,124 +194,40 @@ export default function SavingsLedger() {
 
   return (
     <div className="space-y-6">
-      {/* ============ INDUSTRY-GRADE PRINT LAYOUT ============ */}
-      <div className="print-only">
-        {/* 1. Brand bar */}
-        <div className="flex items-start justify-between pb-3 mb-4 border-b-2 border-foreground/80">
-          <BrandLogo size="md" />
-          <div className="text-right">
-            <p className="text-[13px] font-bold tracking-wider uppercase">Savings Plan Statement</p>
-            <p className="text-[10.5px] text-muted-foreground mt-0.5">
-              Generated: {format(new Date(), "dd MMM, yyyy · HH:mm")}
-            </p>
-          </div>
-        </div>
-
-        {/* 2. Holder strip */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-1 mb-5 pb-3 border-b text-[11px]">
-          <div className="flex gap-2">
-            <span className="text-muted-foreground w-24 shrink-0">Account Holder</span>
-            <span className="font-semibold">: {profile?.full_name || "—"}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-muted-foreground w-24 shrink-0">Plan ID</span>
-            <span className="font-mono">: {plan.id.slice(0, 8).toUpperCase()}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-muted-foreground w-24 shrink-0">Email</span>
-            <span>: {profile?.email || user?.email || "—"}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-muted-foreground w-24 shrink-0">Period</span>
-            <span>: {formatAppDate(plan.start_date)} — {format(new Date(), "dd MMM, yyyy")}</span>
-          </div>
-          {profile?.phone && (
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Phone</span>
-              <span>: {profile.phone}</span>
-            </div>
-          )}
-        </div>
-
-        {/* 3. Plan Details */}
-        <div className="mb-5">
-          <h3 className="print-section-title">Plan Details</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-[11px]">
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Plan Name</span>
-              <span className="font-semibold">: {plan.plan_name}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Type</span>
-              <span className="font-semibold capitalize">: {plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended"}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Recipient</span>
-              <span className="font-semibold">: {plan.recipient_name || "Self"}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Frequency</span>
-              <span className="font-semibold capitalize">: {plan.frequency}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Status</span>
-              <span className="font-semibold capitalize">: {plan.status}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Started</span>
-              <span className="font-semibold">: {formatAppDate(plan.start_date)}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Installment</span>
-              <span className="font-semibold">: {fmt(Number(plan.installment_amount))}</span>
-            </div>
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-24 shrink-0">Maturity</span>
-              <span className="font-semibold">: {plan.maturity_date ? formatAppDate(plan.maturity_date) : "—"}</span>
-            </div>
-            {plan.note && (
-              <div className="flex gap-2 col-span-2">
-                <span className="text-muted-foreground w-24 shrink-0">Note</span>
-                <span>: {plan.note}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 4. Financial Summary */}
-        <div className="mb-5">
-          <h3 className="print-section-title">Financial Summary</h3>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="text-left">Target</th>
-                <th className="text-left">Saved</th>
-                <th className="text-left">Remaining</th>
-                <th className="text-left">Progress</th>
-                <th className="text-left">Next Due</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="font-semibold">{plan.plan_type === "fixed" ? fmt(target) : "Open-ended"}</td>
-                <td className="font-semibold">{fmt(saved)}</td>
-                <td className="font-semibold">{plan.plan_type === "fixed" ? fmt(remaining) : "—"}</td>
-                <td className="font-semibold">{plan.plan_type === "fixed" ? `${pct}%` : "—"}</td>
-                <td className="font-semibold">{nextDue ? formatAppDate(nextDue) : "—"}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="mt-2 text-[11px] text-muted-foreground">
+      <PrintStatementHeader
+        documentTitle="Savings Plan Statement"
+        subjectId={plan.id}
+        subjectIdLabel="Plan ID"
+        periodStart={plan.start_date}
+        detailsTitle="Plan Details"
+        scheduleTitle="Installment Schedule"
+        details={[
+          { label: "Plan Name", value: plan.plan_name },
+          { label: "Type", value: plan.plan_type === "fixed" ? "Fixed-term" : "Open-ended" },
+          { label: "Recipient", value: plan.recipient_name || "Self" },
+          { label: "Frequency", value: plan.frequency },
+          { label: "Status", value: plan.status },
+          { label: "Started", value: formatAppDate(plan.start_date) },
+          { label: "Installment", value: fmt(Number(plan.installment_amount)) },
+          { label: "Maturity", value: plan.maturity_date ? formatAppDate(plan.maturity_date) : "—" },
+          ...(plan.note ? [{ label: "Note", value: plan.note, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Target", value: plan.plan_type === "fixed" ? fmt(target) : "Open-ended" },
+          { label: "Saved", value: fmt(saved) },
+          { label: "Remaining", value: plan.plan_type === "fixed" ? fmt(remaining) : "—" },
+          { label: "Progress", value: plan.plan_type === "fixed" ? `${pct}%` : "—" },
+          { label: "Next Due", value: nextDue ? formatAppDate(nextDue) : "—" },
+        ]}
+        summaryCaption={
+          <>
             <span className="font-semibold text-foreground">{paidCount}</span> Paid &nbsp;·&nbsp;
             <span className="font-semibold text-foreground">{pendingCount}</span> Pending &nbsp;·&nbsp;
             <span className="font-semibold text-foreground">{overdueCount}</span> Overdue &nbsp;·&nbsp;
             <span className="font-semibold text-foreground">{installments.length}</span> Total
-          </p>
-        </div>
-
-        {/* 5. Installment Schedule heading (table itself rendered below) */}
-        <h3 className="print-section-title">Installment Schedule</h3>
-      </div>
+          </>
+        }
+      />
 
       <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/savings")}>
