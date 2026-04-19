@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, X, FileText, Image as ImageIcon, Download, Loader2, UploadCloud } from "lucide-react";
+import { Paperclip, X, FileText, Image as ImageIcon, Download, Loader2, UploadCloud, CloudOff } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEntryAttachments, useUploadAttachment, useDeleteAttachment, getAttachmentUrl, EntryAttachment, type EntryType } from "@/hooks/use-entry-attachments";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 const ALLOWED_TYPES = [
   "image/jpeg", "image/png", "image/webp", "image/gif",
@@ -37,9 +38,14 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+  const online = useOnlineStatus();
 
   const processFiles = useCallback((files: FileList | File[]) => {
     if (!entryId) return;
+    if (!online) {
+      toast.error("Cannot upload while offline. Try again when reconnected.");
+      return;
+    }
     let rejected = 0;
     Array.from(files).forEach(file => {
       if (!ALLOWED_TYPES.includes(file.type)) { rejected++; return; }
@@ -47,7 +53,7 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
       uploadMut.mutate({ file, entryId, entryType });
     });
     if (rejected > 0) toast.error(`${rejected} file(s) skipped (unsupported type or >10MB)`);
-  }, [entryId, entryType, uploadMut]);
+  }, [entryId, entryType, uploadMut, online]);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) processFiles(e.target.files);
@@ -102,10 +108,17 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
               size="sm"
               className="h-7 text-xs gap-1"
               onClick={() => fileRef.current?.click()}
-              disabled={uploadMut.isPending}
+              disabled={uploadMut.isPending || !online}
+              title={!online ? "Cannot upload while offline" : undefined}
             >
-              {uploadMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
-              Attach
+              {uploadMut.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : !online ? (
+                <CloudOff className="h-3 w-3" />
+              ) : (
+                <Paperclip className="h-3 w-3" />
+              )}
+              {!online ? "Offline" : "Attach"}
             </Button>
             <input
               ref={fileRef}
@@ -118,6 +131,13 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
           </>
         )}
       </div>
+
+      {!online && !readOnly && (
+        <div className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-[11px] text-warning">
+          <CloudOff className="h-3 w-3 shrink-0" />
+          <span>You're offline — file uploads will resume when you reconnect.</span>
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading...</p>

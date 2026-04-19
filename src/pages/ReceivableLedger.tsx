@@ -28,6 +28,9 @@ import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
 import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 import { useAttachmentCounts } from "@/hooks/use-attachment-counts";
 import { AttachmentBadge } from "@/components/shared/AttachmentBadge";
+import { usePendingEntryIds } from "@/hooks/use-pending-sync";
+import { PendingSyncIndicator, pendingRowTint } from "@/components/shared/PendingSyncIndicator";
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
@@ -75,6 +78,7 @@ export default function ReceivableLedger() {
   }), [processed, statusFilter]);
 
   const { data: attachmentCounts = {} } = useAttachmentCounts(filtered.map(e => e.id), "receivable");
+  const pendingIds = usePendingEntryIds();
 
   const totalAmount = processed.reduce((s, e) => s + Number(e.amount), 0);
   const totalCollected = processed.reduce((s, e) => s + Number(e.collected_amount), 0);
@@ -258,9 +262,15 @@ export default function ReceivableLedger() {
             <TableBody>
               {filtered.map(e => {
                 const balance = Number(e.amount) - Number(e.collected_amount);
+                const isPending = pendingIds.has(e.id);
                 return (
-                  <TableRow key={e.id}>
-                    <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
+                  <TableRow key={e.id} className={cn(isPending && pendingRowTint)}>
+                    <TableCell className="text-xs">
+                      <span className="inline-flex items-center gap-1.5">
+                        <PendingSyncIndicator pending={isPending} />
+                        {fmtDate(e.date)}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-xs">
                       <span className="inline-flex items-center gap-1.5">
                         {e.description || "—"}

@@ -22,6 +22,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { format } from "date-fns";
+import { usePendingEntryIds } from "@/hooks/use-pending-sync";
+import { PendingSyncIndicator, pendingRowTint } from "@/components/shared/PendingSyncIndicator";
+import { cn } from "@/lib/utils";
 
 const ENTRY_TYPES = [
   { value: "initial_invest", label: "Initial Invest", color: "bg-primary/10 text-primary" },
@@ -89,6 +92,7 @@ export default function PartnershipLedger() {
     if (partnerFilter !== "all" && e.contributor !== partnerFilter) return false;
     return true;
   }), [entries, typeFilter, partnerFilter]);
+  const pendingIds = usePendingEntryIds();
 
   // Partner-wise breakdown
   const breakdown = useMemo(() => {
@@ -356,9 +360,15 @@ export default function PartnershipLedger() {
               {filtered.map(e => {
                 const dir = getDirection(e.entry_type);
                 const isWork = e.entry_type === "working_contribution";
+                const isPending = pendingIds.has(e.id);
                 return (
-                  <TableRow key={e.id}>
-                    <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
+                  <TableRow key={e.id} className={cn(isPending && pendingRowTint)}>
+                    <TableCell className="text-xs">
+                      <span className="inline-flex items-center gap-1.5">
+                        <PendingSyncIndicator pending={isPending} />
+                        {fmtDate(e.date)}
+                      </span>
+                    </TableCell>
                     <TableCell><Badge variant="secondary" className={`text-[10px] ${entryTypeColor(e.entry_type)}`}>{entryTypeLabel(e.entry_type)}</Badge></TableCell>
                     <TableCell className="text-xs">{e.contributor || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{e.description || "—"}</TableCell>
