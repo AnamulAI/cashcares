@@ -381,7 +381,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 no-print">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
