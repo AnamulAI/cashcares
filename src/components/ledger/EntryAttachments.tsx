@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, X, FileText, Image as ImageIcon, Download, Loader2, UploadCloud } from "lucide-react";
+import { Paperclip, X, FileText, Image as ImageIcon, Download, Loader2, UploadCloud, CloudOff } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEntryAttachments, useUploadAttachment, useDeleteAttachment, getAttachmentUrl, EntryAttachment, type EntryType } from "@/hooks/use-entry-attachments";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 const ALLOWED_TYPES = [
   "image/jpeg", "image/png", "image/webp", "image/gif",
@@ -37,9 +38,14 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+  const online = useOnlineStatus();
 
   const processFiles = useCallback((files: FileList | File[]) => {
     if (!entryId) return;
+    if (!online) {
+      toast.error("Cannot upload while offline. Try again when reconnected.");
+      return;
+    }
     let rejected = 0;
     Array.from(files).forEach(file => {
       if (!ALLOWED_TYPES.includes(file.type)) { rejected++; return; }
@@ -47,7 +53,7 @@ export function EntryAttachments({ entryId, entryType, readOnly }: Props) {
       uploadMut.mutate({ file, entryId, entryType });
     });
     if (rejected > 0) toast.error(`${rejected} file(s) skipped (unsupported type or >10MB)`);
-  }, [entryId, entryType, uploadMut]);
+  }, [entryId, entryType, uploadMut, online]);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) processFiles(e.target.files);
