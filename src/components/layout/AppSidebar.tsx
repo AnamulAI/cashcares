@@ -6,6 +6,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { SidebarSyncBadge } from "@/components/shared/SidebarSyncBadge";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/i18n/useTranslation";
