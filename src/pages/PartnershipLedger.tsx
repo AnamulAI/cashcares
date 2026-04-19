@@ -22,6 +22,9 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { format } from "date-fns";
+import { usePendingEntryIds } from "@/hooks/use-pending-sync";
+import { PendingSyncIndicator, pendingRowTint } from "@/components/shared/PendingSyncIndicator";
+import { cn } from "@/lib/utils";
 
 const ENTRY_TYPES = [
   { value: "initial_invest", label: "Initial Invest", color: "bg-primary/10 text-primary" },

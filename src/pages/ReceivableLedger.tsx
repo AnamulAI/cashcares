@@ -28,6 +28,9 @@ import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
 import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 import { useAttachmentCounts } from "@/hooks/use-attachment-counts";
 import { AttachmentBadge } from "@/components/shared/AttachmentBadge";
+import { usePendingEntryIds } from "@/hooks/use-pending-sync";
+import { PendingSyncIndicator, pendingRowTint } from "@/components/shared/PendingSyncIndicator";
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",

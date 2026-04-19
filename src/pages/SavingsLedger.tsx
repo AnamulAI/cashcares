@@ -33,6 +33,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { usePendingEntryIds } from "@/hooks/use-pending-sync";
+import { PendingSyncIndicator, pendingRowTint } from "@/components/shared/PendingSyncIndicator";
+import { cn } from "@/lib/utils";
 
 const statusBadge: Record<string, string> = {
   active: "bg-primary/10 text-primary",
