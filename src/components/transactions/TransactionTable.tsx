@@ -16,6 +16,8 @@ import { useDeleteTransaction, useCreateTransaction } from "@/hooks/use-transact
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAttachmentCounts } from "@/hooks/use-attachment-counts";
+import { AttachmentBadge } from "@/components/shared/AttachmentBadge";
 
 const typeIcons: Record<string, any> = { income: ArrowDownLeft, expense: ArrowUpRight, transfer: ArrowLeftRight };
 const typeColors: Record<string, string> = {
@@ -42,6 +44,8 @@ export function TransactionTable({ transactions, onViewDetails, onEdit }: Transa
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const { data: attachmentCounts = {} } = useAttachmentCounts(transactions.map((t: any) => t.id), "transaction");
 
   const allSelected = transactions.length > 0 && selected.size === transactions.length;
   const someSelected = selected.size > 0 && selected.size < transactions.length;
@@ -152,7 +156,12 @@ export function TransactionTable({ transactions, onViewDetails, onEdit }: Transa
                       <span className="text-[13px] font-medium">{t(`transactions.${txn.type}`)}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-[13px] font-medium py-3.5">{txn.category?.name || (txn.type === "transfer" ? t("action.transfer") : "—")}</TableCell>
+                  <TableCell className="text-[13px] font-medium py-3.5">
+                    <span className="inline-flex items-center gap-1.5">
+                      {txn.category?.name || (txn.type === "transfer" ? t("action.transfer") : "—")}
+                      <AttachmentBadge count={attachmentCounts[txn.id] || 0} />
+                    </span>
+                  </TableCell>
                   <TableCell className="text-[13px] text-muted-foreground hidden md:table-cell py-3.5">{txn.account?.name || "—"}</TableCell>
                   <TableCell className="text-[13px] text-muted-foreground hidden lg:table-cell max-w-[180px] truncate py-3.5">{txn.note || "—"}</TableCell>
                   <TableCell className={cn("text-[13px] text-right font-semibold tabular-nums py-3.5", txn.type === "income" && "text-positive", txn.type === "expense" && "text-negative", txn.type === "transfer" && "text-foreground")}>

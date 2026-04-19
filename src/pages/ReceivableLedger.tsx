@@ -26,6 +26,8 @@ import { parseISO, isAfter, format } from "date-fns";
 import { ReceivableEntryDetailModal } from "@/components/ledger/ReceivableEntryDetailModal";
 import { CategoryCombobox } from "@/components/ledger/CategoryCombobox";
 import { EntryAttachments } from "@/components/ledger/EntryAttachments";
+import { useAttachmentCounts } from "@/hooks/use-attachment-counts";
+import { AttachmentBadge } from "@/components/shared/AttachmentBadge";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/10 text-primary",
