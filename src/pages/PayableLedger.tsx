@@ -261,9 +261,15 @@ export default function PayableLedger() {
             <TableBody>
               {filtered.map(e => {
                 const balance = Number(e.amount) - Number(e.paid_amount);
+                const isPending = pendingIds.has(e.id);
                 return (
-                  <TableRow key={e.id}>
-                    <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
+                  <TableRow key={e.id} className={cn(isPending && pendingRowTint)}>
+                    <TableCell className="text-xs">
+                      <span className="inline-flex items-center gap-1.5">
+                        <PendingSyncIndicator pending={isPending} />
+                        {fmtDate(e.date)}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-xs">
                       <span className="inline-flex items-center gap-1.5">
                         {e.description || "—"}
