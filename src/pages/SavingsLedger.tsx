@@ -20,6 +20,7 @@ import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/
 import { MarkInstallmentPaidModal } from "@/components/savings/MarkInstallmentPaidModal";
 import { EditSavingsPlanModal } from "@/components/savings/EditSavingsPlanModal";
 import { EditInstallmentModal } from "@/components/savings/EditInstallmentModal";
+import { SavingsInstallmentDetailModal } from "@/components/savings/SavingsInstallmentDetailModal";
 import {
   useSavingsPlans, useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
   type SavingsInstallment
@@ -68,6 +69,7 @@ export default function SavingsLedger() {
   const [deleteInstId, setDeleteInstId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editInst, setEditInst] = useState<SavingsInstallment | null>(null);
+  const [detailInst, setDetailInst] = useState<SavingsInstallment | null>(null);
 
   const recentPaid = useMemo(() =>
     installments
@@ -453,7 +455,11 @@ export default function SavingsLedger() {
                 const idx = installments.findIndex(i => i.id === ins.id);
                 const isPending = pendingIds.has(ins.id);
                 return (
-                  <TableRow key={ins.id} className={cn(isPending && pendingRowTint)}>
+                  <TableRow
+                    key={ins.id}
+                    className={cn("cursor-pointer hover:bg-accent/40 transition-colors", isPending && pendingRowTint)}
+                    onClick={() => setDetailInst(ins)}
+                  >
                     <TableCell className="text-xs">
                       <span className="inline-flex items-center gap-1.5">
                         <PendingSyncIndicator pending={isPending} />
@@ -473,7 +479,7 @@ export default function SavingsLedger() {
                         {ins.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right no-print">
+                    <TableCell className="text-right no-print" onClick={(ev) => ev.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -558,6 +564,13 @@ export default function SavingsLedger() {
         open={!!editInst}
         onOpenChange={(v) => !v && setEditInst(null)}
         installment={editInst}
+      />
+
+      <SavingsInstallmentDetailModal
+        open={!!detailInst}
+        onOpenChange={(v) => !v && setDetailInst(null)}
+        installment={detailInst}
+        index={detailInst ? installments.findIndex(i => i.id === detailInst.id) : 0}
       />
 
       {/* Print-only footer */}
