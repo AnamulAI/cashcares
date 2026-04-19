@@ -451,9 +451,15 @@ export default function SavingsLedger() {
             <TableBody>
               {filtered.map((ins) => {
                 const idx = installments.findIndex(i => i.id === ins.id);
+                const isPending = pendingIds.has(ins.id);
                 return (
-                  <TableRow key={ins.id}>
-                    <TableCell className="text-xs">{formatAppDate(ins.due_date)}</TableCell>
+                  <TableRow key={ins.id} className={cn(isPending && pendingRowTint)}>
+                    <TableCell className="text-xs">
+                      <span className="inline-flex items-center gap-1.5">
+                        <PendingSyncIndicator pending={isPending} />
+                        {formatAppDate(ins.due_date)}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">#{idx + 1}</TableCell>
                     <TableCell className="text-xs text-right font-semibold">{fmt(Number(ins.amount))}</TableCell>
                     <TableCell className="text-xs text-right">
