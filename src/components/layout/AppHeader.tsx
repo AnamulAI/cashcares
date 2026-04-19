@@ -43,9 +43,11 @@ export function AppHeader() {
     currency, setCurrency,
     datePreset, dateRange, setDatePreset, setCustomRange,
     notifications, unreadCount, markRead, markAllRead,
+    settings,
   } = useAppContext();
   const { profile, isAdmin, signOut } = useAuth();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const fmtDate = (d: Date) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
 
   const handleDatePreset = (p: DatePreset) => {
     if (p === "custom") {
@@ -153,7 +155,7 @@ export function AppHeader() {
                   />
                   <div className="flex items-center justify-between px-1">
                     <span className="text-[11px] text-muted-foreground">
-                      {format(dateRange.from, "MMM d")} — {format(dateRange.to, "MMM d, yyyy")}
+                      {fmtDate(dateRange.from)} — {fmtDate(dateRange.to)}
                     </span>
                     <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => { setDatePopoverOpen(false); setShowCustomCalendar(false); }}>
                       {t("action.apply")}
