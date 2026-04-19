@@ -1,4 +1,4 @@
-import { format as fnsFormat, parseISO } from "date-fns";
+import { format as fnsFormat, parseISO, differenceInCalendarDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import type { CurrencyOption } from "@/contexts/AppContext";
 
@@ -79,6 +79,53 @@ export function formatAppDateTime(
   } catch {
     return typeof dateInput === "string" ? dateInput : dateInput.toLocaleString();
   }
+}
+
+// --- Relative Time ---
+/**
+ * Returns a relative time label like "Today", "Yesterday", "2 days ago",
+ * "in 3 days". Falls back to formatted absolute date for dates older
+ * than ~6 days or further than 6 days in the future.
+ */
+export function formatRelativeTime(
+  dateInput: string | Date,
+  dateFormat: string = "dmy",
+  timezone: string = "dhaka",
+  lang: string = "en"
+): string {
+  try {
+    const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
+    const tz = TIMEZONE_MAP[timezone] || timezone;
+    const zonedDate = toZonedTime(date, tz);
+    const zonedNow = toZonedTime(new Date(), tz);
+    const diff = differenceInCalendarDays(zonedDate, zonedNow);
+
+    let label: string;
+    if (diff === 0) label = lang === "bn" ? "আজ" : "Today";
+    else if (diff === -1) label = lang === "bn" ? "গতকাল" : "Yesterday";
+    else if (diff === 1) label = lang === "bn" ? "আগামীকাল" : "Tomorrow";
+    else if (diff < 0 && diff >= -6) label = lang === "bn" ? `${Math.abs(diff)} দিন আগে` : `${Math.abs(diff)} days ago`;
+    else if (diff > 0 && diff <= 6) label = lang === "bn" ? `${diff} দিনে` : `in ${diff} days`;
+    else return formatAppDate(dateInput, dateFormat, timezone, lang);
+
+    return lang === "bn" ? toBanglaDigits(label) : label;
+  } catch {
+    return formatAppDate(dateInput, dateFormat, timezone, lang);
+  }
+}
+
+/**
+ * Auto-formatter that uses relative time when the user enabled it
+ * AND the date is within ~6 days of today, otherwise falls back
+ * to the configured absolute date format.
+ */
+export function formatAppDateAuto(
+  dateInput: string | Date,
+  opts: { dateFormat?: string; timezone?: string; lang?: string; relative?: boolean }
+): string {
+  const { dateFormat = "dmy", timezone = "dhaka", lang = "en", relative = false } = opts;
+  if (relative) return formatRelativeTime(dateInput, dateFormat, timezone, lang);
+  return formatAppDate(dateInput, dateFormat, timezone, lang);
 }
 
 // Re-export timezone map for other uses
