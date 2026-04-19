@@ -471,7 +471,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
           )}
 
           {plan.plan_type === "open" && plan.status === "active" && (
-            <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 no-print">
               <p className="text-xs text-muted-foreground">
                 Open-ended plan — extend the schedule whenever needed.
               </p>
