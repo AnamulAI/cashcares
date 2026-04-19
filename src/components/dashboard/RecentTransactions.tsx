@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
-import { formatAmount, formatAppDate } from "@/lib/formatters";
+import { formatAmount, formatAppDateAuto } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -33,7 +33,7 @@ export function RecentTransactions() {
   const { t, lang } = useTranslation();
 
   const fmt = (n: number) => formatAmount(n, currency, lang);
-  const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
+  const fmtDate = (d: string) => formatAppDateAuto(d, { dateFormat: settings.dateFormat, timezone: settings.timezone, lang, relative: settings.relativeTime });
 
   const recentActivity: ActivityItem[] = useMemo(() => {
     const items: ActivityItem[] = [];
