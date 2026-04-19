@@ -7,7 +7,6 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { AlertsCard } from "@/components/dashboard/AlertsCard";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { BudgetProgress } from "@/components/dashboard/BudgetProgress";
-import { SavingsProgressCard } from "@/components/dashboard/SavingsProgressCard";
 import { GettingStarted } from "@/components/shared/GettingStarted";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -48,10 +47,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-3"><RecentTransactions /></div>
-        <div className="lg:col-span-2 space-y-4">
-          <BudgetProgress />
-          <SavingsProgressCard />
-        </div>
+        <div className="lg:col-span-2"><BudgetProgress /></div>
       </div>
 
       <QuickAddModal open={quickAdd} onOpenChange={setQuickAdd} />

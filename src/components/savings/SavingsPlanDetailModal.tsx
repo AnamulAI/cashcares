@@ -16,6 +16,7 @@ import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MarkInstallmentPaidModal } from "./MarkInstallmentPaidModal";
 import { EditSavingsPlanModal } from "./EditSavingsPlanModal";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import {
   useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
   type SavingsPlan, type SavingsInstallment
@@ -184,6 +185,9 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
         <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto print-dialog">
           {/* Print-only clean header */}
           <div className="print-only mb-4 pb-3 border-b">
+            <div className="mb-3 pb-2 border-b">
+              <BrandLogo size="sm" />
+            </div>
             <h1 className="text-xl font-bold">{plan.plan_name}</h1>
             <p className="text-sm mt-1">
               {[
