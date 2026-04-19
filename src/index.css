@@ -347,7 +347,35 @@
     border: 1px solid #999 !important;
     color: black !important;
   }
+
+  /* Industry-grade print layout helpers */
+  .print-section-title {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: #525252 !important;
+    border-bottom: 1px solid #d4d4d4 !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 8px !important;
+  }
+  .print-kv {
+    display: grid !important;
+    grid-template-columns: 110px 1fr;
+    gap: 3px 10px;
+    font-size: 11px;
+  }
+  .print-kv dt { color: #525252 !important; font-weight: 400; }
+  .print-kv dd { color: black !important; font-weight: 600; margin: 0; }
+
+  /* Repeat table headers/footers across pages */
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr, td, th { page-break-inside: avoid; }
 }
+
+/* Define page margins outside the @media print block so it applies during print */
+@page { margin: 14mm 12mm 16mm 12mm; }
 
 /* Print-only blocks are hidden on screen */
 .print-only {
