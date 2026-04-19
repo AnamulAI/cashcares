@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { formatAppDate } from "@/lib/formatters";
 import {
   Bell, Search, Plus, ChevronDown, User, CreditCard, LogOut,
   Settings2, UserCircle, Check, AlertTriangle, Clock, DollarSign,
