@@ -92,6 +92,7 @@ export default function PartnershipLedger() {
     if (partnerFilter !== "all" && e.contributor !== partnerFilter) return false;
     return true;
   }), [entries, typeFilter, partnerFilter]);
+  const pendingIds = usePendingEntryIds();
 
   // Partner-wise breakdown
   const breakdown = useMemo(() => {

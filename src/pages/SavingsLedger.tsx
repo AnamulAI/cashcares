@@ -81,6 +81,7 @@ export default function SavingsLedger() {
     installments.filter(i => statusFilter === "all" || i.status === statusFilter),
     [installments, statusFilter]
   );
+  const pendingIds = usePendingEntryIds();
 
   if (plansLoading) {
     return <div className="space-y-4 p-6"><Skeleton className="h-8 w-64" /><Skeleton className="h-20" /></div>;
