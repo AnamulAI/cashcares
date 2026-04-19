@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/PrintStatementHeader";
 import { MarkInstallmentPaidModal } from "@/components/savings/MarkInstallmentPaidModal";
 import { EditSavingsPlanModal } from "@/components/savings/EditSavingsPlanModal";
 import { EditInstallmentModal } from "@/components/savings/EditInstallmentModal";
