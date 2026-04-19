@@ -1,6 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adjustBalance } from "./_account-balance";
+
+/**
+ * Cash impact of a partnership entry on its linked account.
+ *  - initial_invest / new_invest / reinvest → outflow (-amount): money sent into business
+ *  - withdraw / profit_distribution         → inflow  (+amount): money returned to partner
+ *  - working_contribution                   → no cash move (labor only)
+ */
+function partnershipEntryDelta(entryType: string, amount: number): number {
+  switch (entryType) {
+    case "initial_invest":
+    case "new_invest":
+    case "reinvest":
+      return -amount;
+    case "withdraw":
+    case "profit_distribution":
+      return amount;
+    default:
+      return 0;
+  }
+}
 
 export interface DbPartnership {
   id: string;
@@ -182,11 +203,17 @@ export function useCreatePartnershipEntry() {
     }) => {
       const { error: entryErr } = await (supabase as any).from("partnership_entries").insert(entry);
       if (entryErr) throw entryErr;
+      // Apply cash impact on linked account if present
+      if (entry.linked_account_id) {
+        const delta = partnershipEntryDelta(entry.entry_type, Number(entry.amount));
+        if (delta) await adjustBalance(entry.linked_account_id, delta);
+      }
       await recalcAndUpdate(partnershipId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partnerships"] });
       qc.invalidateQueries({ queryKey: ["partnership_entries"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Entry recorded");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -201,6 +228,21 @@ export function useUpdatePartnershipEntry() {
       partnershipId: string;
       updates: Partial<Omit<DbPartnershipEntry, "id" | "created_at">>;
     }) => {
+      // Fetch current row to compute reversal
+      const { data: current, error: fErr } = await (supabase as any)
+        .from("partnership_entries").select("*").eq("id", entryId).single();
+      if (fErr) throw fErr;
+
+      const oldAcct = current.linked_account_id as string | null;
+      const oldDelta = partnershipEntryDelta(current.entry_type, Number(current.amount));
+      const newType = updates.entry_type ?? current.entry_type;
+      const newAmount = updates.amount !== undefined ? Number(updates.amount) : Number(current.amount);
+      const newAcct = (updates.linked_account_id !== undefined ? updates.linked_account_id : oldAcct) as string | null;
+      const newDelta = partnershipEntryDelta(newType, newAmount);
+
+      if (oldAcct && oldDelta) await adjustBalance(oldAcct, -oldDelta);
+      if (newAcct && newDelta) await adjustBalance(newAcct, newDelta);
+
       const { error } = await (supabase as any).from("partnership_entries").update(updates).eq("id", entryId);
       if (error) throw error;
       await recalcAndUpdate(partnershipId);
@@ -208,6 +250,7 @@ export function useUpdatePartnershipEntry() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partnerships"] });
       qc.invalidateQueries({ queryKey: ["partnership_entries"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Entry updated");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -218,13 +261,21 @@ export function useDeletePartnershipEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ entryId, partnershipId }: { entryId: string; partnershipId: string }) => {
+      const { data: current } = await (supabase as any)
+        .from("partnership_entries").select("linked_account_id, entry_type, amount").eq("id", entryId).single();
       const { error: delErr } = await (supabase as any).from("partnership_entries").delete().eq("id", entryId);
       if (delErr) throw delErr;
+      // Reverse cash impact
+      if (current?.linked_account_id) {
+        const delta = partnershipEntryDelta(current.entry_type, Number(current.amount));
+        if (delta) await adjustBalance(current.linked_account_id, -delta);
+      }
       await recalcAndUpdate(partnershipId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partnerships"] });
       qc.invalidateQueries({ queryKey: ["partnership_entries"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Entry deleted");
     },
     onError: (e: Error) => toast.error(e.message),

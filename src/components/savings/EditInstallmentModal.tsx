@@ -4,10 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { SavingsInstallment } from "@/hooks/use-savings";
+import { useUpdateInstallment, type SavingsInstallment } from "@/hooks/use-savings";
 
 interface Props {
   open: boolean;
@@ -16,11 +14,10 @@ interface Props {
 }
 
 export function EditInstallmentModal({ open, onOpenChange, installment }: Props) {
-  const qc = useQueryClient();
+  const update = useUpdateInstallment();
   const [dueDate, setDueDate] = useState("");
   const [amount, setAmount] = useState(0);
   const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (installment) {
@@ -37,28 +34,16 @@ export function EditInstallmentModal({ open, onOpenChange, installment }: Props)
     if (!dueDate) return toast.error("Due date is required");
     if (!amount || amount <= 0) return toast.error("Amount must be greater than 0");
 
-    setSaving(true);
+    const updates: Partial<SavingsInstallment> = { note: note || null };
+    if (!isPaid) {
+      updates.due_date = dueDate;
+      updates.amount = Number(amount);
+    }
     try {
-      const updates: any = { note: note || null };
-      // Only allow due_date and amount edits when not paid
-      if (!isPaid) {
-        updates.due_date = dueDate;
-        updates.amount = Number(amount);
-      }
-      const { error } = await (supabase as any)
-        .from("savings_installments")
-        .update(updates)
-        .eq("id", installment!.id);
-      if (error) throw error;
-
-      qc.invalidateQueries({ queryKey: ["savings_installments", installment!.plan_id] });
-      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
-      toast.success("Installment updated");
+      await update.mutateAsync({ installment: installment!, updates });
       onOpenChange(false);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to update");
-    } finally {
-      setSaving(false);
+    } catch {
+      // toast handled by hook
     }
   }
 
@@ -97,7 +82,7 @@ export function EditInstallmentModal({ open, onOpenChange, installment }: Props)
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button onClick={handleSave} disabled={update.isPending}>{update.isPending ? "Saving…" : "Save"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

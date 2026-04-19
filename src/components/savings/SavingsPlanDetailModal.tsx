@@ -19,14 +19,12 @@ import { EditSavingsPlanModal } from "./EditSavingsPlanModal";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import {
   useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
+  useReverseInstallment, useDeleteInstallment,
   type SavingsPlan, type SavingsInstallment
 } from "@/hooks/use-savings";
 import { useAccounts } from "@/hooks/use-accounts";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
 import { useAppContext } from "@/contexts/AppContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface Props {
@@ -49,16 +47,17 @@ const installmentStatusBadge: Record<string, string> = {
 
 export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   const { currency } = useAppContext();
-  const qc = useQueryClient();
   const { data: installments = [] } = useSavingsInstallments(plan?.id);
   const { data: accounts = [] } = useAccounts();
   const del = useDeleteSavingsPlan();
   const upd = useUpdateSavingsPlan();
   const generate = useGenerateMoreInstallments();
+  const reverseInst = useReverseInstallment();
+  const deleteInst = useDeleteInstallment();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paidModal, setPaidModal] = useState<SavingsInstallment | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [deleteInstId, setDeleteInstId] = useState<string | null>(null);
+  const [deleteInstTarget, setDeleteInstTarget] = useState<SavingsInstallment | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
   const recentPaid = useMemo(() =>
@@ -104,54 +103,12 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
   }
 
   async function handleReverseInstallment(ins: SavingsInstallment) {
-    try {
-      // Refund linked account if applicable
-      if (ins.linked_account_id && Number(ins.paid_amount) > 0) {
-        const { data: acct } = await (supabase as any)
-          .from("accounts").select("balance").eq("id", ins.linked_account_id).single();
-        if (acct) {
-          const newBal = Number(acct.balance) + Number(ins.paid_amount);
-          await (supabase as any).from("accounts").update({ balance: newBal }).eq("id", ins.linked_account_id);
-        }
-      }
-      // Decrement plan total_saved
-      const { data: p } = await (supabase as any)
-        .from("savings_plans").select("total_saved, status, plan_type").eq("id", ins.plan_id).single();
-      if (p) {
-        const newTotal = Math.max(0, Number(p.total_saved) - Number(ins.paid_amount));
-        const updates: any = { total_saved: newTotal };
-        if (p.status === "completed") updates.status = "active";
-        await (supabase as any).from("savings_plans").update(updates).eq("id", ins.plan_id);
-      }
-      // Reset installment
-      await (supabase as any).from("savings_installments").update({
-        status: "pending",
-        paid_date: null,
-        paid_amount: 0,
-        linked_account_id: null,
-      }).eq("id", ins.id);
-
-      qc.invalidateQueries({ queryKey: ["savings_plans"] });
-      qc.invalidateQueries({ queryKey: ["savings_installments", ins.plan_id] });
-      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
-      qc.invalidateQueries({ queryKey: ["accounts"] });
-      toast.success("Installment reversed");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to reverse");
-    }
+    await reverseInst.mutateAsync(ins);
   }
 
-  async function handleDeleteInstallment(id: string) {
-    try {
-      await (supabase as any).from("savings_installments").delete().eq("id", id);
-      qc.invalidateQueries({ queryKey: ["savings_installments", plan!.id] });
-      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
-      toast.success("Installment deleted");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to delete");
-    } finally {
-      setDeleteInstId(null);
-    }
+  async function handleDeleteInstallment(ins: SavingsInstallment) {
+    await deleteInst.mutateAsync(ins);
+    setDeleteInstTarget(null);
   }
 
   const handlePrint = () => window.print();
@@ -460,7 +417,7 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInstId(ins.id)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInstTarget(ins)}>
                                 <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -503,11 +460,11 @@ export function SavingsPlanDetailModal({ open, onOpenChange, plan }: Props) {
       />
 
       <ConfirmDialog
-        open={!!deleteInstId}
-        onOpenChange={() => setDeleteInstId(null)}
+        open={!!deleteInstTarget}
+        onOpenChange={(v) => !v && setDeleteInstTarget(null)}
         title="Delete this installment?"
-        description="This permanently removes the installment from the schedule."
-        onConfirm={() => deleteInstId && handleDeleteInstallment(deleteInstId)}
+        description="This permanently removes the installment from the schedule. If it was paid, the linked account will be refunded."
+        onConfirm={() => deleteInstTarget && handleDeleteInstallment(deleteInstTarget)}
       />
 
       <MarkInstallmentPaidModal
