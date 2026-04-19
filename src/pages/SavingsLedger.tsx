@@ -19,6 +19,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { MarkInstallmentPaidModal } from "@/components/savings/MarkInstallmentPaidModal";
 import { EditSavingsPlanModal } from "@/components/savings/EditSavingsPlanModal";
+import { EditInstallmentModal } from "@/components/savings/EditInstallmentModal";
 import {
   useSavingsPlans, useSavingsInstallments, useDeleteSavingsPlan, useUpdateSavingsPlan, useGenerateMoreInstallments,
   type SavingsInstallment
@@ -60,6 +61,7 @@ export default function SavingsLedger() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteInstId, setDeleteInstId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [editInst, setEditInst] = useState<SavingsInstallment | null>(null);
 
   const recentPaid = useMemo(() =>
     installments
@@ -465,6 +467,9 @@ export default function SavingsLedger() {
                               <RotateCcw className="h-3.5 w-3.5 mr-2" /> Reverse
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => setEditInst(ins)}>
+                            <Pencil className="h-3.5 w-3.5 mr-2" /> Edit
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInstId(ins.id)}>
                             <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
@@ -524,6 +529,12 @@ export default function SavingsLedger() {
         open={editOpen}
         onOpenChange={setEditOpen}
         plan={plan}
+      />
+
+      <EditInstallmentModal
+        open={!!editInst}
+        onOpenChange={(v) => !v && setEditInst(null)}
+        installment={editInst}
       />
     </div>
   );
