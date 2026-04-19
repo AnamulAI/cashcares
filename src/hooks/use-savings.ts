@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adjustBalance } from "./_account-balance";
 
 export interface SavingsPlan {
   id: string;
@@ -237,6 +238,116 @@ export function useMarkInstallmentPaid() {
       toast.success("Installment marked paid");
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/**
+ * Reverse a previously paid installment: refund the linked account, decrement the plan's
+ * total_saved, and reset the installment row to "pending".
+ */
+export function useReverseInstallment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ins: SavingsInstallment) => {
+      // Refund linked account
+      if (ins.linked_account_id && Number(ins.paid_amount) > 0) {
+        await adjustBalance(ins.linked_account_id, Number(ins.paid_amount));
+      }
+      // Decrement plan total_saved & maybe reactivate
+      const { data: p } = await (supabase as any)
+        .from("savings_plans").select("total_saved, status, plan_type").eq("id", ins.plan_id).single();
+      if (p) {
+        const newTotal = Math.max(0, Number(p.total_saved) - Number(ins.paid_amount));
+        const updates: any = { total_saved: newTotal };
+        if (p.status === "completed") updates.status = "active";
+        await (supabase as any).from("savings_plans").update(updates).eq("id", ins.plan_id);
+      }
+      // Reset installment
+      await (supabase as any).from("savings_installments").update({
+        status: "pending",
+        paid_date: null,
+        paid_amount: 0,
+        linked_account_id: null,
+      }).eq("id", ins.id);
+    },
+    onSuccess: (_, ins) => {
+      qc.invalidateQueries({ queryKey: ["savings_plans"] });
+      qc.invalidateQueries({ queryKey: ["savings_installments", ins.plan_id] });
+      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Installment reversed");
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to reverse"),
+  });
+}
+
+/**
+ * Edit an installment. If currently paid, callers should reverse it first; this hook
+ * itself only updates the row fields. We still reconcile linked-account impact for
+ * paid installments where amount changed (defensive).
+ */
+export function useUpdateInstallment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ installment, updates }: { installment: SavingsInstallment; updates: Partial<SavingsInstallment> }) => {
+      // If installment is paid and paid_amount is changing, reconcile balance
+      if (installment.status === "paid" && updates.paid_amount !== undefined &&
+          installment.linked_account_id && Number(updates.paid_amount) !== Number(installment.paid_amount)) {
+        const delta = Number(installment.paid_amount) - Number(updates.paid_amount); // positive = refund extra
+        await adjustBalance(installment.linked_account_id, delta);
+        // Reflect on plan total
+        const { data: p } = await (supabase as any)
+          .from("savings_plans").select("total_saved").eq("id", installment.plan_id).single();
+        if (p) {
+          const newTotal = Math.max(0, Number(p.total_saved) - delta);
+          await (supabase as any).from("savings_plans").update({ total_saved: newTotal }).eq("id", installment.plan_id);
+        }
+      }
+      const { error } = await (supabase as any).from("savings_installments").update(updates).eq("id", installment.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["savings_plans"] });
+      qc.invalidateQueries({ queryKey: ["savings_installments", vars.installment.plan_id] });
+      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Installment updated");
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to update"),
+  });
+}
+
+/**
+ * Delete a single installment. If paid, refund linked account and decrement the plan total.
+ */
+export function useDeleteInstallment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (installment: SavingsInstallment) => {
+      if (installment.status === "paid" && Number(installment.paid_amount) > 0) {
+        if (installment.linked_account_id) {
+          await adjustBalance(installment.linked_account_id, Number(installment.paid_amount));
+        }
+        const { data: p } = await (supabase as any)
+          .from("savings_plans").select("total_saved, status").eq("id", installment.plan_id).single();
+        if (p) {
+          const newTotal = Math.max(0, Number(p.total_saved) - Number(installment.paid_amount));
+          const updates: any = { total_saved: newTotal };
+          if (p.status === "completed") updates.status = "active";
+          await (supabase as any).from("savings_plans").update(updates).eq("id", installment.plan_id);
+        }
+      }
+      const { error } = await (supabase as any).from("savings_installments").delete().eq("id", installment.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, installment) => {
+      qc.invalidateQueries({ queryKey: ["savings_plans"] });
+      qc.invalidateQueries({ queryKey: ["savings_installments", installment.plan_id] });
+      qc.invalidateQueries({ queryKey: ["savings_installments_all"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Installment deleted");
+    },
+    onError: (e: Error) => toast.error(e.message || "Failed to delete"),
   });
 }
 
