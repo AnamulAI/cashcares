@@ -127,6 +127,11 @@ export default function Settings() {
             </div>
             <Separator />
             <div className="flex items-center justify-between">
+              <div><Label className="text-xs font-medium">{t("settings.relativeTime")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.relativeTimeDesc")}</p></div>
+              <Switch checked={!!settings.relativeTime} onCheckedChange={(v) => { updateSettings({ relativeTime: v }); toast.success(t("action.save") + " ✓"); }} />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
               <div><Label className="text-xs font-medium">{t("settings.timezone")}</Label><p className="text-[11px] text-muted-foreground">{t("settings.timezoneDesc")}</p></div>
               <Select value={settings.timezone} onValueChange={handleTimezoneChange}><SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="dhaka">Asia/Dhaka (GMT+6)</SelectItem><SelectItem value="utc">UTC</SelectItem><SelectItem value="est">US/Eastern</SelectItem></SelectContent></Select>
             </div>
