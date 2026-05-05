@@ -140,40 +140,88 @@ export default function Assets() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={<Building2 className="h-7 w-7 text-muted-foreground" />} title={t("module.noAssets")} description={t("module.noAssetsDesc")} action={<Button size="sm" onClick={() => openModal()}><Plus className="h-4 w-4 mr-1" /> {t("action.addAsset")}</Button>} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map(a => {
-            const appreciation = Number(a.current_value) - Number(a.purchase_value);
-            const pct = Number(a.purchase_value) > 0 ? ((appreciation / Number(a.purchase_value)) * 100).toFixed(1) : "0";
-            const isSelected = selected.has(a.id);
-            return (
-              <Card key={a.id} className={`finance-card group ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(a.id)} />
-                      <div>
-                        <p className="text-sm font-semibold">{a.asset_name}</p>
-                        <p className="text-[10px] text-muted-foreground capitalize">{a.asset_type.replace(/_/g, " ")}</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[a.status] || ""}`}>{a.status}</Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><p className="text-muted-foreground">{t("module.purchase")}</p><p className="font-semibold">{fmt(Number(a.purchase_value))}</p></div>
-                    <div><p className="text-muted-foreground">{t("module.current")}</p><p className="font-semibold">{fmt(Number(a.current_value))}</p></div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className={appreciation >= 0 ? "text-positive" : "text-negative"}>{appreciation >= 0 ? "+" : ""}{pct}% {appreciation >= 0 ? "↑" : "↓"}</span>
-                    {a.acquisition_date && <span className="text-muted-foreground">{fmtDate(a.acquisition_date)}</span>}
-                  </div>
-                  <div className="flex items-center gap-1 pt-1 border-t border-border/50">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={() => openModal(a)}><Pencil className="h-3 w-3 mr-1" /> {t("action.edit")}</Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-negative" onClick={() => setDeleteId(a.id)}><Trash2 className="h-3 w-3" /></Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="space-y-8">
+          {filtered.filter(a => a.status !== 'sold').length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">{t("status.active")} / {t("status.archived")} {t("assets.title")}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filtered.filter(a => a.status !== 'sold').map(a => {
+                  const appreciation = Number(a.current_value) - Number(a.purchase_value);
+                  const pct = Number(a.purchase_value) > 0 ? ((appreciation / Number(a.purchase_value)) * 100).toFixed(1) : "0";
+                  const isSelected = selected.has(a.id);
+                  return (
+                    <Card key={a.id} className={`finance-card group ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(a.id)} />
+                            <div>
+                              <p className="text-sm font-semibold">{a.asset_name}</p>
+                              <p className="text-[10px] text-muted-foreground capitalize">{a.asset_type.replace(/_/g, " ")}</p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[a.status] || ""}`}>{a.status}</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><p className="text-muted-foreground">{t("module.purchase")}</p><p className="font-semibold">{fmt(Number(a.purchase_value))}</p></div>
+                          <div><p className="text-muted-foreground">{t("module.current")}</p><p className="font-semibold">{fmt(Number(a.current_value))}</p></div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className={appreciation >= 0 ? "text-positive" : "text-negative"}>{appreciation >= 0 ? "+" : ""}{pct}% {appreciation >= 0 ? "↑" : "↓"}</span>
+                          {a.acquisition_date && <span className="text-muted-foreground">{fmtDate(a.acquisition_date)}</span>}
+                        </div>
+                        <div className="flex items-center gap-1 pt-1 border-t border-border/50">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={() => openModal(a)}><Pencil className="h-3 w-3 mr-1" /> {t("action.edit")}</Button>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs text-negative" onClick={() => setDeleteId(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {filtered.filter(a => a.status === 'sold').length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">{t("status.sold")} {t("assets.title")}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filtered.filter(a => a.status === 'sold').map(a => {
+                  const appreciation = Number(a.current_value) - Number(a.purchase_value);
+                  const pct = Number(a.purchase_value) > 0 ? ((appreciation / Number(a.purchase_value)) * 100).toFixed(1) : "0";
+                  const isSelected = selected.has(a.id);
+                  return (
+                    <Card key={a.id} className={`finance-card opacity-75 group ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(a.id)} />
+                            <div>
+                              <p className="text-sm font-semibold">{a.asset_name}</p>
+                              <p className="text-[10px] text-muted-foreground capitalize">{a.asset_type.replace(/_/g, " ")}</p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[a.status] || ""}`}>{a.status}</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><p className="text-muted-foreground">{t("module.purchase")}</p><p className="font-semibold">{fmt(Number(a.purchase_value))}</p></div>
+                          <div><p className="text-muted-foreground">{t("module.current")}</p><p className="font-semibold">{fmt(Number(a.current_value))}</p></div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className={appreciation >= 0 ? "text-positive" : "text-negative"}>{appreciation >= 0 ? "+" : ""}{pct}% {appreciation >= 0 ? "↑" : "↓"}</span>
+                          {a.acquisition_date && <span className="text-muted-foreground">{fmtDate(a.acquisition_date)}</span>}
+                        </div>
+                        <div className="flex items-center gap-1 pt-1 border-t border-border/50">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={() => openModal(a)}><Pencil className="h-3 w-3 mr-1" /> {t("action.edit")}</Button>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs text-negative" onClick={() => setDeleteId(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -27,6 +27,11 @@ import {
   Map, Luggage, Tent, Mountain, Ship, TrainFront,
   // Fast Food
   Pizza, Sandwich, Beef, IceCream, Cookie, Soup,
+  // Freelancing
+  Laptop, Code, Terminal, PenTool, Pen, FileCode,
+  MousePointer2, LayoutDashboard, Cpu, Database,
+  Server, Cloud, CloudUpload, GitBranch, GitMerge, Bug,
+  Brush, Palette, Wand, Sparkles, Star,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -126,6 +131,29 @@ export const CATEGORY_ICONS: CategoryIconOption[] = [
   // Work & Business
   { key: "briefcase", icon: Briefcase, label: "Business", group: "Work" },
   { key: "building2", icon: Building2, label: "Office", group: "Work" },
+
+  // Freelancing
+  { key: "Laptop", icon: Laptop, label: "Laptop", group: "Freelancing" },
+  { key: "Code", icon: Code, label: "Code", group: "Freelancing" },
+  { key: "Terminal", icon: Terminal, label: "Terminal", group: "Freelancing" },
+  { key: "PenTool", icon: PenTool, label: "Design", group: "Freelancing" },
+  { key: "Pen", icon: Pen, label: "Writing", group: "Freelancing" },
+  { key: "FileCode", icon: FileCode, label: "File Code", group: "Freelancing" },
+  { key: "MousePointer2", icon: MousePointer2, label: "UI/UX", group: "Freelancing" },
+  { key: "LayoutDashboard", icon: LayoutDashboard, label: "Dashboard", group: "Freelancing" },
+  { key: "Cpu", icon: Cpu, label: "Dev", group: "Freelancing" },
+  { key: "Database", icon: Database, label: "Database", group: "Freelancing" },
+  { key: "Server", icon: Server, label: "Server", group: "Freelancing" },
+  { key: "Cloud", icon: Cloud, label: "Cloud", group: "Freelancing" },
+  { key: "CloudUpload", icon: CloudUpload, label: "Deploy", group: "Freelancing" },
+  { key: "GitBranch", icon: GitBranch, label: "Git Branch", group: "Freelancing" },
+  { key: "GitMerge", icon: GitMerge, label: "Git Merge", group: "Freelancing" },
+  { key: "Bug", icon: Bug, label: "Bug Fix", group: "Freelancing" },
+  { key: "Brush", icon: Brush, label: "Design Work", group: "Freelancing" },
+  { key: "Palette", icon: Palette, label: "Palette", group: "Freelancing" },
+  { key: "Wand", icon: Wand, label: "Creative", group: "Freelancing" },
+  { key: "Sparkles", icon: Sparkles, label: "AI Work", group: "Freelancing" },
+  { key: "Star", icon: Star, label: "Top Rated", group: "Freelancing" },
 
   // Lifestyle
   { key: "gift", icon: Gift, label: "Gift", group: "Lifestyle" },

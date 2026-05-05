@@ -42,9 +42,9 @@ export function useCreateAsset() {
     mutationFn: async (a: AssetInsert) => {
       const { data, error } = await (supabase as any).from("assets").insert(a).select().single();
       if (error) throw error;
-      // Buying an asset = cash OUT from linked account
-      if (a.linked_account_id && Number(a.purchase_value) > 0) {
-        await adjustBalance(a.linked_account_id, -Number(a.purchase_value));
+      // Asset adds value to linked account
+      if (a.linked_account_id && Number(a.purchase_value) > 0 && a.status !== 'sold') {
+        await adjustBalance(a.linked_account_id, Number(a.purchase_value));
       }
       return data;
     },
@@ -67,12 +67,21 @@ export function useUpdateAsset() {
 
       const oldAcct = current.linked_account_id as string | null;
       const oldPv = Number(current.purchase_value || 0);
+      const oldStatus = current.status;
+      
       const newAcct = (updates.linked_account_id !== undefined ? updates.linked_account_id : oldAcct) as string | null;
       const newPv = updates.purchase_value !== undefined ? Number(updates.purchase_value) : oldPv;
+      const newStatus = updates.status !== undefined ? updates.status : oldStatus;
 
-      // Reverse old outflow (+) then apply new outflow (-)
-      if (oldAcct && oldPv > 0) await adjustBalance(oldAcct, oldPv);
-      if (newAcct && newPv > 0) await adjustBalance(newAcct, -newPv);
+      // Reverse old effect if it was added
+      if (oldAcct && oldPv > 0 && oldStatus !== 'sold') {
+        await adjustBalance(oldAcct, -oldPv);
+      }
+      
+      // Apply new effect if it is active/not sold
+      if (newAcct && newPv > 0 && newStatus !== 'sold') {
+        await adjustBalance(newAcct, newPv);
+      }
 
       const { data, error } = await (supabase as any).from("assets").update(updates).eq("id", id).select().single();
       if (error) throw error;
@@ -92,12 +101,12 @@ export function useDeleteAsset() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { data: current } = await (supabase as any)
-        .from("assets").select("linked_account_id, purchase_value").eq("id", id).single();
+        .from("assets").select("linked_account_id, purchase_value, status").eq("id", id).single();
       const { error } = await (supabase as any).from("assets").delete().eq("id", id);
       if (error) throw error;
-      // Refund cash back to linked account
-      if (current?.linked_account_id && Number(current.purchase_value) > 0) {
-        await adjustBalance(current.linked_account_id, Number(current.purchase_value));
+      // Remove value from linked account if it was added
+      if (current?.linked_account_id && Number(current.purchase_value) > 0 && current.status !== 'sold') {
+        await adjustBalance(current.linked_account_id, -Number(current.purchase_value));
       }
     },
     onSuccess: () => {
@@ -108,3 +117,4 @@ export function useDeleteAsset() {
     onError: (e: Error) => toast.error(e.message),
   });
 }
+
