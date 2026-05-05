@@ -6,6 +6,17 @@
     <title>MahBook - Personal Finance, Refined</title>
     <meta name="description" content="MahBook is a premium personal finance app for tracking income, expenses, savings, budgets and more.">
     <meta name="author" content="MahBook" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MahBook" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     
     
     <meta property="og:type" content="website" />
@@ -31,5 +42,21 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .then(function (reg) {
+              console.log('[MahBook SW] Registered, scope:', reg.scope);
+            })
+            .catch(function (err) {
+              console.warn('[MahBook SW] Registration failed:', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
