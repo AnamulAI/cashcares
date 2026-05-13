@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Wallet2, FolderOpen, FileText, PieChart, BarChart3, X, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Wallet2, FolderOpen, FileText, PieChart, BarChart3, X, Sparkles, Database, Loader2, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,10 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useBudgets } from "@/hooks/use-budgets";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { loadDemoData, clearDemoData, isDemoDataLoaded } from "@/lib/demo-data";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 interface Step {
   key: string;
@@ -43,17 +47,63 @@ export function GettingStarted() {
   const allDone = completedCount >= 4; // reports doesn't count
   const pct = Math.round((completedCount / steps.length) * 100);
 
+  const queryClient = useQueryClient();
+  const [demoLoaded, setDemoLoaded] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
+
   useEffect(() => {
-    if (allDone && !dismissed) {
-      // Auto-dismiss after all core steps done
-    }
-  }, [allDone, dismissed]);
+    isDemoDataLoaded().then(setDemoLoaded).catch(() => {});
+  }, [accounts.length, categories.length, transactions.length, budgets.length]);
 
   if (dismissed) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
     localStorage.setItem("cc_onboarding_dismissed", "true");
+  };
+
+  const refreshAll = () => {
+    [
+      "accounts","categories","transactions","budgets",
+      "receivables","payables","loans","assets","investments",
+      "partnerships","reminders","savings",
+    ].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+  };
+
+  const handleLoadDemo = async () => {
+    setDemoBusy(true);
+    try {
+      const already = await isDemoDataLoaded();
+      if (already) {
+        toast.info(t("onboarding.demoAlready"));
+        setDemoLoaded(true);
+        return;
+      }
+      await loadDemoData();
+      toast.success(t("onboarding.demoLoaded"));
+      setDemoLoaded(true);
+      refreshAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to load sample data");
+    } finally {
+      setDemoBusy(false);
+    }
+  };
+
+  const handleClearDemo = async () => {
+    setDemoBusy(true);
+    try {
+      await clearDemoData();
+      toast.success(t("onboarding.demoCleared"));
+      setDemoLoaded(false);
+      refreshAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to clear sample data");
+    } finally {
+      setDemoBusy(false);
+      setClearConfirm(false);
+    }
   };
 
   return (
@@ -97,7 +147,41 @@ export function GettingStarted() {
             </button>
           ))}
         </div>
+
+        <div className="pt-2 border-t border-border/60 space-y-2.5">
+          <p className="text-[11px] text-muted-foreground">{t("onboarding.demoHint")}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {!demoLoaded && (
+              <Button size="sm" className="gap-1.5 h-8" onClick={handleLoadDemo} disabled={demoBusy}>
+                {demoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+                {demoBusy ? t("onboarding.demoLoading") : t("onboarding.tryDemo")}
+              </Button>
+            )}
+            {demoLoaded && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => setClearConfirm(true)}
+                disabled={demoBusy}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("onboarding.clearDemo")}
+              </Button>
+            )}
+          </div>
+        </div>
       </CardContent>
+
+      <ConfirmDialog
+        open={clearConfirm}
+        onOpenChange={setClearConfirm}
+        title={t("onboarding.clearDemo")}
+        description={t("onboarding.clearDemoConfirm")}
+        confirmLabel={t("onboarding.clearDemo")}
+        onConfirm={handleClearDemo}
+        loading={demoBusy}
+      />
     </Card>
   );
 }

@@ -1,21 +1,41 @@
-## Problem
+# Add Sample Data to Getting Started
 
-`src/contexts/AppContext.tsx` seeds `notifications` from a hardcoded `DEFAULT_NOTIFICATIONS` array (6 mock items like "Budget threshold reached", "Tanvir Ahmed owes…") whenever `localStorage["cc_notifications"]` is empty. So every new account / fresh browser sees these fake alerts in the header bell dropdown.
+## Goal
+Help new users understand MahBook quickly by letting them load a complete set of demo data (accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, reminders) directly from the Getting Started card on the dashboard — without having to dig into Settings.
 
-These mock entries are unrelated to the user's real data and contradict the live `AlertsCard` (which already computes real alerts from budgets, reminders, and installments).
+The full demo dataset and `loadDemoData()` / `clearDemoData()` / `isDemoDataLoaded()` helpers already exist in `src/lib/demo-data.ts`. This plan only wires them into the onboarding card and refines the UX.
 
-## Fix
+## Changes
 
-In `src/contexts/AppContext.tsx`:
+### 1. `src/components/shared/GettingStarted.tsx`
+- Detect whether the workspace is empty (no accounts, categories, transactions, budgets) and whether demo data is already loaded (via `isDemoDataLoaded()`).
+- Add a primary CTA row at the bottom of the card:
+  - **"Load Sample Data"** button (visible when workspace is empty and demo not loaded). Calls `loadDemoData()`, shows a loading state, then a success toast and invalidates React Query caches so all dashboard widgets refresh instantly (no full page reload).
+  - **"Clear Sample Data"** button (visible when demo data is detected). Confirmation via existing `ConfirmDialog`, then calls `clearDemoData()` and refreshes caches.
+- Add a short helper line: "New here? Load a ready-made workspace to explore every feature."
+- Keep the existing 5-step checklist and dismiss button untouched.
+- After demo loads, the checklist auto-completes (steps already react to live data) so the user immediately sees a finished workspace.
 
-1. Remove the `DEFAULT_NOTIFICATIONS` constant.
-2. Change `loadNotifications()` to return `[]` when nothing is stored.
-3. Leave the rest of the notification API (`markRead`, `markAllRead`, `unreadCount`, persistence) untouched so future real notifications still work.
+### 2. `src/lib/demo-data.ts` (small cleanup)
+- Remove the `localStorage.setItem("cc_notifications_v2", [...])` block from `loadDemoData()` so the previous "no fake notifications on new accounts" fix is preserved when sample data is loaded.
+- Keep `localStorage.setItem("cc_plan", "yearly")` so premium-only modules become explorable.
 
-No other files need changes — the bell UI already handles an empty list (it just shows "no notifications" / zero badge).
+### 3. `src/i18n/translations.ts`
+- Add new keys under the `onboarding.*` namespace (English + Bangla):
+  - `onboarding.tryDemo` — "Load Sample Data" / "নমুনা ডেটা লোড করুন"
+  - `onboarding.clearDemo` — "Clear Sample Data" / "নমুনা ডেটা মুছুন"
+  - `onboarding.demoHint` — short helper sentence
+  - `onboarding.demoLoading` — "Loading sample data..."
+  - `onboarding.demoLoaded` — toast success
+  - `onboarding.demoCleared` — toast success
 
-## Optional cleanup (only if you want)
+## Technical notes
+- Use `useQueryClient().invalidateQueries()` on the relevant keys (`accounts`, `categories`, `transactions`, `budgets`, `receivables`, `payables`, `loans`, `assets`, `investments`, `partnerships`, `reminders`) instead of `window.location.reload()` — smoother UX.
+- Keep all styling on existing semantic tokens (`bg-primary`, `text-primary-foreground`, `border-primary/20`); no hardcoded colors.
+- Buttons sized `sm`, with a `Sparkles` / `Database` icon to match the card's premium look.
+- Settings page demo controls remain unchanged (kept as a power-user fallback).
 
-Clear stale mock notifications for existing sessions by bumping the storage key (e.g. `cc_notifications` → `cc_notifications_v2`) so users who already have the seeded mocks in localStorage also get a clean slate. Otherwise existing browsers keep their old seeded entries until "Mark all read" / manual clear.
-
-Confirm whether you want the storage-key bump, or just the default-to-empty change.
+## Out of scope
+- No DB schema changes.
+- No changes to the demo dataset contents themselves.
+- No changes to Settings page.
