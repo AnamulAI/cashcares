@@ -220,7 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Notifications
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
   useEffect(() => {
-    localStorage.setItem("cc_notifications", JSON.stringify(notifications));
+    localStorage.setItem("cc_notifications_v2", JSON.stringify(notifications));
   }, [notifications]);
 
   const markRead = useCallback((id: string) => {
