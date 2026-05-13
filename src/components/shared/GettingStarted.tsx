@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Wallet2, FolderOpen, FileText, PieChart, BarChart3, X, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Wallet2, FolderOpen, FileText, PieChart, BarChart3, X, Sparkles, Database, Loader2, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,10 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useBudgets } from "@/hooks/use-budgets";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { loadDemoData, clearDemoData, isDemoDataLoaded } from "@/lib/demo-data";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 interface Step {
   key: string;
