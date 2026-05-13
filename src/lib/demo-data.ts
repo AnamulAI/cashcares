@@ -227,6 +227,7 @@ export async function clearDemoData(): Promise<{ total: number }> {
   // Reset client-side demo state
   localStorage.removeItem("cc_plan");
   localStorage.removeItem("cc_notifications");
+  localStorage.removeItem("cc_notifications_v2");
 
   return { total };
 }
