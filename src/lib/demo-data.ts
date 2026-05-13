@@ -179,7 +179,7 @@ export async function loadDemoData(): Promise<{ total: number }> {
 
   // Also set premium plan and demo notifications for full testing
   localStorage.setItem("cc_plan", "yearly");
-  localStorage.setItem("cc_notifications", JSON.stringify([
+  localStorage.setItem("cc_notifications_v2", JSON.stringify([
     { id: "1", icon: "AlertTriangle", color: "text-warning", title: "Budget threshold reached", desc: "Shopping budget exceeded ৳10,000 limit", time: "2 min ago", read: false },
     { id: "2", icon: "Clock", color: "text-negative", title: "Receivable overdue", desc: "Tanvir Ahmed owes ৳15,000 — overdue", time: "1 hour ago", read: false },
     { id: "3", icon: "DollarSign", color: "text-primary", title: "Payable due soon", desc: "Shopno Electronics AC installment — ৳22,000 due Mar 20", time: "3 hours ago", read: false },
