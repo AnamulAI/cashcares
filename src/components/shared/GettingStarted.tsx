@@ -147,7 +147,41 @@ export function GettingStarted() {
             </button>
           ))}
         </div>
+
+        <div className="pt-2 border-t border-border/60 space-y-2.5">
+          <p className="text-[11px] text-muted-foreground">{t("onboarding.demoHint")}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {!demoLoaded && (
+              <Button size="sm" className="gap-1.5 h-8" onClick={handleLoadDemo} disabled={demoBusy}>
+                {demoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+                {demoBusy ? t("onboarding.demoLoading") : t("onboarding.tryDemo")}
+              </Button>
+            )}
+            {demoLoaded && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => setClearConfirm(true)}
+                disabled={demoBusy}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("onboarding.clearDemo")}
+              </Button>
+            )}
+          </div>
+        </div>
       </CardContent>
+
+      <ConfirmDialog
+        open={clearConfirm}
+        onOpenChange={setClearConfirm}
+        title={t("onboarding.clearDemo")}
+        description={t("onboarding.clearDemoConfirm")}
+        confirmLabel={t("onboarding.clearDemo")}
+        onConfirm={handleClearDemo}
+        loading={demoBusy}
+      />
     </Card>
   );
 }
