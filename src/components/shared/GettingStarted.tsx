@@ -47,17 +47,63 @@ export function GettingStarted() {
   const allDone = completedCount >= 4; // reports doesn't count
   const pct = Math.round((completedCount / steps.length) * 100);
 
+  const queryClient = useQueryClient();
+  const [demoLoaded, setDemoLoaded] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
+
   useEffect(() => {
-    if (allDone && !dismissed) {
-      // Auto-dismiss after all core steps done
-    }
-  }, [allDone, dismissed]);
+    isDemoDataLoaded().then(setDemoLoaded).catch(() => {});
+  }, [accounts.length, categories.length, transactions.length, budgets.length]);
 
   if (dismissed) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
     localStorage.setItem("cc_onboarding_dismissed", "true");
+  };
+
+  const refreshAll = () => {
+    [
+      "accounts","categories","transactions","budgets",
+      "receivables","payables","loans","assets","investments",
+      "partnerships","reminders","savings",
+    ].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+  };
+
+  const handleLoadDemo = async () => {
+    setDemoBusy(true);
+    try {
+      const already = await isDemoDataLoaded();
+      if (already) {
+        toast.info(t("onboarding.demoAlready"));
+        setDemoLoaded(true);
+        return;
+      }
+      await loadDemoData();
+      toast.success(t("onboarding.demoLoaded"));
+      setDemoLoaded(true);
+      refreshAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to load sample data");
+    } finally {
+      setDemoBusy(false);
+    }
+  };
+
+  const handleClearDemo = async () => {
+    setDemoBusy(true);
+    try {
+      await clearDemoData();
+      toast.success(t("onboarding.demoCleared"));
+      setDemoLoaded(false);
+      refreshAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to clear sample data");
+    } finally {
+      setDemoBusy(false);
+      setClearConfirm(false);
+    }
   };
 
   return (
