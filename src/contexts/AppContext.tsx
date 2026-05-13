@@ -102,21 +102,14 @@ export interface AppNotification {
   read: boolean;
 }
 
-const DEFAULT_NOTIFICATIONS: AppNotification[] = [
-  { id: "1", icon: "AlertTriangle", color: "text-warning", title: "Budget threshold reached", desc: "Shopping budget exceeded ৳10,000 limit", time: "2 min ago", read: false },
-  { id: "2", icon: "Clock", color: "text-negative", title: "Receivable overdue", desc: "Tanvir Ahmed owes ৳15,000 — overdue", time: "1 hour ago", read: false },
-  { id: "3", icon: "DollarSign", color: "text-primary", title: "Payable due soon", desc: "Shopno Electronics AC installment — ৳22,000 due Mar 20", time: "3 hours ago", read: false },
-  { id: "4", icon: "CreditCard", color: "text-warning", title: "Loan EMI due", desc: "BRAC Bank EMI ৳8,500 due on March 10", time: "5 hours ago", read: false },
-  { id: "5", icon: "Bell", color: "text-feature-reminders", title: "Reminder due today", desc: "Renew internet subscription — ISP annual renewal", time: "Today", read: false },
-  { id: "6", icon: "ArrowUpRight", color: "text-positive", title: "New transaction added", desc: "Salary credited — ৳80,000", time: "Yesterday", read: true },
-];
-
 function loadNotifications(): AppNotification[] {
   try {
-    const saved = localStorage.getItem("cc_notifications");
+    const saved = localStorage.getItem("cc_notifications_v2");
     if (saved) return JSON.parse(saved);
+    // Clear legacy seeded mock notifications from older versions
+    localStorage.removeItem("cc_notifications");
   } catch {}
-  return DEFAULT_NOTIFICATIONS;
+  return [];
 }
 
 // --- Premium / Plan ---
@@ -227,7 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Notifications
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
   useEffect(() => {
-    localStorage.setItem("cc_notifications", JSON.stringify(notifications));
+    localStorage.setItem("cc_notifications_v2", JSON.stringify(notifications));
   }, [notifications]);
 
   const markRead = useCallback((id: string) => {

@@ -1,44 +1,21 @@
+## Problem
 
+`src/contexts/AppContext.tsx` seeds `notifications` from a hardcoded `DEFAULT_NOTIFICATIONS` array (6 mock items like "Budget threshold reached", "Tanvir Ahmed owes…") whenever `localStorage["cc_notifications"]` is empty. So every new account / fresh browser sees these fake alerts in the header bell dropdown.
 
-## Make all ledger entry rows clickable to open detail popups
+These mock entries are unrelated to the user's real data and contradict the live `AlertsCard` (which already computes real alerts from budgets, reminders, and installments).
 
-### Audit
-| Module | Row clickable? | Detail modal exists? |
-|---|---|---|
-| Transactions | Yes ✓ | Yes (`TransactionDetails`) |
-| Receivable entries | No (only via "View Details" dropdown) | Yes (`ReceivableEntryDetailModal`) |
-| Payable entries | No (only via dropdown) | Yes (`PayableEntryDetailModal`) |
-| Partnership entries | No (only via dropdown) | Yes (inline Dialog in page) |
-| Savings installments | No | **No — needs to be created** |
+## Fix
 
-### Changes
+In `src/contexts/AppContext.tsx`:
 
-**1. Make rows clickable in three existing ledgers**
+1. Remove the `DEFAULT_NOTIFICATIONS` constant.
+2. Change `loadNotifications()` to return `[]` when nothing is stored.
+3. Leave the rest of the notification API (`markRead`, `markAllRead`, `unreadCount`, persistence) untouched so future real notifications still work.
 
-In `ReceivableLedger.tsx`, `PayableLedger.tsx`, and `PartnershipLedger.tsx`, add to each `<TableRow>`:
-- `onClick={() => setDetailEntry(e)}` to open the existing detail modal.
-- `className` additions: `cursor-pointer hover:bg-accent/40 transition-colors` (kept compatible with the existing `pendingRowTint` class via `cn()`).
-- Wrap the actions cell (the dropdown column) in `onClick={e => e.stopPropagation()}` so the menu and inner buttons don't trigger the modal — matching the proven pattern from `TransactionTable`.
+No other files need changes — the bell UI already handles an empty list (it just shows "no notifications" / zero badge).
 
-**2. Create `SavingsInstallmentDetailModal` and wire it up**
+## Optional cleanup (only if you want)
 
-New file: `src/components/savings/SavingsInstallmentDetailModal.tsx`
-- Centered Dialog (`sm:max-w-md`, `max-h-[85vh] overflow-y-auto`) per project modal convention.
-- Show: due date, installment #, scheduled amount, paid amount, paid date, linked account, status badge, note, and `EntryAttachments` for `entry_type="savings_installment"`.
-- Read-only summary; actions (Mark Paid / Edit / Reverse / Delete) remain in the existing dropdown.
+Clear stale mock notifications for existing sessions by bumping the storage key (e.g. `cc_notifications` → `cc_notifications_v2`) so users who already have the seeded mocks in localStorage also get a clean slate. Otherwise existing browsers keep their old seeded entries until "Mark all read" / manual clear.
 
-Wire-up in `SavingsLedger.tsx`:
-- Add `detailInst` state.
-- Make installment `<TableRow>` clickable (same pattern as above) and stop propagation on the actions cell.
-- Render `<SavingsInstallmentDetailModal entry={detailInst} ... />` near the other modals.
-
-### Out of scope
-Detail popups already exist for entries on dashboard cards (Recent Transactions/Activity) and account/budget detail views; this task focuses on the ledger tables that surface raw entries.
-
-### Verification
-1. Receivable Ledger → click any row → `ReceivableEntryDetailModal` opens with collection history.
-2. Payable Ledger → click any row → `PayableEntryDetailModal` opens with payment history.
-3. Partnership Ledger → click any row → existing inline detail Dialog opens.
-4. Savings Ledger → click any installment row → new `SavingsInstallmentDetailModal` opens with attachments.
-5. Confirm clicking the row's three-dot menu (or dropdown items) does NOT also open the detail popup (event isolation works).
-
+Confirm whether you want the storage-key bump, or just the default-to-empty change.
