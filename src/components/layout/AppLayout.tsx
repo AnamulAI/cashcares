@@ -19,6 +19,7 @@ export function AppLayout() {
           </main>
         </div>
         <PWAInstallPrompt />
+        <PWAUpdatePrompt />
       </div>
     </SidebarProvider>
   );
