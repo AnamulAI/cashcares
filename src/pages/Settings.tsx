@@ -315,7 +315,15 @@ export default function Settings() {
             <CardTitle className="text-sm font-semibold flex items-center gap-2"><RotateCw className="h-4 w-4 text-feature-settings" /> App Updates</CardTitle>
             <CardDescription className="text-xs">Check for the latest MahBook version and refresh the offline cache.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-medium">Installed cache version</Label>
+                <p className="text-[11px] text-muted-foreground">Reported live by the active service worker.</p>
+              </div>
+              <Badge variant="secondary" className="font-mono text-[10px]">{swVersion ?? "checking…"}</Badge>
+            </div>
+            <Separator />
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-xs font-medium">Check for updates</Label>
