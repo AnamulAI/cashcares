@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2 } from "lucide-react";
+import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2, RotateCw } from "lucide-react";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
