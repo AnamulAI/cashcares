@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,27 @@ export default function Settings() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [clearConfirm, setClearConfirm] = useState(false);
   const qc = useQueryClient();
+  const [swVersion, setSwVersion] = useState<string | null>(null);
+
+  const fetchSwVersion = async () => {
+    if (!("serviceWorker" in navigator)) { setSwVersion("unsupported"); return; }
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sw = reg?.active;
+      if (!sw) { setSwVersion("not installed"); return; }
+      const channel = new MessageChannel();
+      const versionPromise = new Promise<string>((resolve) => {
+        channel.port1.onmessage = (e) => resolve(e.data?.version ?? "unknown");
+        setTimeout(() => resolve("unknown"), 1500);
+      });
+      sw.postMessage("GET_VERSION", [channel.port2]);
+      setSwVersion(await versionPromise);
+    } catch {
+      setSwVersion("unknown");
+    }
+  };
+
+  useEffect(() => { fetchSwVersion(); }, []);
 
   const toggleNotif = (key: keyof typeof settings.notifications) => {
     updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
@@ -107,6 +128,7 @@ export default function Settings() {
       if (!reg) { toast.success("App is up to date", { id: "sw-check" }); return; }
       await reg.update();
       toast.dismiss("sw-check");
+      await fetchSwVersion();
       if (reg.waiting) {
         // Let PWAUpdatePrompt show the reload prompt with force=true
         window.dispatchEvent(new CustomEvent("mahbook:sw-check"));
@@ -293,7 +315,15 @@ export default function Settings() {
             <CardTitle className="text-sm font-semibold flex items-center gap-2"><RotateCw className="h-4 w-4 text-feature-settings" /> App Updates</CardTitle>
             <CardDescription className="text-xs">Check for the latest MahBook version and refresh the offline cache.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-medium">Installed cache version</Label>
+                <p className="text-[11px] text-muted-foreground">Reported live by the active service worker.</p>
+              </div>
+              <Badge variant="secondary" className="font-mono text-[10px]">{swVersion ?? "checking…"}</Badge>
+            </div>
+            <Separator />
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-xs font-medium">Check for updates</Label>
