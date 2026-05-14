@@ -128,6 +128,7 @@ export default function Settings() {
       if (!reg) { toast.success("App is up to date", { id: "sw-check" }); return; }
       await reg.update();
       toast.dismiss("sw-check");
+      await fetchSwVersion();
       if (reg.waiting) {
         // Let PWAUpdatePrompt show the reload prompt with force=true
         window.dispatchEvent(new CustomEvent("mahbook:sw-check"));
