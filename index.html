@@ -81,7 +81,9 @@
             reg.addEventListener('updatefound', function () {
               var installing = reg.installing;
               if (!installing) return;
+              console.info('[MahBook SW] updatefound', { state: installing.state });
               installing.addEventListener('statechange', function () {
+                console.info('[MahBook SW] statechange', { state: installing.state });
                 if (installing.state === 'installed' && navigator.serviceWorker.controller) {
                   notifyWaiting(installing);
                 }
