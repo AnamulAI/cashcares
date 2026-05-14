@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Search, LayoutGrid, List, Wallet2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { AccountSummary } from "@/components/accounts/AccountSummary";
 import { AccountCards } from "@/components/accounts/AccountCards";
 import { AddAccountModal } from "@/components/accounts/AddAccountModal";
@@ -75,9 +76,12 @@ export default function Accounts() {
         title={t("accounts.title")}
         subtitle={t("accounts.subtitle")}
         actions={
-          <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditAccount(null); setAddOpen(true); }}>
-            <Plus className="h-4 w-4" /> {t("action.addAccount")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <FeatureIO feature="accounts" tables={[{ table: "accounts" }]} />
+            <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditAccount(null); setAddOpen(true); }}>
+              <Plus className="h-4 w-4" /> {t("action.addAccount")}
+            </Button>
+          </div>
         }
       />
 

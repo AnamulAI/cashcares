@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus, TrendingUp, TrendingDown, Hash, Search, RotateCcw, Trash2, Pencil, DollarSign } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
@@ -116,7 +117,7 @@ export default function Investments() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("investments.title")} subtitle={t("investments.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addInvestment")}</Button>} />
+      <PageHeader title={t("investments.title")} subtitle={t("investments.subtitle")} actions={<div className="flex items-center gap-2"><FeatureIO feature="investments" tables={[{ table: "investments" }]} /><Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addInvestment")}</Button></div>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <FinanceCard icon={<DollarSign className="h-5 w-5 text-feature-investments" />} iconBg="bg-feature-investments/10" label={t("module.totalInvested")} value={fmt(totalInvested)} />

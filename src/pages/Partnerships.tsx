@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Users, DollarSign, TrendingDown, PiggyBank, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, Percent, Landmark } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -199,7 +200,7 @@ export default function Partnerships() {
       <PageHeader
         title="Partnerships"
         subtitle="Manage shared business capital, withdrawals, profit distribution, and reinvestment"
-        actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Partnership</Button>}
+        actions={<div className="flex items-center gap-2"><FeatureIO feature="partnerships" tables={[{ table: "partnerships" }, { table: "partnership_entries" }]} /><Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Partnership</Button></div>}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

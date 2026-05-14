@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Plus, PieChart, TrendingDown, AlertTriangle, Search, RotateCcw, ShieldCheck, Target, Gauge, Pencil, Trash2, Wallet } from "lucide-react";
 import { CATEGORY_ICONS } from "@/components/categories/category-icons";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -200,7 +201,7 @@ export default function Budgets() {
       <PageHeader
         title={t("budgets.title")}
         subtitle={t("budgets.subtitle")}
-        actions={<Button size="sm" className="gap-1.5 h-9" onClick={openCreate}><Plus className="h-4 w-4" /> {t("action.createBudget")}</Button>}
+        actions={<div className="flex items-center gap-2"><FeatureIO feature="budgets" tables={[{ table: "budgets" }]} /><Button size="sm" className="gap-1.5 h-9" onClick={openCreate}><Plus className="h-4 w-4" /> {t("action.createBudget")}</Button></div>}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

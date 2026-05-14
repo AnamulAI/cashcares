@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus, Scale, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, DollarSign } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
@@ -133,7 +134,7 @@ export default function DebtLoans() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("debtLoans.title")} subtitle={t("debtLoans.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addLoan")}</Button>} />
+      <PageHeader title={t("debtLoans.title")} subtitle={t("debtLoans.subtitle")} actions={<div className="flex items-center gap-2"><FeatureIO feature="loans" tables={[{ table: "loans" }]} /><Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addLoan")}</Button></div>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <FinanceCard icon={<Scale className="h-5 w-5 text-feature-debt" />} iconBg="bg-feature-debt/10" label={t("module.totalOutstanding")} value={fmt(totalDebt)} />

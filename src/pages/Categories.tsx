@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Search, FolderOpen } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { CategoryList } from "@/components/categories/CategoryList";
 import { CategoryInsights } from "@/components/categories/CategoryInsights";
 import { AddCategoryModal } from "@/components/categories/AddCategoryModal";
@@ -76,9 +77,12 @@ export default function Categories() {
         title={t("categories.title")}
         subtitle={t("categories.subtitle")}
         actions={
-          <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditCategory(null); setAddOpen(true); }}>
-            <Plus className="h-4 w-4" /> {t("action.addCategory")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <FeatureIO feature="categories" tables={[{ table: "categories" }]} />
+            <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditCategory(null); setAddOpen(true); }}>
+              <Plus className="h-4 w-4" /> {t("action.addCategory")}
+            </Button>
+          </div>
         }
       />
 
