@@ -1,42 +1,32 @@
 ## Goal
+Replace the flat "MB" PWA icon set with a premium 3D-styled icon matching the uploaded reference (deep navy-blue rounded squircle, beveled metallic "MB" with gold edge highlights, soft outer glow).
 
-Make MahBook installable as a real standalone PWA on Android (and pinnable with a proper icon on iOS), instead of degrading to a Chrome shortcut.
+## Approach
+1. **Generate a master icon** (1024×1024 PNG, transparent background) using `imagegen` with the `premium` tier for crisp text/bevel fidelity. Prompt will describe: rounded-squircle tile, deep navy gradient, 3D extruded "MB" monogram with brushed-metal face and gold beveled edges, soft ambient glow, subtle highlight — matching the reference screenshot.
+2. **Generate a maskable variant** with extra safe-zone padding (icon centered at ~70% of canvas) so Android adaptive masks don't clip the monogram.
+3. **Resize into all required PWA + iOS sizes** via a sharp/imagemagick script:
+   - `public/icons/icon-{72,96,128,144,152,192,384,512}.png` (any purpose)
+   - `public/icons/icon-{192,512}-maskable.png` (maskable, padded source)
+   - `public/apple-touch-icon.png` (180)
+   - `public/apple-touch-icon-{120,152,167,180}.png`
+   - `public/favicon.ico` regen optional (skip unless requested)
+4. **Update `src/components/shared/BrandLogo.tsx`** so the in-app brand tile visually echoes the new icon: deeper navy gradient + subtle gold inner ring + stronger inset highlight (keeps existing API, no layout change). This keeps the app header consistent with the installed icon.
+5. **No manifest.json change needed** — sizes/paths already match. Bump SW cache version (`mahbook-v3` → `mahbook-v4`) in `public/sw.js` so installed users get the new icons on next update.
+6. **QA**: view a few of the generated PNGs to confirm the bevel/colors render, check the maskable version stays inside the safe circle.
 
-## Root cause
-
-`public/manifest.json` references `/icons/icon-*.png` and `/favicon.ico`, but **`public/icons/` does not exist**. When Android Chrome can't fetch the required 192px and 512px icons, it fails the installability check and offers only "Add to Home screen" (= shortcut), not "Install app" (= standalone PWA).
-
-## Changes
-
-### 1. Generate the MahBook icon set
-Use the image generator (premium/transparent) to produce one master 1024×1024 PNG of the MB monogram on the indigo→violet gradient tile (matching `BrandLogo`), then downscale with ImageMagick to every size the manifest requires:
-
-- `public/icons/icon-72x72.png`
-- `public/icons/icon-96x96.png`
-- `public/icons/icon-128x128.png`
-- `public/icons/icon-144x144.png`
-- `public/icons/icon-152x152.png`
-- `public/icons/icon-192x192.png` (maskable + any)
-- `public/icons/icon-384x384.png`
-- `public/icons/icon-512x512.png` (maskable + any)
-- `public/apple-touch-icon.png` (180×180, with safe padding for iOS rounded mask)
-
-The 192 and 512 maskable variants need ~10% safe-zone padding so Android's adaptive icon mask doesn't crop the monogram.
-
-### 2. Tighten `public/manifest.json`
-- Add `"id": "/"` for stable PWA identity
-- Split icon entries so 192 and 512 each have **separate** `purpose: "any"` and `purpose: "maskable"` records (Chrome treats combined `"any maskable"` more strictly)
-- Keep `start_url`, `scope`, `display: "standalone"` as-is
-
-### 3. Tighten `index.html`
-- Point `apple-touch-icon` to the new `/apple-touch-icon.png`
-- Keep existing iOS standalone meta tags
-
-### 4. Verification
-- Visually QA the generated icons (open the PNGs, confirm the MB monogram is centered and not clipped on the maskable variants)
-- Note to the user: install testing must be done on the **published URL** (`https://mahbooks.lovable.app`), not the editor preview — the service worker is intentionally disabled inside the Lovable iframe to prevent cache-staleness bugs.
+## Files touched
+- `public/icons/*.png` (overwrite all sizes)
+- `public/apple-touch-icon*.png` (overwrite)
+- `public/sw.js` (cache version bump only)
+- `src/components/shared/BrandLogo.tsx` (visual polish to match)
 
 ## Out of scope
+- Manifest schema changes, new routes, splash screens, favicon.ico regen.
 
-- Changing the service-worker caching strategy (recently fixed, working correctly)
-- Capacitor / native wrapper (different product decision — ask separately if you want true native iOS/Android builds for the App Store / Play Store)
+## Question before I build
+The reference shows a **deep navy + gold** premium look, but the current brand memory specifies an **indigo→violet gradient** (`#6366f1`→violet) used across the app. Two options:
+
+- **A. Match the screenshot exactly** — navy/gold icon. The installed app icon will look distinct from the in-app indigo/violet brand tiles (slight inconsistency).
+- **B. Premium 3D in the existing indigo→violet palette** — same depth/bevel/glow treatment as the reference, but indigo/violet face with lighter violet highlights instead of gold. Keeps the whole brand system consistent.
+
+I'll ask this as a quick question after you approve the plan.
