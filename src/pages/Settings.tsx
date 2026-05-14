@@ -59,7 +59,9 @@ export default function Settings() {
         setTimeout(() => resolve("unknown"), 1500);
       });
       sw.postMessage("GET_VERSION", [channel.port2]);
-      setSwVersion(await versionPromise);
+      const v = await versionPromise;
+      setSwVersion(v);
+      recordVersion(v);
     } catch {
       setSwVersion("unknown");
     }
