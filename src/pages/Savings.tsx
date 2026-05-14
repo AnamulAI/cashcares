@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { StatCard } from "@/components/shared/StatCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
@@ -112,9 +113,12 @@ export default function Savings() {
         title="Savings"
         subtitle="Recurring deposits, DPS, foundation contributions, and more"
         actions={
-          <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" /> New Plan
-          </Button>
+          <div className="flex items-center gap-2">
+            <FeatureIO feature="savings" tables={[{ table: "savings_plans" }, { table: "savings_installments" }]} />
+            <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" /> New Plan
+            </Button>
+          </div>
         }
       />
 

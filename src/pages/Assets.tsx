@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus, Building2, TrendingUp, TrendingDown, Hash, Search, RotateCcw, Trash2, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
@@ -117,7 +118,7 @@ export default function Assets() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("assets.title")} subtitle={t("assets.subtitle")} actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addAsset")}</Button>} />
+      <PageHeader title={t("assets.title")} subtitle={t("assets.subtitle")} actions={<div className="flex items-center gap-2"><FeatureIO feature="assets" tables={[{ table: "assets" }]} /><Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> {t("action.addAsset")}</Button></div>} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <FinanceCard icon={<Building2 className="h-5 w-5 text-feature-assets" />} iconBg="bg-feature-assets/10" label={t("module.totalAssetValue")} value={fmt(totalValue)} />

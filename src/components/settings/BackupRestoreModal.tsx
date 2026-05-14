@@ -42,7 +42,7 @@ export function BackupRestoreModal({ open, onOpenChange }: BackupRestoreModalPro
     try {
       const backup: Record<string, any> = {
         _meta: {
-          app: "CashCare",
+          app: "MahBook",
           version: "1.0",
           exportedAt: new Date().toISOString(),
           type: "full_backup",
@@ -63,7 +63,7 @@ export function BackupRestoreModal({ open, onOpenChange }: BackupRestoreModalPro
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `cash-care-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
+      a.download = `mahbook-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(t("backup.downloadSuccess"));
@@ -91,7 +91,7 @@ export function BackupRestoreModal({ open, onOpenChange }: BackupRestoreModalPro
       const text = await f.text();
       const json = JSON.parse(text);
 
-      if (!json._meta || json._meta.app !== "CashCare") {
+      if (!json._meta || (json._meta.app !== "MahBook" && json._meta.app !== "CashCare")) {
         setRestoreError(t("backup.invalidBackup"));
         return;
       }

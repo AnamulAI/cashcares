@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Download, FileText, SearchX } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { TransactionFilters, TransactionFilterValues, emptyFilters } from "@/components/transactions/TransactionFilters";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { TransactionDetails } from "@/components/transactions/TransactionDetails";
@@ -129,9 +130,7 @@ export default function Transactions() {
               <ArrowLeftRight className="h-3.5 w-3.5" /> {t("action.transfer")}
             </Button>
             <div className="w-px h-5 bg-border mx-0.5" />
-            <Button variant="ghost" size="sm" className="h-9 text-xs gap-1.5 text-muted-foreground">
-              <Download className="h-3.5 w-3.5" /> {t("action.export")}
-            </Button>
+            <FeatureIO feature="transactions" tables={[{ table: "transactions" }]} />
           </div>
         }
       />

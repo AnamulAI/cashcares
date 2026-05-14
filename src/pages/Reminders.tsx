@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus, Bell, AlertTriangle, CheckCircle2, Clock, CalendarClock, Search, RotateCcw, Trash2, Pencil, AlarmClockOff, Check } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -213,7 +214,7 @@ export default function Reminders() {
       <PageHeader
         title={t("reminders.title", "Reminder Center")}
         subtitle={t("reminders.subtitle", "Stay on top of dues, alerts, and follow-ups")}
-        actions={<Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Reminder</Button>}
+        actions={<div className="flex items-center gap-2"><FeatureIO feature="reminders" tables={[{ table: "reminders" }]} /><Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openModal()}><Plus className="h-4 w-4" /> Add Reminder</Button></div>}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
