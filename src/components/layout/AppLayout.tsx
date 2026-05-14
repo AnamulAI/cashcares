@@ -2,6 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { Outlet } from "react-router-dom";
+import { PWAInstallPrompt } from "@/components/shared/PWAInstallPrompt";
 
 export function AppLayout() {
   return (
@@ -16,6 +17,7 @@ export function AppLayout() {
             </div>
           </main>
         </div>
+        <PWAInstallPrompt />
       </div>
     </SidebarProvider>
   );
