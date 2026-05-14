@@ -99,6 +99,26 @@ export default function Settings() {
     toast.success("Data exported successfully");
   };
 
+  const checkForUpdates = async () => {
+    if (!("serviceWorker" in navigator)) { toast.info("Updates aren't available in this browser"); return; }
+    toast.loading("Checking for updates…", { id: "sw-check" });
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) { toast.success("App is up to date", { id: "sw-check" }); return; }
+      await reg.update();
+      toast.dismiss("sw-check");
+      if (reg.waiting) {
+        // Let PWAUpdatePrompt show the reload prompt with force=true
+        window.dispatchEvent(new CustomEvent("mahbook:sw-check"));
+      } else {
+        // Trigger the prompt's check handler which will toast success when current
+        window.dispatchEvent(new CustomEvent("mahbook:sw-check"));
+      }
+    } catch {
+      toast.error("Couldn't check for updates", { id: "sw-check" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("settings.title")} subtitle={t("settings.subtitle")} />
