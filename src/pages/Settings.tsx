@@ -32,6 +32,27 @@ export default function Settings() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [clearConfirm, setClearConfirm] = useState(false);
   const qc = useQueryClient();
+  const [swVersion, setSwVersion] = useState<string | null>(null);
+
+  const fetchSwVersion = async () => {
+    if (!("serviceWorker" in navigator)) { setSwVersion("unsupported"); return; }
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sw = reg?.active;
+      if (!sw) { setSwVersion("not installed"); return; }
+      const channel = new MessageChannel();
+      const versionPromise = new Promise<string>((resolve) => {
+        channel.port1.onmessage = (e) => resolve(e.data?.version ?? "unknown");
+        setTimeout(() => resolve("unknown"), 1500);
+      });
+      sw.postMessage("GET_VERSION", [channel.port2]);
+      setSwVersion(await versionPromise);
+    } catch {
+      setSwVersion("unknown");
+    }
+  };
+
+  useEffect(() => { fetchSwVersion(); }, []);
 
   const toggleNotif = (key: keyof typeof settings.notifications) => {
     updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } });
