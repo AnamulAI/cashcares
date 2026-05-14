@@ -348,6 +348,35 @@ export default function Settings() {
                 <RotateCw className="h-3.5 w-3.5" /> Check now
               </Button>
             </div>
+            <Separator />
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <Label className="text-xs font-medium">Version history</Label>
+                  <p className="text-[11px] text-muted-foreground">Last {versionHistory.length || 5} cache versions seen on this device.</p>
+                </div>
+                {versionHistory.length > 0 && (
+                  <Button variant="ghost" size="sm" className="text-[11px] h-7 text-muted-foreground" onClick={() => { localStorage.removeItem("mahbook:sw-version-history"); setVersionHistory([]); }}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+              {versionHistory.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground italic">No versions recorded yet.</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {versionHistory.map((entry, i) => (
+                    <li key={`${entry.version}-${entry.seenAt}`} className="flex items-center justify-between text-[11px] py-1.5 px-2 rounded-md bg-muted/40">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={i === 0 ? "default" : "secondary"} className="font-mono text-[10px]">{entry.version}</Badge>
+                        {i === 0 && <span className="text-[10px] text-muted-foreground">current</span>}
+                      </div>
+                      <span className="text-muted-foreground tabular-nums">{format(new Date(entry.seenAt), "dd MMM yyyy, HH:mm")}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
