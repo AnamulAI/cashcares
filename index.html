@@ -41,22 +41,34 @@
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker
-            .register('/sw.js', { scope: '/' })
-            .then(function (reg) {
-              console.log('[MahBook SW] Registered, scope:', reg.scope);
-            })
-            .catch(function (err) {
-              console.warn('[MahBook SW] Registration failed:', err);
+        const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('lovable.app');
+
+        if (isLocalPreview) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            registrations.forEach(function (registration) {
+              registration.unregister();
             });
+          });
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (key) {
+                if (key.startsWith('mahbook-')) caches.delete(key);
+              });
+            });
+          }
+        }
+
+        window.addEventListener('load', function () {
+          if (isLocalPreview) return;
+
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function (err) {
+            console.warn('[MahBook SW] Registration failed:', err);
+          });
         });
       }
     </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahbook-v1';
+const CACHE_NAME = 'mahbook-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -52,7 +52,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for everything else (JS, CSS, fonts, images)
+  // Never cache Vite dev modules or JavaScript chunks. Serving a cached React
+  // chunk beside a fresh ReactDOM chunk creates the "Invalid hook call" crash.
+  if (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules/.vite/') ||
+    url.pathname.startsWith('/@vite/') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.mjs') ||
+    url.pathname.endsWith('.css')
+  ) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Cache-first only for non-code static assets.
   event.respondWith(
     caches.match(request).then(
       (cached) =>
