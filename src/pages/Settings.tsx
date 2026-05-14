@@ -33,6 +33,19 @@ export default function Settings() {
   const [clearConfirm, setClearConfirm] = useState(false);
   const qc = useQueryClient();
   const [swVersion, setSwVersion] = useState<string | null>(null);
+  const [versionHistory, setVersionHistory] = useState<{ version: string; seenAt: string }[]>(() => {
+    try { return JSON.parse(localStorage.getItem("mahbook:sw-version-history") || "[]"); } catch { return []; }
+  });
+
+  const recordVersion = (v: string) => {
+    if (!v || ["unsupported", "not installed", "unknown", "checking…"].includes(v)) return;
+    setVersionHistory((prev) => {
+      if (prev[0]?.version === v) return prev;
+      const next = [{ version: v, seenAt: new Date().toISOString() }, ...prev.filter(e => e.version !== v)].slice(0, 5);
+      try { localStorage.setItem("mahbook:sw-version-history", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const fetchSwVersion = async () => {
     if (!("serviceWorker" in navigator)) { setSwVersion("unsupported"); return; }
