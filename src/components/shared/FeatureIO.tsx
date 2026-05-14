@@ -23,7 +23,7 @@ const STRIP_FIELDS = ["user_id", "created_at", "updated_at"] as const;
 // --- CSV helpers ---
 function toCsv(rows: any[]): string {
   if (!rows.length) return "";
-  const headers = Array.from(rows.reduce((s: Set<string>, r) => { Object.keys(r || {}).forEach(k => s.add(k)); return s; }, new Set<string>()));
+  const headers: string[] = Array.from(rows.reduce((s: Set<string>, r) => { Object.keys(r || {}).forEach(k => s.add(k)); return s; }, new Set<string>()));
   const esc = (v: any) => {
     if (v === null || v === undefined) return "";
     const s = typeof v === "object" ? JSON.stringify(v) : String(v);
