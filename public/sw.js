@@ -1,26 +1,43 @@
-const CACHE_NAME = 'mahbook-v2';
-const STATIC_ASSETS = [
+// MahBook service worker — offline-first shell with safe handling of Vite chunks.
+const CACHE_VERSION = 'mahbook-v3';
+const SHELL_CACHE = `${CACHE_VERSION}-shell`;
+const ASSET_CACHE = `${CACHE_VERSION}-assets`;
+
+// Routes pre-warmed so the SPA shell loads with no connectivity.
+const APP_ROUTES = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon-120x120.png',
+  '/apple-touch-icon-152x152.png',
+  '/apple-touch-icon-167x167.png',
+  '/apple-touch-icon-180x180.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 ];
 
-// ── Install: pre-cache static shell ──────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(SHELL_CACHE).then((cache) =>
+      // Use individual adds so a single 404 doesn't abort the entire install.
+      Promise.all(
+        APP_ROUTES.map((url) =>
+          cache.add(new Request(url, { cache: 'reload' })).catch(() => null)
+        )
+      )
+    )
   );
   self.skipWaiting();
 });
 
-// ── Activate: remove old caches ───────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => !key.startsWith(CACHE_VERSION))
           .map((key) => caches.delete(key))
       )
     )
@@ -28,56 +45,79 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: cache-first for static, network-first for API ─────────────────────
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin requests (e.g. Supabase API calls)
-  if (request.method !== 'GET' || url.origin !== self.location.origin) {
-    return;
-  }
+  // Skip non-GET and cross-origin (Supabase, fonts CDN handled separately).
+  if (request.method !== 'GET') return;
 
-  // Network-first for navigation (HTML pages) so fresh deploys reach users
+  const sameOrigin = url.origin === self.location.origin;
+
+  // Network-first for navigation so fresh deploys reach users; fall back to cached shell.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', clone));
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() =>
+          caches.match(request).then((m) => m || caches.match('/index.html'))
+        )
     );
     return;
   }
 
-  // Never cache Vite dev modules or JavaScript chunks. Serving a cached React
-  // chunk beside a fresh ReactDOM chunk creates the "Invalid hook call" crash.
+  // Never cache Vite dev modules or JS/CSS chunks — mismatched React copies crash hooks.
   if (
-    url.pathname.startsWith('/src/') ||
-    url.pathname.startsWith('/node_modules/.vite/') ||
-    url.pathname.startsWith('/@vite/') ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.mjs') ||
-    url.pathname.endsWith('.css')
+    sameOrigin &&
+    (url.pathname.startsWith('/src/') ||
+      url.pathname.startsWith('/node_modules/.vite/') ||
+      url.pathname.startsWith('/@vite/') ||
+      url.pathname.endsWith('.js') ||
+      url.pathname.endsWith('.mjs') ||
+      url.pathname.endsWith('.css'))
   ) {
     event.respondWith(fetch(request));
     return;
   }
 
-  // Cache-first only for non-code static assets.
-  event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-    )
-  );
+  // Stale-while-revalidate for icons, images, fonts, manifest — keeps app usable offline.
+  const isCacheableAsset =
+    sameOrigin &&
+    (/\.(png|jpg|jpeg|svg|webp|ico|woff2?|ttf|otf)$/i.test(url.pathname) ||
+      url.pathname === '/manifest.json');
+
+  const isGoogleFont =
+    url.origin === 'https://fonts.googleapis.com' ||
+    url.origin === 'https://fonts.gstatic.com';
+
+  if (isCacheableAsset || isGoogleFont) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const network = fetch(request)
+          .then((response) => {
+            if (response && response.ok) {
+              const clone = response.clone();
+              caches.open(ASSET_CACHE).then((cache) => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || network;
+      })
+    );
+    return;
+  }
+
+  // Default: try network, fall back to cache if offline.
+  if (sameOrigin) {
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
+  }
 });
