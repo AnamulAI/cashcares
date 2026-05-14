@@ -1,41 +1,42 @@
-# Add Sample Data to Getting Started
-
 ## Goal
-Help new users understand MahBook quickly by letting them load a complete set of demo data (accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, reminders) directly from the Getting Started card on the dashboard — without having to dig into Settings.
 
-The full demo dataset and `loadDemoData()` / `clearDemoData()` / `isDemoDataLoaded()` helpers already exist in `src/lib/demo-data.ts`. This plan only wires them into the onboarding card and refines the UX.
+Make MahBook installable as a real standalone PWA on Android (and pinnable with a proper icon on iOS), instead of degrading to a Chrome shortcut.
+
+## Root cause
+
+`public/manifest.json` references `/icons/icon-*.png` and `/favicon.ico`, but **`public/icons/` does not exist**. When Android Chrome can't fetch the required 192px and 512px icons, it fails the installability check and offers only "Add to Home screen" (= shortcut), not "Install app" (= standalone PWA).
 
 ## Changes
 
-### 1. `src/components/shared/GettingStarted.tsx`
-- Detect whether the workspace is empty (no accounts, categories, transactions, budgets) and whether demo data is already loaded (via `isDemoDataLoaded()`).
-- Add a primary CTA row at the bottom of the card:
-  - **"Load Sample Data"** button (visible when workspace is empty and demo not loaded). Calls `loadDemoData()`, shows a loading state, then a success toast and invalidates React Query caches so all dashboard widgets refresh instantly (no full page reload).
-  - **"Clear Sample Data"** button (visible when demo data is detected). Confirmation via existing `ConfirmDialog`, then calls `clearDemoData()` and refreshes caches.
-- Add a short helper line: "New here? Load a ready-made workspace to explore every feature."
-- Keep the existing 5-step checklist and dismiss button untouched.
-- After demo loads, the checklist auto-completes (steps already react to live data) so the user immediately sees a finished workspace.
+### 1. Generate the MahBook icon set
+Use the image generator (premium/transparent) to produce one master 1024×1024 PNG of the MB monogram on the indigo→violet gradient tile (matching `BrandLogo`), then downscale with ImageMagick to every size the manifest requires:
 
-### 2. `src/lib/demo-data.ts` (small cleanup)
-- Remove the `localStorage.setItem("cc_notifications_v2", [...])` block from `loadDemoData()` so the previous "no fake notifications on new accounts" fix is preserved when sample data is loaded.
-- Keep `localStorage.setItem("cc_plan", "yearly")` so premium-only modules become explorable.
+- `public/icons/icon-72x72.png`
+- `public/icons/icon-96x96.png`
+- `public/icons/icon-128x128.png`
+- `public/icons/icon-144x144.png`
+- `public/icons/icon-152x152.png`
+- `public/icons/icon-192x192.png` (maskable + any)
+- `public/icons/icon-384x384.png`
+- `public/icons/icon-512x512.png` (maskable + any)
+- `public/apple-touch-icon.png` (180×180, with safe padding for iOS rounded mask)
 
-### 3. `src/i18n/translations.ts`
-- Add new keys under the `onboarding.*` namespace (English + Bangla):
-  - `onboarding.tryDemo` — "Load Sample Data" / "নমুনা ডেটা লোড করুন"
-  - `onboarding.clearDemo` — "Clear Sample Data" / "নমুনা ডেটা মুছুন"
-  - `onboarding.demoHint` — short helper sentence
-  - `onboarding.demoLoading` — "Loading sample data..."
-  - `onboarding.demoLoaded` — toast success
-  - `onboarding.demoCleared` — toast success
+The 192 and 512 maskable variants need ~10% safe-zone padding so Android's adaptive icon mask doesn't crop the monogram.
 
-## Technical notes
-- Use `useQueryClient().invalidateQueries()` on the relevant keys (`accounts`, `categories`, `transactions`, `budgets`, `receivables`, `payables`, `loans`, `assets`, `investments`, `partnerships`, `reminders`) instead of `window.location.reload()` — smoother UX.
-- Keep all styling on existing semantic tokens (`bg-primary`, `text-primary-foreground`, `border-primary/20`); no hardcoded colors.
-- Buttons sized `sm`, with a `Sparkles` / `Database` icon to match the card's premium look.
-- Settings page demo controls remain unchanged (kept as a power-user fallback).
+### 2. Tighten `public/manifest.json`
+- Add `"id": "/"` for stable PWA identity
+- Split icon entries so 192 and 512 each have **separate** `purpose: "any"` and `purpose: "maskable"` records (Chrome treats combined `"any maskable"` more strictly)
+- Keep `start_url`, `scope`, `display: "standalone"` as-is
+
+### 3. Tighten `index.html`
+- Point `apple-touch-icon` to the new `/apple-touch-icon.png`
+- Keep existing iOS standalone meta tags
+
+### 4. Verification
+- Visually QA the generated icons (open the PNGs, confirm the MB monogram is centered and not clipped on the maskable variants)
+- Note to the user: install testing must be done on the **published URL** (`https://mahbooks.lovable.app`), not the editor preview — the service worker is intentionally disabled inside the Lovable iframe to prevent cache-staleness bugs.
 
 ## Out of scope
-- No DB schema changes.
-- No changes to the demo dataset contents themselves.
-- No changes to Settings page.
+
+- Changing the service-worker caching strategy (recently fixed, working correctly)
+- Capacitor / native wrapper (different product decision — ask separately if you want true native iOS/Android builds for the App Store / Play Store)
