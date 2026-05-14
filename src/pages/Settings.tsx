@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2 } from "lucide-react";
+import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2, RotateCw } from "lucide-react";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -97,6 +97,26 @@ export default function Settings() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Data exported successfully");
+  };
+
+  const checkForUpdates = async () => {
+    if (!("serviceWorker" in navigator)) { toast.info("Updates aren't available in this browser"); return; }
+    toast.loading("Checking for updates…", { id: "sw-check" });
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) { toast.success("App is up to date", { id: "sw-check" }); return; }
+      await reg.update();
+      toast.dismiss("sw-check");
+      if (reg.waiting) {
+        // Let PWAUpdatePrompt show the reload prompt with force=true
+        window.dispatchEvent(new CustomEvent("mahbook:sw-check"));
+      } else {
+        // Trigger the prompt's check handler which will toast success when current
+        window.dispatchEvent(new CustomEvent("mahbook:sw-check"));
+      }
+    } catch {
+      toast.error("Couldn't check for updates", { id: "sw-check" });
+    }
   };
 
   return (
@@ -264,6 +284,25 @@ export default function Settings() {
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">Seeds accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, and reminders.</p>
+          </CardContent>
+        </Card>
+
+        {/* App Updates */}
+        <Card className="finance-card-static lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><RotateCw className="h-4 w-4 text-feature-settings" /> App Updates</CardTitle>
+            <CardDescription className="text-xs">Check for the latest MahBook version and refresh the offline cache.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-medium">Check for updates</Label>
+                <p className="text-[11px] text-muted-foreground">If a newer version is installed, you'll be prompted to reload immediately.</p>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={checkForUpdates}>
+                <RotateCw className="h-3.5 w-3.5" /> Check now
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
