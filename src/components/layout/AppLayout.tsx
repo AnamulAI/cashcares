@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { Outlet } from "react-router-dom";
 import { PWAInstallPrompt } from "@/components/shared/PWAInstallPrompt";
+import { PWAUpdatePrompt } from "@/components/shared/PWAUpdatePrompt";
 
 export function AppLayout() {
   return (
