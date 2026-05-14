@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, CreditCard, AlertTriangle, CheckCircle2, Clock, Search, RotateCcw, Trash2, Pencil, BookOpen, MoreHorizontal, FileText, ArrowRightLeft, Upload } from "lucide-react";
 import { ImportLedgerModal } from "@/components/shared/ImportLedgerModal";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FeatureIO } from "@/components/shared/FeatureIO";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
@@ -146,6 +147,7 @@ export default function Payables() {
         subtitle="Track money you owe to people or entities"
         actions={
           <div className="flex items-center gap-2">
+            <FeatureIO feature="payables" tables={[{ table: "payable_books" }, { table: "payable_entries" }, { table: "payable_payment_history" }]} />
             <Button size="sm" variant="outline" className="gap-1.5 h-9 text-xs" onClick={() => setImportOpen(true)}>
               <Upload className="h-3.5 w-3.5" /> Import
             </Button>
