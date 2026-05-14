@@ -286,6 +286,25 @@ export default function Settings() {
             <p className="text-[10px] text-muted-foreground mt-2">Seeds accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, and reminders.</p>
           </CardContent>
         </Card>
+
+        {/* App Updates */}
+        <Card className="finance-card-static lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><RotateCw className="h-4 w-4 text-feature-settings" /> App Updates</CardTitle>
+            <CardDescription className="text-xs">Check for the latest MahBook version and refresh the offline cache.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-medium">Check for updates</Label>
+                <p className="text-[11px] text-muted-foreground">If a newer version is installed, you'll be prompted to reload immediately.</p>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={checkForUpdates}>
+                <RotateCw className="h-3.5 w-3.5" /> Check now
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <ImportDataModal open={importOpen} onOpenChange={setImportOpen} />
