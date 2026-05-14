@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download, Upload, ChevronDown, Loader2 } from "lucide-react";
+import { Download, Upload, ChevronDown, Loader2, FileJson, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,57 +8,132 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export interface FeatureIOTable {
-  /** Supabase table name */
   table: string;
-  /** React Query keys to invalidate after import */
   invalidateKeys?: string[];
 }
 
 interface FeatureIOProps {
-  /** Short feature label used for filename and menu (e.g. "accounts", "transactions") */
   feature: string;
-  /** One or more tables to include in the export/import bundle */
   tables: FeatureIOTable[];
-  /** Optional button size override */
   size?: "sm" | "default";
 }
 
 const STRIP_FIELDS = ["user_id", "created_at", "updated_at"] as const;
 
+// --- CSV helpers ---
+function toCsv(rows: any[]): string {
+  if (!rows.length) return "";
+  const headers = Array.from(rows.reduce((s: Set<string>, r) => { Object.keys(r || {}).forEach(k => s.add(k)); return s; }, new Set<string>()));
+  const esc = (v: any) => {
+    if (v === null || v === undefined) return "";
+    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [headers.join(","), ...rows.map(r => headers.map(h => esc(r[h])).join(","))].join("\n");
+}
+
+function parseCsv(text: string): any[] {
+  const lines: string[][] = [];
+  let cur: string[] = [], field = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else field += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ",") { cur.push(field); field = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        cur.push(field); lines.push(cur); cur = []; field = "";
+      } else field += c;
+    }
+  }
+  if (field.length || cur.length) { cur.push(field); lines.push(cur); }
+  if (!lines.length) return [];
+  const headers = lines.shift()!;
+  return lines.filter(r => r.some(v => v !== "")).map(r => {
+    const o: any = {};
+    headers.forEach((h, i) => {
+      const v = r[i] ?? "";
+      if (v === "") { o[h] = null; return; }
+      if (v === "true" || v === "false") { o[h] = v === "true"; return; }
+      if (/^-?\d+(\.\d+)?$/.test(v)) { o[h] = Number(v); return; }
+      if ((v.startsWith("{") && v.endsWith("}")) || (v.startsWith("[") && v.endsWith("]"))) {
+        try { o[h] = JSON.parse(v); return; } catch {}
+      }
+      o[h] = v;
+    });
+    return o;
+  });
+}
+
+function downloadFile(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function FeatureIO({ feature, tables, size = "sm" }: FeatureIOProps) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const importFormatRef = useRef<"json" | "csv">("json");
   const [busy, setBusy] = useState<"idle" | "export" | "import">("idle");
 
-  const handleExport = async () => {
+  const invalidateAll = () => {
+    const keys = new Set<string>();
+    tables.forEach((t) => (t.invalidateKeys || [t.table]).forEach((k) => keys.add(k)));
+    keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  };
+
+  const fetchAll = async () => {
+    const out: Record<string, any[]> = {};
+    let total = 0;
+    for (const { table } of tables) {
+      const { data, error } = await supabase.from(table as any).select("*");
+      if (error) { console.warn(`Export warning for ${table}:`, error.message); out[table] = []; }
+      else { out[table] = data || []; total += data?.length || 0; }
+    }
+    return { out, total };
+  };
+
+  const handleExportJson = async () => {
     setBusy("export");
     try {
-      const bundle: Record<string, any> = {
-        _meta: { app: "MahBook", feature, version: "1.0", exportedAt: new Date().toISOString() },
-      };
-      let totalRows = 0;
-      for (const { table } of tables) {
-        const { data, error } = await supabase.from(table as any).select("*");
-        if (error) {
-          console.warn(`Export warning for ${table}:`, error.message);
-          bundle[table] = [];
-        } else {
-          bundle[table] = data || [];
-          totalRows += data?.length || 0;
-        }
+      const { out, total } = await fetchAll();
+      const bundle = { _meta: { app: "MahBook", feature, version: "1.0", exportedAt: new Date().toISOString() }, ...out };
+      downloadFile(JSON.stringify(bundle, null, 2), `mahbook-${feature}-${format(new Date(), "yyyy-MM-dd")}.json`, "application/json");
+      toast.success(`Exported ${total} ${feature} record${total === 1 ? "" : "s"}`);
+    } catch (e: any) { toast.error(e.message || "Export failed"); }
+    finally { setBusy("idle"); }
+  };
+
+  const handleExportCsv = async () => {
+    setBusy("export");
+    try {
+      const { out, total } = await fetchAll();
+      const date = format(new Date(), "yyyy-MM-dd");
+      const nonEmpty = Object.entries(out).filter(([, rows]) => rows.length);
+      if (!nonEmpty.length) { toast.info("Nothing to export"); return; }
+      // One CSV per table (downloaded sequentially)
+      for (const [table, rows] of nonEmpty) {
+        const name = nonEmpty.length === 1 ? `mahbook-${feature}-${date}.csv` : `mahbook-${feature}-${table}-${date}.csv`;
+        downloadFile(toCsv(rows), name, "text/csv");
+        await new Promise(r => setTimeout(r, 150));
       }
-      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `mahbook-${feature}-${format(new Date(), "yyyy-MM-dd")}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(`Exported ${totalRows} ${feature} record${totalRows === 1 ? "" : "s"}`);
-    } catch (e: any) {
-      toast.error(e.message || "Export failed");
-    } finally {
-      setBusy("idle");
+      toast.success(`Exported ${total} record${total === 1 ? "" : "s"} as CSV`);
+    } catch (e: any) { toast.error(e.message || "Export failed"); }
+    finally { setBusy("idle"); }
+  };
+
+  const triggerImport = (fmt: "json" | "csv") => {
+    importFormatRef.current = fmt;
+    if (fileRef.current) {
+      fileRef.current.accept = fmt === "csv" ? ".csv" : ".json";
+      fileRef.current.click();
     }
   };
 
@@ -66,23 +141,24 @@ export function FeatureIO({ feature, tables, size = "sm" }: FeatureIOProps) {
     const f = e.target.files?.[0];
     if (fileRef.current) fileRef.current.value = "";
     if (!f) return;
-    if (!f.name.endsWith(".json")) {
-      toast.error("Please select a .json export file");
-      return;
-    }
     setBusy("import");
     try {
-      const json = JSON.parse(await f.text());
-      if (!json._meta || json._meta.app !== "MahBook") {
-        toast.error("This file is not a MahBook export");
-        return;
+      const text = await f.text();
+      const fmt = importFormatRef.current;
+      let perTable: Record<string, any[]> = {};
+      if (fmt === "json") {
+        const json = JSON.parse(text);
+        if (!json._meta || json._meta.app !== "MahBook") { toast.error("This file is not a MahBook export"); return; }
+        for (const { table } of tables) if (Array.isArray(json[table])) perTable[table] = json[table];
+      } else {
+        const rows = parseCsv(text);
+        if (!rows.length) { toast.error("CSV is empty"); return; }
+        // CSV imports go into the first/primary table
+        perTable[tables[0].table] = rows;
       }
-      let totalImported = 0;
-      let totalSkipped = 0;
-      for (const { table } of tables) {
-        const rows: any[] = Array.isArray(json[table]) ? json[table] : [];
+      let imported = 0, skipped = 0;
+      for (const [table, rows] of Object.entries(perTable)) {
         if (!rows.length) continue;
-        // Strip ownership/timestamp fields so the current user becomes the owner
         const cleaned = rows.map((r) => {
           const out: any = { ...r };
           for (const k of STRIP_FIELDS) delete out[k];
@@ -92,24 +168,16 @@ export function FeatureIO({ feature, tables, size = "sm" }: FeatureIOProps) {
         for (let i = 0; i < cleaned.length; i += 50) {
           const batch = cleaned.slice(i, i + 50);
           const { error } = await supabase.from(table as any).upsert(batch as any, { onConflict: "id" });
-          if (error) {
-            console.warn(`Import warning for ${table}:`, error.message);
-            totalSkipped += batch.length;
-          } else {
-            totalImported += batch.length;
-          }
+          if (error) { console.warn(`Import warning for ${table}:`, error.message); skipped += batch.length; }
+          else imported += batch.length;
         }
       }
-      const keys = new Set<string>();
-      tables.forEach((t) => (t.invalidateKeys || [t.table]).forEach((k) => keys.add(k)));
-      keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
-      if (totalImported) toast.success(`Imported ${totalImported} record${totalImported === 1 ? "" : "s"}${totalSkipped ? ` · ${totalSkipped} skipped` : ""}`);
+      invalidateAll();
+      if (imported) toast.success(`Imported ${imported} record${imported === 1 ? "" : "s"}${skipped ? ` · ${skipped} skipped` : ""}`);
       else toast.error("No records imported");
     } catch {
       toast.error("Failed to read or import file");
-    } finally {
-      setBusy("idle");
-    }
+    } finally { setBusy("idle"); }
   };
 
   return (
@@ -122,14 +190,21 @@ export function FeatureIO({ feature, tables, size = "sm" }: FeatureIOProps) {
             <ChevronDown className="h-3 w-3 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">Transfer</DropdownMenuLabel>
-          <DropdownMenuItem onClick={handleExport} className="gap-2 text-xs">
-            <Download className="h-3.5 w-3.5" /> Export as JSON
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
+          <DropdownMenuItem onClick={handleExportJson} className="gap-2 text-xs">
+            <FileJson className="h-3.5 w-3.5" /> Export as JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleExportCsv} className="gap-2 text-xs">
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Export as CSV
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => fileRef.current?.click()} className="gap-2 text-xs">
+          <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">Import</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => triggerImport("json")} className="gap-2 text-xs">
             <Upload className="h-3.5 w-3.5" /> Import from JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => triggerImport("csv")} className="gap-2 text-xs">
+            <Upload className="h-3.5 w-3.5" /> Import from CSV
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
