@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, onlineManager } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -78,14 +78,33 @@ export function useCreateTransaction() {
 
       return data;
     },
+    onMutate: async (txn) => {
+      // Optimistically prepend the new transaction so it shows immediately,
+      // even when the device is offline and the mutation is paused.
+      await qc.cancelQueries({ queryKey: ["transactions"] });
+      const previous = qc.getQueryData<any[]>(["transactions"]);
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const now = new Date().toISOString();
+      qc.setQueryData<any[]>(["transactions"], (old) => [
+        { ...txn, id: tempId, created_at: now, updated_at: now, _pending: true },
+        ...(old ?? []),
+      ]);
+      if (!onlineManager.isOnline()) {
+        toast.success("Saved locally — will sync when you're back online");
+      }
+      return { previous };
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Transaction saved");
+      if (onlineManager.isOnline()) toast.success("Transaction saved");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, _vars, ctx: any) => {
+      if (ctx?.previous) qc.setQueryData(["transactions"], ctx.previous);
+      toast.error(e.message);
+    },
   });
 }
 
