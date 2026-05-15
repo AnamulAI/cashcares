@@ -41,32 +41,69 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const PROFILE_CACHE_KEY = "mahbook:profile";
+const ROLES_CACHE_KEY = "mahbook:roles";
+
+function readCachedProfile(): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as UserProfile) : null;
+  } catch {
+    return null;
+  }
+}
+
+function readCachedRoles(): AppRole[] {
+  try {
+    const raw = localStorage.getItem(ROLES_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as AppRole[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(() => readCachedProfile());
+  const [roles, setRoles] = useState<AppRole[]>(() => readCachedRoles());
   const [loading, setLoading] = useState(true);
   const initializedRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    setProfile(data as UserProfile | null);
-    return data as UserProfile | null;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error) throw error;
+      const next = data as UserProfile | null;
+      if (next) {
+        setProfile(next);
+        try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(next)); } catch {}
+      }
+      return next;
+    } catch {
+      // Offline or transient error — keep cached profile so the app stays usable.
+      return readCachedProfile();
+    }
   }, []);
 
   const fetchRoles = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    const r = (data || []).map((d: any) => d.role as AppRole);
-    setRoles(r);
-    return r;
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      if (error) throw error;
+      const r = (data || []).map((d: any) => d.role as AppRole);
+      setRoles(r);
+      try { localStorage.setItem(ROLES_CACHE_KEY, JSON.stringify(r)); } catch {}
+      return r;
+    } catch {
+      return readCachedRoles();
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -81,6 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
+    try {
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+      localStorage.removeItem(ROLES_CACHE_KEY);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -91,9 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          // If getSession already initialized, handle subsequent auth events
           if (initializedRef.current) {
-            // Fetch profile/roles for new sign-in events
             setTimeout(async () => {
               await Promise.all([
                 fetchProfile(newSession.user.id),
@@ -111,24 +150,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // 2. Then restore existing session — this is the ONLY path that sets loading=false initially
+    // 2. Then restore existing session (works offline via local storage).
     supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
 
       if (existingSession?.user) {
-        await Promise.all([
+        // Fire-and-forget — fetchProfile/fetchRoles already swallow offline errors
+        // and fall back to cached values, so we don't block UI on the network.
+        Promise.all([
           fetchProfile(existingSession.user.id),
           fetchRoles(existingSession.user.id),
-        ]);
+        ]).catch(() => {});
       }
 
+      initializedRef.current = true;
+      setLoading(false);
+    }).catch(() => {
       initializedRef.current = true;
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, [fetchProfile, fetchRoles]);
+
 
   const isAdmin = roles.includes("admin");
   const profileComplete = isProfileComplete(profile);
