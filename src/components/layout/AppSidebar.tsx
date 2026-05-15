@@ -65,13 +65,15 @@ const systemItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
   const { isModuleLocked } = useAppContext();
   const { isAdmin } = useAuth();
   const { t } = useTranslation();
+
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
