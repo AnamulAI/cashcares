@@ -1,32 +1,70 @@
-## Goal
-Replace the flat "MB" PWA icon set with a premium 3D-styled icon matching the uploaded reference (deep navy-blue rounded squircle, beveled metallic "MB" with gold edge highlights, soft outer glow).
+# Plan: True offline support + mobile sidebar auto-close
 
-## Approach
-1. **Generate a master icon** (1024×1024 PNG, transparent background) using `imagegen` with the `premium` tier for crisp text/bevel fidelity. Prompt will describe: rounded-squircle tile, deep navy gradient, 3D extruded "MB" monogram with brushed-metal face and gold beveled edges, soft ambient glow, subtle highlight — matching the reference screenshot.
-2. **Generate a maskable variant** with extra safe-zone padding (icon centered at ~70% of canvas) so Android adaptive masks don't clip the monogram.
-3. **Resize into all required PWA + iOS sizes** via a sharp/imagemagick script:
-   - `public/icons/icon-{72,96,128,144,152,192,384,512}.png` (any purpose)
-   - `public/icons/icon-{192,512}-maskable.png` (maskable, padded source)
-   - `public/apple-touch-icon.png` (180)
-   - `public/apple-touch-icon-{120,152,167,180}.png`
-   - `public/favicon.ico` regen optional (skip unless requested)
-4. **Update `src/components/shared/BrandLogo.tsx`** so the in-app brand tile visually echoes the new icon: deeper navy gradient + subtle gold inner ring + stronger inset highlight (keeps existing API, no layout change). This keeps the app header consistent with the installed icon.
-5. **No manifest.json change needed** — sizes/paths already match. Bump SW cache version (`mahbook-v3` → `mahbook-v4`) in `public/sw.js` so installed users get the new icons on next update.
-6. **QA**: view a few of the generated PNGs to confirm the bevel/colors render, check the maskable version stays inside the safe circle.
+## Issue 1 — App breaks when offline
+
+Root causes (from screenshot + code review):
+
+1. The service worker caches `/index.html` so the shell loads, but inside the app:
+   - `AuthContext` calls `supabase.auth.getSession()` (works offline via local storage) but then `fetchProfile`/`fetchRoles` hit Supabase. Offline these throw, `profile` stays `null`, `profileComplete` becomes `false`, and `ProtectedRoute` redirects to `/complete-profile`. That route's outer chrome isn't rendered, leaving the bare "MB / You're offline" splash.
+   - Every query hook (e.g. `useTransactions`) calls `supabase.auth.getUser()` inside `queryFn`, which is a network round-trip. Offline it throws, so even though React Query has a persisted cache, the cached data never displays because the query errors immediately on mount.
+   - Mutations (`useCreateTransaction`, etc.) call Supabase directly and surface a toast error offline; nothing is queued for later sync.
+
+### Fixes
+
+**a. Persist profile + roles locally so auth survives offline**
+
+In `AuthContext.tsx`:
+- Cache the last fetched `profile` and `roles` in `localStorage` (`mahbook:profile`, `mahbook:roles`) keyed by user id.
+- On mount, hydrate `profile`/`roles` from cache immediately so `profileComplete` is correct before any network call.
+- Wrap `fetchProfile` / `fetchRoles` in try/catch so a network failure keeps the cached values instead of nulling them.
+- Clear cache on `signOut`.
+
+**b. Stop blocking queries on `supabase.auth.getUser()`**
+
+Replace the in-`queryFn` `getUser()` calls with the `user.id` already held in `AuthContext`. Add a small helper hook `useUserId()` and pass it via `enabled`/closure, e.g.:
+
+```ts
+const userId = useUserId();
+return useQuery({
+  queryKey: ["transactions", userId],
+  enabled: !!userId,
+  queryFn: async () => { /* uses userId directly */ },
+  networkMode: "offlineFirst",
+});
+```
+
+Apply to the read hooks that currently call `supabase.auth.getUser()` inside `queryFn` (`use-transactions`, and any other hook doing the same — quick `rg` sweep before editing). Persisted React Query cache (already configured in `src/lib/offline.ts`) then displays last-known data offline.
+
+**c. Queue writes while offline and auto-sync on reconnect**
+
+Enable React Query's pause-and-resume behavior for mutations:
+- In each mutation hook (`useCreateTransaction`, `useUpdateTransaction`, `useDeleteTransaction`, plus the equivalent hooks for accounts, categories, budgets, receivables, payables, savings, etc.), set `networkMode: "online"` so the mutation is paused (not failed) while offline.
+- Add an `onMutate` optimistic update for the create/update/delete cases that matter most for UX (transactions, accounts, categories) so the new entry appears immediately in the cached list. Use `queryClient.setQueryData` with a temp UUID; rollback on `onError`.
+- Toast: when offline, show `"Saved locally — will sync when you reconnect"` instead of an error. Detect via `onlineManager.isOnline()` inside `onError` (paused mutations don't fire `onError`, but for transient failures we still want the friendly message).
+- `App.tsx` already calls `queryClient.resumePausedMutations()` on hydration; also subscribe to `onlineManager` to call it whenever connectivity returns, and invalidate queries afterward so server state catches up.
+
+**d. Service worker: keep current behavior but make sure navigation always falls back**
+
+`public/sw.js` already does network-first for navigations with cached `/index.html` fallback — leave as-is. Bump `CACHE_VERSION` to `mahbook-v5` so installed users pick up the new client logic.
+
+## Issue 2 — Mobile sidebar doesn't close on navigation
+
+In `src/components/layout/AppSidebar.tsx`:
+- Pull `isMobile` and `setOpenMobile` from `useSidebar()`.
+- On every `NavLink` click (nav groups, admin link, system items), call `if (isMobile) setOpenMobile(false)`.
+
+This collapses the mobile Sheet immediately after a route is selected, matching expected behavior.
 
 ## Files touched
-- `public/icons/*.png` (overwrite all sizes)
-- `public/apple-touch-icon*.png` (overwrite)
-- `public/sw.js` (cache version bump only)
-- `src/components/shared/BrandLogo.tsx` (visual polish to match)
+
+- `src/contexts/AuthContext.tsx` — persist profile/roles, hydrate on mount, tolerate offline fetch errors.
+- `src/hooks/use-transactions.ts` and other read hooks calling `supabase.auth.getUser()` inside `queryFn` — switch to `userId` from context, add `networkMode: "offlineFirst"`.
+- All mutation hooks under `src/hooks/use-*.ts` — `networkMode: "online"`, optimistic updates for the high-traffic ones, friendlier offline toast.
+- `src/App.tsx` — resume paused mutations on `onlineManager` reconnect + invalidate queries.
+- `src/components/layout/AppSidebar.tsx` — auto-close mobile sidebar on link click.
+- `public/sw.js` — bump `CACHE_VERSION` to `mahbook-v5`.
 
 ## Out of scope
-- Manifest schema changes, new routes, splash screens, favicon.ico regen.
 
-## Question before I build
-The reference shows a **deep navy + gold** premium look, but the current brand memory specifies an **indigo→violet gradient** (`#6366f1`→violet) used across the app. Two options:
-
-- **A. Match the screenshot exactly** — navy/gold icon. The installed app icon will look distinct from the in-app indigo/violet brand tiles (slight inconsistency).
-- **B. Premium 3D in the existing indigo→violet palette** — same depth/bevel/glow treatment as the reference, but indigo/violet face with lighter violet highlights instead of gold. Keeps the whole brand system consistent.
-
-I'll ask this as a quick question after you approve the plan.
+- Building a custom IndexedDB write queue (React Query's persisted paused-mutations cover this).
+- Offline auth sign-in/sign-up (Supabase auth requires network for new sessions; existing sessions remain valid offline).
