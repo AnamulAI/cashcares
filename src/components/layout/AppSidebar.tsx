@@ -65,13 +65,15 @@ const systemItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
   const { isModuleLocked } = useAppContext();
   const { isAdmin } = useAuth();
   const { t } = useTranslation();
+
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -97,6 +99,7 @@ export function AppSidebar() {
                           <NavLink
                             to={item.url}
                             end
+                            onClick={closeOnMobile}
                             className={cn(
                               "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
                               "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
@@ -109,7 +112,7 @@ export function AppSidebar() {
                         ) : (
                           <div
                             className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground/40 cursor-pointer select-none hover:bg-sidebar-accent/50 transition-colors"
-                            onClick={() => navigate("/subscription")}
+                            onClick={() => { closeOnMobile(); navigate("/subscription"); }}
                           >
                             <item.icon className="h-[18px] w-[18px] shrink-0" />
                             {!collapsed && (
@@ -142,6 +145,7 @@ export function AppSidebar() {
                     <NavLink
                       to="/admin"
                       end
+                      onClick={closeOnMobile}
                       className={cn(
                         "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
                         "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
@@ -171,6 +175,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
+                      onClick={closeOnMobile}
                       className={cn(
                         "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-out",
                         "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5",
