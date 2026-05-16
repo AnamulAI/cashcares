@@ -363,6 +363,57 @@ export default function Settings() {
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">Seeds accounts, categories, transactions, budgets, receivables, payables, loans, assets, investments, partnerships, and reminders.</p>
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="text-xs font-medium">Offline readiness</Label>
+                  <p className="text-[11px] text-muted-foreground">Verify the service worker is installed and the app can run without internet.</p>
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 shrink-0" onClick={checkOfflineReadiness} disabled={readiness.status === "checking"}>
+                  {readiness.status === "checking" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+                  {readiness.status === "checking" ? "Checking…" : "Check status"}
+                </Button>
+              </div>
+              {readiness.status !== "idle" && (
+                <div className={
+                  "rounded-md border p-3 space-y-2.5 " +
+                  (readiness.status === "ready" ? "border-positive/30 bg-positive/5"
+                    : readiness.status === "partial" ? "border-warning/30 bg-warning/5"
+                    : readiness.status === "unavailable" ? "border-negative/30 bg-negative/5"
+                    : "border-border bg-muted/30")
+                }>
+                  <div className="flex items-center gap-2 text-xs font-medium">
+                    {readiness.status === "ready" && <><CheckCircle2 className="h-4 w-4 text-positive" /><span className="text-positive">Offline ready</span></>}
+                    {readiness.status === "partial" && <><AlertCircle className="h-4 w-4 text-warning" /><span className="text-warning">Partially ready</span></>}
+                    {readiness.status === "unavailable" && <><XCircle className="h-4 w-4 text-negative" /><span className="text-negative">Not available</span></>}
+                    {readiness.status === "checking" && <><RefreshCw className="h-4 w-4 animate-spin" /><span>Checking…</span></>}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{readiness.message}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      {readiness.swRegistered ? <CheckCircle2 className="h-3 w-3 text-positive" /> : <XCircle className="h-3 w-3 text-negative" />}
+                      <span className="text-muted-foreground">SW registered</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      {readiness.swActive ? <CheckCircle2 className="h-3 w-3 text-positive" /> : <XCircle className="h-3 w-3 text-negative" />}
+                      <span className="text-muted-foreground">SW active</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <Database className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">{readiness.cacheCount} cache{readiness.cacheCount === 1 ? "" : "s"} · {readiness.cachedItems} item{readiness.cachedItems === 1 ? "" : "s"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      {readiness.online ? <Wifi className="h-3 w-3 text-positive" /> : <WifiOff className="h-3 w-3 text-negative" />}
+                      <span className="text-muted-foreground">{readiness.online ? "Online" : "Offline"}</span>
+                    </div>
+                  </div>
+                  {readiness.checkedAt && (
+                    <p className="text-[10px] text-muted-foreground/70 pt-1">Checked {format(new Date(readiness.checkedAt), "dd MMM yyyy, HH:mm:ss")}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
