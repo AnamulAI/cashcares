@@ -49,7 +49,15 @@
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator) {
-        const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('lovable.app');
+        var host = window.location.hostname;
+        var isInIframe = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+        var isLovableEditorPreview =
+          host === 'localhost' ||
+          host === '127.0.0.1' ||
+          host.indexOf('lovableproject.com') !== -1 ||
+          host.indexOf('id-preview--') === 0 ||
+          isInIframe;
+        var isLocalPreview = isLovableEditorPreview;
 
         if (isLocalPreview) {
           navigator.serviceWorker.getRegistrations().then(function (registrations) {
