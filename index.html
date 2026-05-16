@@ -102,6 +102,7 @@
             var refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', function () {
               if (refreshing) return;
+              if (navigator.onLine === false) return;
               refreshing = true;
               window.location.reload();
             });
