@@ -36,6 +36,48 @@ export default function Settings() {
   const [versionHistory, setVersionHistory] = useState<{ version: string; seenAt: string }[]>(() => {
     try { return JSON.parse(localStorage.getItem("mahbook:sw-version-history") || "[]"); } catch { return []; }
   });
+  const [readiness, setReadiness] = useState<{
+    status: "idle" | "checking" | "ready" | "partial" | "unavailable";
+    swRegistered: boolean;
+    swActive: boolean;
+    swScope?: string;
+    cacheCount: number;
+    cachedItems: number;
+    online: boolean;
+    checkedAt?: string;
+    message: string;
+  }>({ status: "idle", swRegistered: false, swActive: false, cacheCount: 0, cachedItems: 0, online: typeof navigator !== "undefined" ? navigator.onLine : true, message: "Not checked yet." });
+
+  const checkOfflineReadiness = async () => {
+    setReadiness((r) => ({ ...r, status: "checking", message: "Checking…" }));
+    const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+    if (!("serviceWorker" in navigator)) {
+      setReadiness({ status: "unavailable", swRegistered: false, swActive: false, cacheCount: 0, cachedItems: 0, online, checkedAt: new Date().toISOString(), message: "Service workers aren't supported in this browser." });
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const swRegistered = !!reg;
+      const swActive = !!reg?.active;
+      const scope = reg?.scope;
+      let cacheCount = 0;
+      let cachedItems = 0;
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        cacheCount = keys.length;
+        const counts = await Promise.all(keys.map(async (k) => (await (await caches.open(k)).keys()).length));
+        cachedItems = counts.reduce((a, b) => a + b, 0);
+      }
+      let status: "ready" | "partial" | "unavailable" = "unavailable";
+      let message = "Offline mode is not available yet. Visit the published app online once to install it.";
+      if (swActive && cachedItems > 0) { status = "ready"; message = "Offline-ready. The app will keep working without internet."; }
+      else if (swRegistered && !swActive) { status = "partial"; message = "Service worker is installing. Reload once it finishes to enable offline mode."; }
+      else if (swActive && cachedItems === 0) { status = "partial"; message = "Service worker is active but nothing is cached yet. Browse a few pages online to populate the cache."; }
+      setReadiness({ status, swRegistered, swActive, swScope: scope, cacheCount, cachedItems, online, checkedAt: new Date().toISOString(), message });
+    } catch (e: any) {
+      setReadiness({ status: "unavailable", swRegistered: false, swActive: false, cacheCount: 0, cachedItems: 0, online, checkedAt: new Date().toISOString(), message: e?.message || "Couldn't read service worker status." });
+    }
+  };
 
   const recordVersion = (v: string) => {
     if (!v || ["unsupported", "not installed", "unknown", "checking…"].includes(v)) return;
