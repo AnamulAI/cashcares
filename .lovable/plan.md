@@ -1,70 +1,109 @@
-# Plan: True offline support + mobile sidebar auto-close
+# Why offline mode isn't working on the deployed app
 
-## Issue 1 — App breaks when offline
+Root cause is in `index.html` (lines 51–67):
 
-Root causes (from screenshot + code review):
+```js
+const isLocalPreview =
+  ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  || window.location.hostname.includes('lovableproject.com')
+  || window.location.hostname.includes('lovable.app');   // <-- this line
 
-1. The service worker caches `/index.html` so the shell loads, but inside the app:
-   - `AuthContext` calls `supabase.auth.getSession()` (works offline via local storage) but then `fetchProfile`/`fetchRoles` hit Supabase. Offline these throw, `profile` stays `null`, `profileComplete` becomes `false`, and `ProtectedRoute` redirects to `/complete-profile`. That route's outer chrome isn't rendered, leaving the bare "MB / You're offline" splash.
-   - Every query hook (e.g. `useTransactions`) calls `supabase.auth.getUser()` inside `queryFn`, which is a network round-trip. Offline it throws, so even though React Query has a persisted cache, the cached data never displays because the query errors immediately on mount.
-   - Mutations (`useCreateTransaction`, etc.) call Supabase directly and surface a toast error offline; nothing is queued for later sync.
+if (isLocalPreview) {
+  // unregister all SWs + delete mahbook-* caches
+}
+```
 
-### Fixes
+The published site lives at `https://mahbooks.lovable.app`. Because the host
+contains `lovable.app`, the bootstrap code treats it as a preview and
+**actively unregisters the service worker and wipes the caches on every
+load**. So:
 
-**a. Persist profile + roles locally so auth survives offline**
+- `/sw.js` never stays registered on the deployed PWA.
+- `caches` named `mahbook-v5-*` are deleted immediately.
+- When the device goes offline, there's no SW to serve `/index.html` or
+  cached assets, and the browser falls back to its native "You're offline"
+  screen — exactly what the screenshot shows.
 
-In `AuthContext.tsx`:
-- Cache the last fetched `profile` and `roles` in `localStorage` (`mahbook:profile`, `mahbook:roles`) keyed by user id.
-- On mount, hydrate `profile`/`roles` from cache immediately so `profileComplete` is correct before any network call.
-- Wrap `fetchProfile` / `fetchRoles` in try/catch so a network failure keeps the cached values instead of nulling them.
-- Clear cache on `signOut`.
+The SW + offline-first React Query work we shipped is fine; it just never
+gets a chance to run in production.
 
-**b. Stop blocking queries on `supabase.auth.getUser()`**
+A secondary issue: the `controllerchange` handler unconditionally calls
+`window.location.reload()`. If a new SW activates while the device is
+offline, the reload fails and the user is stuck on the browser's offline
+page. We should skip the reload when `navigator.onLine === false`.
 
-Replace the in-`queryFn` `getUser()` calls with the `user.id` already held in `AuthContext`. Add a small helper hook `useUserId()` and pass it via `enabled`/closure, e.g.:
+# Plan
 
-```ts
-const userId = useUserId();
-return useQuery({
-  queryKey: ["transactions", userId],
-  enabled: !!userId,
-  queryFn: async () => { /* uses userId directly */ },
-  networkMode: "offlineFirst",
+### 1. `index.html` — only treat true preview hosts as "local preview"
+
+Tighten the check so we keep unregistering the SW in the Lovable editor
+preview (which runs inside an iframe and on `id-preview--*.lovable.app` /
+`*.lovableproject.com`), but **register normally on the published custom
+subdomain** (e.g. `mahbooks.lovable.app`, custom domains).
+
+```js
+const host = window.location.hostname;
+const isInIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+const isLovableEditorPreview =
+  host === 'localhost' ||
+  host === '127.0.0.1' ||
+  host.includes('lovableproject.com') ||
+  host.startsWith('id-preview--') ||      // editor preview subdomains
+  isInIframe;                              // any iframe context (covers editor)
+
+if (isLovableEditorPreview) {
+  // existing unregister + cache cleanup
+} else {
+  window.addEventListener('load', /* existing register('/sw.js') flow */);
+}
+```
+
+This keeps the editor preview clean (per Lovable PWA guidance) while
+letting the published `mahbooks.lovable.app` domain install and keep the
+service worker.
+
+### 2. `index.html` — don't reload on `controllerchange` while offline
+
+```js
+navigator.serviceWorker.addEventListener('controllerchange', function () {
+  if (refreshing) return;
+  if (navigator.onLine === false) return;   // <-- new guard
+  refreshing = true;
+  window.location.reload();
 });
 ```
 
-Apply to the read hooks that currently call `supabase.auth.getUser()` inside `queryFn` (`use-transactions`, and any other hook doing the same — quick `rg` sweep before editing). Persisted React Query cache (already configured in `src/lib/offline.ts`) then displays last-known data offline.
+Prevents the white "You're offline" screen if the SW updates mid-session
+without connectivity.
 
-**c. Queue writes while offline and auto-sync on reconnect**
+### 3. `public/sw.js` — bump cache version to `mahbook-v6`
 
-Enable React Query's pause-and-resume behavior for mutations:
-- In each mutation hook (`useCreateTransaction`, `useUpdateTransaction`, `useDeleteTransaction`, plus the equivalent hooks for accounts, categories, budgets, receivables, payables, savings, etc.), set `networkMode: "online"` so the mutation is paused (not failed) while offline.
-- Add an `onMutate` optimistic update for the create/update/delete cases that matter most for UX (transactions, accounts, categories) so the new entry appears immediately in the cached list. Use `queryClient.setQueryData` with a temp UUID; rollback on `onError`.
-- Toast: when offline, show `"Saved locally — will sync when you reconnect"` instead of an error. Detect via `onlineManager.isOnline()` inside `onError` (paused mutations don't fire `onError`, but for transient failures we still want the friendly message).
-- `App.tsx` already calls `queryClient.resumePausedMutations()` on hydration; also subscribe to `onlineManager` to call it whenever connectivity returns, and invalidate queries afterward so server state catches up.
+So returning users force-evict any stale `mahbook-v5` shell and pick up
+the corrected client logic on next visit.
 
-**d. Service worker: keep current behavior but make sure navigation always falls back**
+### 4. Verification steps to share with the user
 
-`public/sw.js` already does network-first for navigations with cached `/index.html` fallback — leave as-is. Bump `CACHE_VERSION` to `mahbook-v5` so installed users pick up the new client logic.
+After deploy, on `https://mahbooks.lovable.app`:
 
-## Issue 2 — Mobile sidebar doesn't close on navigation
-
-In `src/components/layout/AppSidebar.tsx`:
-- Pull `isMobile` and `setOpenMobile` from `useSidebar()`.
-- On every `NavLink` click (nav groups, admin link, system items), call `if (isMobile) setOpenMobile(false)`.
-
-This collapses the mobile Sheet immediately after a route is selected, matching expected behavior.
+1. Load the app once online → DevTools › Application › Service Workers
+   should now show `sw.js` as **activated and running**, and
+   Cache Storage should contain `mahbook-v6-shell` / `mahbook-v6-assets`.
+2. DevTools › Network → set to **Offline**, hard-refresh: the app shell
+   should load, `OfflineBanner` should show the red "You're offline" bar,
+   and cached transactions/accounts should still render.
+3. Add a transaction while offline → it appears optimistically with the
+   "Saved locally — will sync when you're back online" toast.
+4. Toggle Network back to **Online** → amber "Syncing N changes…" banner,
+   then green "All changes synced."
 
 ## Files touched
 
-- `src/contexts/AuthContext.tsx` — persist profile/roles, hydrate on mount, tolerate offline fetch errors.
-- `src/hooks/use-transactions.ts` and other read hooks calling `supabase.auth.getUser()` inside `queryFn` — switch to `userId` from context, add `networkMode: "offlineFirst"`.
-- All mutation hooks under `src/hooks/use-*.ts` — `networkMode: "online"`, optimistic updates for the high-traffic ones, friendlier offline toast.
-- `src/App.tsx` — resume paused mutations on `onlineManager` reconnect + invalidate queries.
-- `src/components/layout/AppSidebar.tsx` — auto-close mobile sidebar on link click.
-- `public/sw.js` — bump `CACHE_VERSION` to `mahbook-v5`.
+- `index.html` — narrow the preview check; guard the reload.
+- `public/sw.js` — `CACHE_VERSION = 'mahbook-v6'`.
 
 ## Out of scope
 
-- Building a custom IndexedDB write queue (React Query's persisted paused-mutations cover this).
-- Offline auth sign-in/sign-up (Supabase auth requires network for new sessions; existing sessions remain valid offline).
+- Editor preview offline support (intentionally disabled per Lovable PWA
+  guidance — service workers in iframes cause stale-content problems).
+- Any changes to `AuthContext`, React Query config, or `OfflineBanner` —
+  those already work, they just need the SW alive in production.

@@ -1,5 +1,5 @@
 // MahBook service worker — offline-first shell with safe handling of Vite chunks.
-const CACHE_VERSION = 'mahbook-v5';
+const CACHE_VERSION = 'mahbook-v6';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 
