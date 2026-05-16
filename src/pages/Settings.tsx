@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2, RotateCw } from "lucide-react";
+import { Globe, Bell, Palette, Shield, Database, Download, Upload, RefreshCw, Monitor, Sun, Moon, FlaskConical, Trash2, RotateCw, CheckCircle2, XCircle, AlertCircle, WifiOff, Wifi } from "lucide-react";
 import { useAppContext, CURRENCIES, type DatePreset } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTransactions } from "@/hooks/use-transactions";
@@ -36,6 +36,48 @@ export default function Settings() {
   const [versionHistory, setVersionHistory] = useState<{ version: string; seenAt: string }[]>(() => {
     try { return JSON.parse(localStorage.getItem("mahbook:sw-version-history") || "[]"); } catch { return []; }
   });
+  const [readiness, setReadiness] = useState<{
+    status: "idle" | "checking" | "ready" | "partial" | "unavailable";
+    swRegistered: boolean;
+    swActive: boolean;
+    swScope?: string;
+    cacheCount: number;
+    cachedItems: number;
+    online: boolean;
+    checkedAt?: string;
+    message: string;
+  }>({ status: "idle", swRegistered: false, swActive: false, cacheCount: 0, cachedItems: 0, online: typeof navigator !== "undefined" ? navigator.onLine : true, message: "Not checked yet." });
+
+  const checkOfflineReadiness = async () => {
+    setReadiness((r) => ({ ...r, status: "checking", message: "Checking…" }));
+    const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+    if (!("serviceWorker" in navigator)) {
+      setReadiness({ status: "unavailable", swRegistered: false, swActive: false, cacheCount: 0, cachedItems: 0, online, checkedAt: new Date().toISOString(), message: "Service workers aren't supported in this browser." });
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const swRegistered = !!reg;
+      const swActive = !!reg?.active;
+      const scope = reg?.scope;
+      let cacheCount = 0;
+      let cachedItems = 0;
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        cacheCount = keys.length;
+        const counts = await Promise.all(keys.map(async (k) => (await (await caches.open(k)).keys()).length));
+        cachedItems = counts.reduce((a, b) => a + b, 0);
+      }
+      let status: "ready" | "partial" | "unavailable" = "unavailable";
+      let message = "Offline mode is not available yet. Visit the published app online once to install it.";
+      if (swActive && cachedItems > 0) { status = "ready"; message = "Offline-ready. The app will keep working without internet."; }
+      else if (swRegistered && !swActive) { status = "partial"; message = "Service worker is installing. Reload once it finishes to enable offline mode."; }
+      else if (swActive && cachedItems === 0) { status = "partial"; message = "Service worker is active but nothing is cached yet. Browse a few pages online to populate the cache."; }
+      setReadiness({ status, swRegistered, swActive, swScope: scope, cacheCount, cachedItems, online, checkedAt: new Date().toISOString(), message });
+    } catch (e: any) {
+      setReadiness({ status: "unavailable", swRegistered: false, swActive: false, cacheCount: 0, cachedItems: 0, online, checkedAt: new Date().toISOString(), message: e?.message || "Couldn't read service worker status." });
+    }
+  };
 
   const recordVersion = (v: string) => {
     if (!v || ["unsupported", "not installed", "unknown", "checking…"].includes(v)) return;
@@ -375,6 +417,57 @@ export default function Settings() {
                     </li>
                   ))}
                 </ul>
+              )}
+            </div>
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="text-xs font-medium">Offline readiness</Label>
+                  <p className="text-[11px] text-muted-foreground">Verify the service worker is installed and the app can run without internet.</p>
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 shrink-0" onClick={checkOfflineReadiness} disabled={readiness.status === "checking"}>
+                  {readiness.status === "checking" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+                  {readiness.status === "checking" ? "Checking…" : "Check status"}
+                </Button>
+              </div>
+              {readiness.status !== "idle" && (
+                <div className={
+                  "rounded-md border p-3 space-y-2.5 " +
+                  (readiness.status === "ready" ? "border-positive/30 bg-positive/5"
+                    : readiness.status === "partial" ? "border-warning/30 bg-warning/5"
+                    : readiness.status === "unavailable" ? "border-negative/30 bg-negative/5"
+                    : "border-border bg-muted/30")
+                }>
+                  <div className="flex items-center gap-2 text-xs font-medium">
+                    {readiness.status === "ready" && <><CheckCircle2 className="h-4 w-4 text-positive" /><span className="text-positive">Offline ready</span></>}
+                    {readiness.status === "partial" && <><AlertCircle className="h-4 w-4 text-warning" /><span className="text-warning">Partially ready</span></>}
+                    {readiness.status === "unavailable" && <><XCircle className="h-4 w-4 text-negative" /><span className="text-negative">Not available</span></>}
+                    {readiness.status === "checking" && <><RefreshCw className="h-4 w-4 animate-spin" /><span>Checking…</span></>}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{readiness.message}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      {readiness.swRegistered ? <CheckCircle2 className="h-3 w-3 text-positive" /> : <XCircle className="h-3 w-3 text-negative" />}
+                      <span className="text-muted-foreground">SW registered</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      {readiness.swActive ? <CheckCircle2 className="h-3 w-3 text-positive" /> : <XCircle className="h-3 w-3 text-negative" />}
+                      <span className="text-muted-foreground">SW active</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <Database className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">{readiness.cacheCount} cache{readiness.cacheCount === 1 ? "" : "s"} · {readiness.cachedItems} item{readiness.cachedItems === 1 ? "" : "s"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      {readiness.online ? <Wifi className="h-3 w-3 text-positive" /> : <WifiOff className="h-3 w-3 text-negative" />}
+                      <span className="text-muted-foreground">{readiness.online ? "Online" : "Offline"}</span>
+                    </div>
+                  </div>
+                  {readiness.checkedAt && (
+                    <p className="text-[10px] text-muted-foreground/70 pt-1">Checked {format(new Date(readiness.checkedAt), "dd MMM yyyy, HH:mm:ss")}</p>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>
