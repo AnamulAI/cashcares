@@ -53,20 +53,15 @@ function readCachedProfile(): UserProfile | null {
   }
 }
 
-function readCachedRoles(): AppRole[] {
-  try {
-    const raw = localStorage.getItem(ROLES_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as AppRole[]) : [];
-  } catch {
-    return [];
-  }
-}
+// SECURITY: roles are never seeded from localStorage. A user could otherwise
+// edit localStorage to render the admin UI before the server query resolves.
+// Roles must always come from the server.
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => readCachedProfile());
-  const [roles, setRoles] = useState<AppRole[]>(() => readCachedRoles());
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const initializedRef = useRef(false);
 
@@ -99,10 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       const r = (data || []).map((d: any) => d.role as AppRole);
       setRoles(r);
-      try { localStorage.setItem(ROLES_CACHE_KEY, JSON.stringify(r)); } catch {}
       return r;
     } catch {
-      return readCachedRoles();
+      // On offline/error, do not grant any role. RLS is the authoritative gate.
+      return [];
     }
   }, []);
 
