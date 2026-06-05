@@ -35,6 +35,7 @@ import SavingsLedger from "./pages/SavingsLedger";
 import Partnerships from "./pages/Partnerships";
 import PartnershipLedger from "./pages/PartnershipLedger";
 import Reminders from "./pages/Reminders";
+import Mohorana from "./pages/Mohorana";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="/savings/:id" element={<PremiumRoute><SavingsLedger /></PremiumRoute>} />
             <Route path="/partnerships" element={<PremiumRoute><Partnerships /></PremiumRoute>} />
             <Route path="/partnerships/:id" element={<PremiumRoute><PartnershipLedger /></PremiumRoute>} />
+            <Route path="/mohorana" element={<PremiumRoute><Mohorana /></PremiumRoute>} />
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Route>
