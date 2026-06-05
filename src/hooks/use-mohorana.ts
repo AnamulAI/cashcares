@@ -37,6 +37,25 @@ export function useMohoranaRecords() {
   });
 }
 
+export function useMohoranaRecord(id?: string) {
+  return useQuery({
+    queryKey: ["mohorana_records", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const { data, error } = await (supabase as any)
+        .from("mohorana_records")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as MohoranaRecord | null;
+    },
+  });
+}
+
 export function useCreateMohoranaRecord() {
   const qc = useQueryClient();
   return useMutation({

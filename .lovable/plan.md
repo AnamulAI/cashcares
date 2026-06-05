@@ -1,88 +1,41 @@
-# মোহরানা (Mohorana) Module
+# Mohorana → Book-Style UI/UX (Payables/Partnerships এর মতো)
 
-স্ত্রীর মোহরানা/দেনমোহরের নির্ধারিত অঙ্ক ও ধাপে ধাপে পরিশোধের সম্পূর্ণ ইতিহাস রাখার জন্য একটি স্বাধীন প্রিমিয়াম মডিউল।
+বর্তমানে Mohorana একটি 2-column card grid যেখানে detail একটি modal এ খোলে। Payables/Partnerships এর মতো "book/ledger" pattern এ নিয়ে আসব — list rows + আলাদা ledger page।
 
-## Scope
+## কী পরিবর্তন হবে
 
-- Sidebar-এ "মোহরানা" নামে নতুন পেজ (`/mohorana`)
-- PremiumRoute দিয়ে গার্ড — শুধু premium ব্যবহারকারীর জন্য
-- সম্পূর্ণ স্বাধীন লেজার — কোনো account balance বা transaction-এ প্রভাব পড়বে না
-- বহুবিবাহ সমর্থন: একাধিক মোহরানা রেকর্ড করা যাবে (প্রতিটি স্ত্রীর জন্য আলাদা)
+### 1. `src/pages/Mohorana.tsx` — Book-style list
+- **Header**: `FeatureIO` (export/import) যোগ + `Add Record` button (Payables এর মতো)
+- **Stats**: ৩টি FinanceCard থেকে বাড়িয়ে ৪টি — Total Committed, Total Paid, Total Remaining, **Active Records** (Payables এর "Open Books" এর মতো)
+- **Filter bar**: Search (স্ত্রীর নাম), Status select (all/active/completed/archived), Reset button
+- **Bulk select**: প্রতি row এ Checkbox + `BulkActionBar` + bulk delete confirm
+- **List**: 2-column grid বাদ → **single-column row cards** (Payables এর মতো):
+  - বাঁয়ে: Checkbox + icon tile (HeartHandshake)
+  - মাঝে: spouse_name + status badge + marriage date + "X payments · Created …"
+  - ডানে (sm+): Total / Paid / Remaining (Payables এর সংখ্যা layout এর মতো)
+  - শেষে: DropdownMenu — **Open Ledger**, Edit, Add Payment, Delete
+- Detail modal বাদ — row click → navigate `/mohorana/:id`
+- Empty state, skeleton, premium-locked block অপরিবর্তিত (style match থাকবে)
 
-## Data model (2 new tables)
+### 2. নতুন page `src/pages/MohoranaLedger.tsx` (PayableLedger এর প্যাটার্ন)
+- Back button + spouse name header + status badge
+- Summary cards: Total, Muajjal, Muakhkhar, Paid, Remaining, Progress %
+- Muajjal/Muakhkhar breakdown card + overall Progress bar
+- **Payment History table/list** (date, amount, type, account ref, note, actions)
+- `Add Payment` button → existing `AddPaymentModal`
+- Edit record, delete record actions (header dropdown)
 
-### `mohorana_records`
-এক মোহরানার মূল তথ্য:
-- `spouse_name` (স্ত্রীর নাম)
-- `marriage_date` (বিবাহের তারিখ)
-- `currency` (BDT/USD/…)
-- `total_amount` (মোট মোহরানা)
-- `muajjal_amount` (নগদ/মুয়াজ্জাল ভাগ)
-- `muakhkhar_amount` (বাকি/মুআখখার ভাগ)
-- `note` (বিবরণ)
-- `attachment_path` (কাবিননামা ইত্যাদি — `ledger-attachments` bucket-এ)
-- `status` ('active' | 'completed' | 'archived')
+### 3. Route যোগ
+- `src/App.tsx` — `/mohorana/:id` → `MohoranaLedger` (PremiumRoute এ)
 
-### `mohorana_payments`
-প্রতিটি কিস্তির ইতিহাস:
-- `record_id` → mohorana_records
-- `paid_on` (তারিখ)
-- `amount` (অঙ্ক)
-- `account_id` (কোন অ্যাকাউন্ট থেকে — শুধু রেফারেন্স, balance touch হবে না, nullable)
-- `payment_type` ('muajjal' | 'muakhkhar' | 'general')
-- `note`
-- `attachment_path` (রসিদ — optional)
+### 4. ছোট refactor
+- `MohoranaDetailModal.tsx` — আর route থেকে ব্যবহৃত হবে না, তবে ফাইল রাখা হবে (backward-safe); future cleanup এর জন্য রেখে দেওয়া যায়। যদি চান, পুরোপুরি delete করব।
+- existing hooks (`use-mohorana`, `use-mohorana-payments`) যেমন আছে তেমনই কাজ করবে — কোনো schema change নেই।
 
-দুটি টেবিলেই `user_id`, `created_at`, `updated_at` থাকবে; RLS দিয়ে শুধু owner access; `updated_at` trigger।
+## Scope এর বাইরে
+- DB schema, hooks, business logic — কিছুই বদলাবে না
+- Account balance impact যোগ হবে না (আগের মতোই reference-only)
+- Attachment upload UI এই পর্বে নয়
 
-## UI
-
-### Page (`src/pages/Mohorana.tsx`)
-- PageHeader: "মোহরানা" + "মোট মোহরানা ও পরিশোধ ট্র্যাকিং" + "নতুন মোহরানা যোগ করুন" button
-- Summary stat-row: মোট নির্ধারিত / মোট পরিশোধিত / অবশিষ্ট
-- প্রতিটি record-এর জন্য কার্ড:
-  - স্ত্রীর নাম, বিবাহের তারিখ, status badge
-  - Progress bar: paid / total
-  - মুয়াজ্জাল ও মুআখখার আলাদা breakdown
-  - "বিস্তারিত" → centered Dialog
-- Empty state ("এখনও কোনো মোহরানা যোগ করা হয়নি")
-
-### Modals (centered Dialog, max-h-[90vh] overflow-y-auto)
-- **AddMohoranaModal** — record তৈরি/সম্পাদনা, attachment upload
-- **MohoranaDetailModal** — full info, payment history list, "পরিশোধ যোগ করুন" button, summary, attachment download
-- **AddPaymentModal** — কিস্তি যোগ/সম্পাদনা (amount, date, account select, type, note, attachment)
-- **ConfirmDialog** — delete confirmation (existing component reuse)
-
-### Hooks (`src/hooks/`)
-- `use-mohorana.ts` — list/create/update/delete records (React Query)
-- `use-mohorana-payments.ts` — per-record payments list/create/update/delete
-
-### Sidebar (`src/components/layout/AppSidebar.tsx`)
-নতুন nav-item "মোহরানা" (icon: HeartHandshake বা Gem, feature-color: indigo→pink gradient), Premium section-এ।
-
-### Routing (`src/App.tsx`)
-`<Route path="/mohorana" element={<PremiumRoute><Mohorana /></PremiumRoute>} />`
-
-### i18n (`src/i18n/translations.ts`)
-নতুন keys: `nav.mohorana`, `mohorana.title`, `mohorana.subtitle`, `mohorana.total`, `mohorana.paid`, `mohorana.remaining`, `mohorana.muajjal`, `mohorana.muakhkhar`, `mohorana.spouseName`, `mohorana.marriageDate`, `mohorana.addRecord`, `mohorana.addPayment`, `mohorana.paymentHistory`, `mohorana.status.active|completed|archived` ইত্যাদি (en + bn)।
-
-## Out of scope
-- কোনো auto-expense বা account balance ইন্টিগ্রেশন নেই (user choice অনুযায়ী)
-- Recurring reminder/notification এই plan-এ নেই (পরে যোগ করা যাবে)
-- Dashboard widget এই plan-এ নেই
-
-## Files to create
-- `supabase/migrations/...` — দুটি table + RLS + GRANTs + updated_at triggers
-- `src/pages/Mohorana.tsx`
-- `src/components/mohorana/MohoranaCard.tsx`
-- `src/components/mohorana/AddMohoranaModal.tsx`
-- `src/components/mohorana/MohoranaDetailModal.tsx`
-- `src/components/mohorana/AddPaymentModal.tsx`
-- `src/hooks/use-mohorana.ts`
-- `src/hooks/use-mohorana-payments.ts`
-
-## Files to edit
-- `src/App.tsx` — route যোগ
-- `src/components/layout/AppSidebar.tsx` — nav-item
-- `src/i18n/translations.ts` — labels
-- `src/config/feature-colors.ts` — mohorana color token
+## প্রশ্ন
+1. `MohoranaDetailModal.tsx` কি **delete করে দেব**, নাকি ফাইল রেখে দেব (unused)?
