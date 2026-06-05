@@ -115,7 +115,7 @@ function loadNotifications(): AppNotification[] {
 // --- Premium / Plan ---
 export type PlanType = "free" | "monthly" | "yearly" | "lifetime";
 
-export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments", "partnerships"] as const;
+export const PREMIUM_MODULES = ["receivables", "payables", "debt-loans", "assets", "investments", "partnerships", "mohorana"] as const;
 
 // --- Settings ---
 export interface AppSettings {
