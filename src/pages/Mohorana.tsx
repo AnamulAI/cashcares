@@ -37,7 +37,6 @@ export default function Mohorana() {
   const navigate = useNavigate();
   const { data: records = [], isLoading } = useMohoranaRecords();
   const { data: allPayments = [] } = useMohoranaPayments();
-  const { data: allPayments = [] } = useMohoranaPayments();
   const { data: allAdjustments = [] } = useMohoranaAdjustments();
   const deleteMut = useDeleteMohoranaRecord();
 
