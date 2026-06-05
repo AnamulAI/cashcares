@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMohoranaRecords, useDeleteMohoranaRecord, MohoranaRecord } from "@/hooks/use-mohorana";
 import { useMohoranaPayments } from "@/hooks/use-mohorana-payments";
+import { useMohoranaAdjustments } from "@/hooks/use-mohorana-adjustments";
 import { AddMohoranaModal } from "@/components/mohorana/AddMohoranaModal";
 import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -36,6 +37,7 @@ export default function Mohorana() {
   const navigate = useNavigate();
   const { data: records = [], isLoading } = useMohoranaRecords();
   const { data: allPayments = [] } = useMohoranaPayments();
+  const { data: allAdjustments = [] } = useMohoranaAdjustments();
   const deleteMut = useDeleteMohoranaRecord();
 
   const [addOpen, setAddOpen] = useState(false);
@@ -57,14 +59,22 @@ export default function Mohorana() {
     return map;
   }, [allPayments]);
 
+  const adjustmentsByRecord = useMemo(() => {
+    const map: Record<string, number> = {};
+    allAdjustments.forEach(a => {
+      map[a.record_id] = (map[a.record_id] || 0) + Number(a.amount);
+    });
+    return map;
+  }, [allAdjustments]);
+
   const totals = useMemo(() => {
     let total = 0, paid = 0;
     records.forEach(r => {
-      total += Number(r.total_amount);
+      total += Number(r.total_amount) + (adjustmentsByRecord[r.id] || 0);
       paid += paidByRecord[r.id]?.paid || 0;
     });
     return { total, paid, remaining: Math.max(0, total - paid), active: records.filter(r => r.status === "active").length };
-  }, [records, paidByRecord]);
+  }, [records, paidByRecord, adjustmentsByRecord]);
 
   const filtered = useMemo(() => records.filter(r => {
     if (statusFilter !== "all" && r.status !== statusFilter) return false;
@@ -167,7 +177,8 @@ export default function Mohorana() {
             const recordCurrency = CURRENCIES.find(c => c.code === r.currency) || currency;
             const recordFmt = (n: number) => formatAmount(n, recordCurrency, lang);
             const agg = paidByRecord[r.id] || { paid: 0, count: 0 };
-            const total = Number(r.total_amount);
+            const adj = adjustmentsByRecord[r.id] || 0;
+            const total = Number(r.total_amount) + adj;
             const remaining = Math.max(0, total - agg.paid);
             return (
               <Card key={r.id} className="finance-card-static p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/mohorana/${r.id}`)}>
@@ -189,7 +200,7 @@ export default function Mohorana() {
                     </p>
                   </div>
                   <div className="text-right shrink-0 hidden sm:block">
-                    <p className="text-xs text-muted-foreground">{t("mohorana.total")}: {recordFmt(total)}</p>
+                    <p className="text-xs text-muted-foreground">{t("mohorana.totalLiability", "Total Liability")}: {recordFmt(total)}{adj > 0 ? ` (+${recordFmt(adj)})` : ""}</p>
                     <p className="text-xs text-positive">{t("mohorana.paid")}: {recordFmt(agg.paid)}</p>
                     <p className="text-sm font-bold mt-0.5">{t("mohorana.remaining")}: {recordFmt(remaining)}</p>
                   </div>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckCircle2, AlertTriangle, Calendar, Download, Printer } from "lucide-react";
+import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckCircle2, AlertTriangle, Calendar, Download, Printer, TrendingUp } from "lucide-react";
 import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/PrintStatementHeader";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
@@ -15,12 +15,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMohoranaRecord, useDeleteMohoranaRecord } from "@/hooks/use-mohorana";
 import { useMohoranaPayments, useDeleteMohoranaPayment, MohoranaPayment } from "@/hooks/use-mohorana-payments";
+import { useMohoranaAdjustments, useDeleteMohoranaAdjustment, MohoranaAdjustment } from "@/hooks/use-mohorana-adjustments";
 import { useAccounts } from "@/hooks/use-accounts";
 import { AddMohoranaModal } from "@/components/mohorana/AddMohoranaModal";
 import { AddPaymentModal } from "@/components/mohorana/AddPaymentModal";
+import { AddAdjustmentModal } from "@/components/mohorana/AddAdjustmentModal";
 import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
+
+const REASON_LABELS: Record<string, { key: string; fallback: string }> = {
+  gold_sold: { key: "mohorana.reasonGoldSold", fallback: "Sold spouse's gold" },
+  emergency_loan: { key: "mohorana.reasonEmergency", fallback: "Emergency loan" },
+  debt_repayment: { key: "mohorana.reasonDebtRepay", fallback: "Used for debt repayment" },
+  other: { key: "mohorana.reasonOther", fallback: "Other" },
+};
 
 const statusBadge: Record<string, string> = {
   active: "bg-primary/10 text-primary",
@@ -35,14 +44,19 @@ export default function MohoranaLedger() {
   const { t, lang } = useTranslation();
   const { data: record, isLoading } = useMohoranaRecord(id);
   const { data: payments = [] } = useMohoranaPayments(id);
+  const { data: adjustments = [] } = useMohoranaAdjustments(id);
   const { data: accounts = [] } = useAccounts();
   const deleteRecordMut = useDeleteMohoranaRecord();
   const deletePaymentMut = useDeleteMohoranaPayment();
+  const deleteAdjustmentMut = useDeleteMohoranaAdjustment();
 
   const [editOpen, setEditOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
+  const [adjOpen, setAdjOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<MohoranaPayment | null>(null);
+  const [editingAdjustment, setEditingAdjustment] = useState<MohoranaAdjustment | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [deleteAdjustmentId, setDeleteAdjustmentId] = useState<string | null>(null);
   const [deleteRecordOpen, setDeleteRecordOpen] = useState(false);
 
   const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a.name])), [accounts]);
@@ -56,8 +70,9 @@ export default function MohoranaLedger() {
     const paid = payments.reduce((s, p) => s + Number(p.amount), 0);
     const muajjalPaid = payments.filter(p => p.payment_type === "muajjal").reduce((s, p) => s + Number(p.amount), 0);
     const muakhkharPaid = payments.filter(p => p.payment_type === "muakhkhar").reduce((s, p) => s + Number(p.amount), 0);
-    return { paid, muajjalPaid, muakhkharPaid };
-  }, [payments]);
+    const adjustmentsTotal = adjustments.reduce((s, a) => s + Number(a.amount), 0);
+    return { paid, muajjalPaid, muakhkharPaid, adjustmentsTotal };
+  }, [payments, adjustments]);
 
   const fmt = (n: number) => formatAmount(n, recordCurrency, lang);
   const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
@@ -70,11 +85,13 @@ export default function MohoranaLedger() {
     </div>
   );
 
-  const total = Number(record.total_amount);
-  const remaining = Math.max(0, total - totals.paid);
-  const pct = total > 0 ? Math.min(100, (totals.paid / total) * 100) : 0;
+  const baseTotal = Number(record.total_amount);
+  const totalLiability = baseTotal + totals.adjustmentsTotal;
+  const remaining = Math.max(0, totalLiability - totals.paid);
+  const pct = totalLiability > 0 ? Math.min(100, (totals.paid / totalLiability) * 100) : 0;
 
   const openEditPayment = (p?: MohoranaPayment) => { setEditingPayment(p || null); setPayOpen(true); };
+  const openEditAdjustment = (a?: MohoranaAdjustment) => { setEditingAdjustment(a || null); setAdjOpen(true); };
 
   const handlePrint = () => window.print();
   const handleCSV = () => {
@@ -114,7 +131,9 @@ export default function MohoranaLedger() {
           ...(record.note ? [{ label: "Note", value: record.note, fullWidth: true }] : []),
         ]}
         summary={[
-          { label: "Total Mohorana", value: fmt(total) },
+          { label: "Base Mohorana", value: fmt(baseTotal) },
+          { label: "Adjustments", value: fmt(totals.adjustmentsTotal) },
+          { label: "Total Liability", value: fmt(totalLiability) },
           { label: "Total Paid", value: fmt(totals.paid) },
           { label: "Remaining", value: fmt(remaining) },
           { label: "Progress", value: `${Math.round(pct)}%` },
@@ -139,6 +158,9 @@ export default function MohoranaLedger() {
             </Badge>
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> {t("action.edit")}
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEditAdjustment()}>
+              <TrendingUp className="h-4 w-4" /> {t("mohorana.addAdjustment", "Add Debt")}
             </Button>
             <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openEditPayment()}>
               <Plus className="h-4 w-4" /> {t("mohorana.addPayment")}
@@ -165,8 +187,9 @@ export default function MohoranaLedger() {
       </div>
 
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<HeartHandshake className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.total")} value={fmt(total)} />
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <FinanceCard icon={<HeartHandshake className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.totalLiability", "Total Liability")} value={fmt(totalLiability)} />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("mohorana.adjustments", "Adjustments")} value={fmt(totals.adjustmentsTotal)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("mohorana.paid")} value={fmt(totals.paid)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("mohorana.remaining")} value={fmt(remaining)} />
         <FinanceCard icon={<Calendar className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.progress")} value={`${Math.round(pct)}%`} />
@@ -177,7 +200,7 @@ export default function MohoranaLedger() {
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-muted-foreground">{t("mohorana.progress")}</span>
-              <span className="font-medium">{fmt(totals.paid)} / {fmt(total)}</span>
+              <span className="font-medium">{fmt(totals.paid)} / {fmt(totalLiability)}</span>
             </div>
             <Progress value={pct} className="h-2" />
           </div>
@@ -263,8 +286,63 @@ export default function MohoranaLedger() {
         </Card>
       )}
 
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">{t("mohorana.adjustmentHistory", "Adjustment / Debt History")}</h3>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEditAdjustment()}>
+          <Plus className="h-4 w-4" /> {t("mohorana.addAdjustment", "Add Debt")}
+        </Button>
+      </div>
+
+      {adjustments.length === 0 ? (
+        <Card className="finance-card-static p-6 text-center">
+          <p className="text-muted-foreground text-xs">{t("mohorana.noAdjustments", "No adjustments yet. Use this to record extra debts you owe your spouse (e.g. sold their gold).")}</p>
+        </Card>
+      ) : (
+        <Card className="finance-card-static overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">{t("table.date")}</TableHead>
+                <TableHead className="text-xs">{t("mohorana.adjustmentReason", "Reason")}</TableHead>
+                <TableHead className="text-xs">{t("mohorana.note")}</TableHead>
+                <TableHead className="text-xs text-right">{t("table.amount")}</TableHead>
+                <TableHead className="text-xs text-right">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {adjustments.map(a => (
+                <TableRow key={a.id} className="hover:bg-accent/40 transition-colors">
+                  <TableCell className="text-xs">{fmtDate(a.adjusted_on)}</TableCell>
+                  <TableCell className="text-xs">
+                    <Badge variant="secondary" className="text-[10px] bg-warning/10 text-warning">
+                      {a.reason && REASON_LABELS[a.reason] ? t(REASON_LABELS[a.reason].key, REASON_LABELS[a.reason].fallback) : (a.reason || "—")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[260px] truncate">{a.note || "—"}</TableCell>
+                  <TableCell className="text-xs text-right font-semibold text-warning">+{fmt(Number(a.amount))}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditAdjustment(a)}>
+                          <Pencil className="h-3.5 w-3.5 mr-2" /> {t("action.edit")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteAdjustmentId(a.id)}>
+                          <Trash2 className="h-3.5 w-3.5 mr-2" /> {t("action.delete")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
       <AddMohoranaModal open={editOpen} onOpenChange={setEditOpen} editing={record} />
       <AddPaymentModal open={payOpen} onOpenChange={(o) => { setPayOpen(o); if (!o) setEditingPayment(null); }} recordId={record.id} editing={editingPayment} />
+      <AddAdjustmentModal open={adjOpen} onOpenChange={(o) => { setAdjOpen(o); if (!o) setEditingAdjustment(null); }} recordId={record.id} editing={editingAdjustment} />
 
       <ConfirmDialog
         open={!!deletePaymentId}
@@ -272,6 +350,13 @@ export default function MohoranaLedger() {
         title={t("mohorana.deletePaymentTitle")}
         description={t("mohorana.deletePaymentDesc")}
         onConfirm={() => { if (deletePaymentId) deletePaymentMut.mutate(deletePaymentId); setDeletePaymentId(null); }}
+      />
+      <ConfirmDialog
+        open={!!deleteAdjustmentId}
+        onOpenChange={() => setDeleteAdjustmentId(null)}
+        title={t("mohorana.deleteAdjustmentTitle", "Delete this adjustment?")}
+        description={t("mohorana.deleteAdjustmentDesc", "This will reduce the remaining balance accordingly.")}
+        onConfirm={() => { if (deleteAdjustmentId) deleteAdjustmentMut.mutate(deleteAdjustmentId); setDeleteAdjustmentId(null); }}
       />
       <ConfirmDialog
         open={deleteRecordOpen}
