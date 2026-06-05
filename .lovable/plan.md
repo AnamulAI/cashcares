@@ -1,41 +1,49 @@
-# Mohorana → Book-Style UI/UX (Payables/Partnerships এর মতো)
 
-বর্তমানে Mohorana একটি 2-column card grid যেখানে detail একটি modal এ খোলে। Payables/Partnerships এর মতো "book/ledger" pattern এ নিয়ে আসব — list rows + আলাদা ledger page।
+# মোহরানা — কর্জ/সমন্বয় (Adjustments) ফিচার
 
-## কী পরিবর্তন হবে
+স্বামী যদি স্ত্রীর কাছ থেকে কর্জ নেন (যেমন স্বর্ণ বিক্রি করে ঋণ শোধ বা বিপদে ব্যবহার), সেটি মোহরানার বকেয়ার সাথে যোগ হবে। তাই Remaining = (মোট মোহরানা + সব Adjustments) − মোট পরিশোধ।
 
-### 1. `src/pages/Mohorana.tsx` — Book-style list
-- **Header**: `FeatureIO` (export/import) যোগ + `Add Record` button (Payables এর মতো)
-- **Stats**: ৩টি FinanceCard থেকে বাড়িয়ে ৪টি — Total Committed, Total Paid, Total Remaining, **Active Records** (Payables এর "Open Books" এর মতো)
-- **Filter bar**: Search (স্ত্রীর নাম), Status select (all/active/completed/archived), Reset button
-- **Bulk select**: প্রতি row এ Checkbox + `BulkActionBar` + bulk delete confirm
-- **List**: 2-column grid বাদ → **single-column row cards** (Payables এর মতো):
-  - বাঁয়ে: Checkbox + icon tile (HeartHandshake)
-  - মাঝে: spouse_name + status badge + marriage date + "X payments · Created …"
-  - ডানে (sm+): Total / Paid / Remaining (Payables এর সংখ্যা layout এর মতো)
-  - শেষে: DropdownMenu — **Open Ledger**, Edit, Add Payment, Delete
-- Detail modal বাদ — row click → navigate `/mohorana/:id`
-- Empty state, skeleton, premium-locked block অপরিবর্তিত (style match থাকবে)
+## ১) ডেটাবেস
 
-### 2. নতুন page `src/pages/MohoranaLedger.tsx` (PayableLedger এর প্যাটার্ন)
-- Back button + spouse name header + status badge
-- Summary cards: Total, Muajjal, Muakhkhar, Paid, Remaining, Progress %
-- Muajjal/Muakhkhar breakdown card + overall Progress bar
-- **Payment History table/list** (date, amount, type, account ref, note, actions)
-- `Add Payment` button → existing `AddPaymentModal`
-- Edit record, delete record actions (header dropdown)
+নতুন টেবিল **`mohorana_adjustments`** (Mohorana payments টেবিলের অনুরূপ গঠন):
 
-### 3. Route যোগ
-- `src/App.tsx` — `/mohorana/:id` → `MohoranaLedger` (PremiumRoute এ)
+- `record_id` — কোন মোহরানা রেকর্ডের সাথে যুক্ত
+- `adjusted_on` — তারিখ
+- `amount` — কর্জ/সমন্বয়ের অঙ্ক (BDT)
+- `reason` — কারণ (যেমন "স্বর্ণ বিক্রি", "জরুরি কর্জ" ইত্যাদি — ছোট ড্রপডাউন/টেক্সট)
+- `note` — বিস্তারিত নোট
+- `attachment_path` — ভবিষ্যৎ সংযুক্তির জন্য
 
-### 4. ছোট refactor
-- `MohoranaDetailModal.tsx` — আর route থেকে ব্যবহৃত হবে না, তবে ফাইল রাখা হবে (backward-safe); future cleanup এর জন্য রেখে দেওয়া যায়। যদি চান, পুরোপুরি delete করব।
-- existing hooks (`use-mohorana`, `use-mohorana-payments`) যেমন আছে তেমনই কাজ করবে — কোনো schema change নেই।
+RLS: শুধুমাত্র মালিক (user_id) দেখতে/সম্পাদনা করতে পারবেন। Service role-এ ALL access।
 
-## Scope এর বাইরে
-- DB schema, hooks, business logic — কিছুই বদলাবে না
-- Account balance impact যোগ হবে না (আগের মতোই reference-only)
-- Attachment upload UI এই পর্বে নয়
+## ২) Hook
 
-## প্রশ্ন
-1. `MohoranaDetailModal.tsx` কি **delete করে দেব**, নাকি ফাইল রেখে দেব (unused)?
+`src/hooks/use-mohorana-adjustments.ts` — Payments hook-এর প্যাটার্নে CRUD (list / create / update / delete)।
+
+## ৩) UI পরিবর্তন (MohoranaLedger)
+
+- নতুন **Add Adjustment Modal** (`AddAdjustmentModal.tsx`) — তারিখ, অঙ্ক, কারণ, নোট।
+- হেডারে নতুন বাটন: **"কর্জ যোগ করুন"** (Add Adjustment) — addPayment-এর পাশে।
+- Summary recalculation:
+  - **মোট দায়** = `total_amount + sum(adjustments)`
+  - **পরিশোধ** = আগের মতো
+  - **বাকি** = মোট দায় − পরিশোধ
+  - নতুন কার্ড: **"কর্জ/সমন্বয়"** (Adjustments মোট)
+- Muajjal/Muakhkhar ব্রেকডাউনের নিচে নতুন সেকশন: **"কর্জ/সমন্বয় ইতিহাস"** — টেবিল (তারিখ, কারণ, নোট, অঙ্ক, Edit/Delete)।
+- CSV এক্সপোর্ট ও Print statement-এ Adjustments সারি যোগ হবে।
+
+## ৪) Mohorana list page
+
+প্রতিটি record-এর Remaining হিসাব এখন adjustments যোগ করে দেখাবে।
+
+## ৫) ব্যালেন্স প্রভাব
+
+আগের নিয়মের মতো — Adjustment বা Payment কোনোটাই অ্যাকাউন্ট ব্যালেন্সে effect করবে না (reference-only ledger)।
+
+## i18n
+
+নতুন কী: `mohorana.adjustment`, `mohorana.addAdjustment`, `mohorana.adjustmentHistory`, `mohorana.adjustmentReason`, `mohorana.totalLiability`, ইত্যাদি — বাংলা + ইংরেজি।
+
+---
+
+আপনি অনুমোদন দিলে আমি এই পরিবর্তনগুলো একসাথে বাস্তবায়ন করব (migration → hook → modal → ledger UI আপডেট)।
