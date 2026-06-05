@@ -200,7 +200,7 @@ export default function Mohorana() {
                     </p>
                   </div>
                   <div className="text-right shrink-0 hidden sm:block">
-                    <p className="text-xs text-muted-foreground">{t("mohorana.total")}: {recordFmt(total)}</p>
+                    <p className="text-xs text-muted-foreground">{t("mohorana.totalLiability", "Total Liability")}: {recordFmt(total)}{adj > 0 ? ` (+${recordFmt(adj)})` : ""}</p>
                     <p className="text-xs text-positive">{t("mohorana.paid")}: {recordFmt(agg.paid)}</p>
                     <p className="text-sm font-bold mt-0.5">{t("mohorana.remaining")}: {recordFmt(remaining)}</p>
                   </div>
