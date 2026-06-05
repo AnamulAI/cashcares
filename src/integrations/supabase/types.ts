@@ -390,6 +390,53 @@ export type Database = {
           },
         ]
       }
+      mohorana_adjustments: {
+        Row: {
+          adjusted_on: string
+          amount: number
+          attachment_path: string | null
+          created_at: string
+          id: string
+          note: string | null
+          reason: string | null
+          record_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adjusted_on?: string
+          amount?: number
+          attachment_path?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          reason?: string | null
+          record_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adjusted_on?: string
+          amount?: number
+          attachment_path?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          reason?: string | null
+          record_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mohorana_adjustments_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "mohorana_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mohorana_payments: {
         Row: {
           account_id: string | null
