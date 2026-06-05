@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Pencil, Trash2, HeartHandshake } from "lucide-react";
 import { useMohoranaPayments, useDeleteMohoranaPayment, MohoranaPayment } from "@/hooks/use-mohorana-payments";
 import { MohoranaRecord } from "@/hooks/use-mohorana";
+import { useAccounts } from "@/hooks/use-accounts";
 import { AddPaymentModal } from "./AddPaymentModal";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
@@ -22,7 +23,9 @@ export function MohoranaDetailModal({ open, onOpenChange, record }: Props) {
   const { t, lang } = useTranslation();
   const { settings } = useAppContext();
   const { data: payments = [] } = useMohoranaPayments(record?.id);
+  const { data: accounts = [] } = useAccounts();
   const deleteMut = useDeleteMohoranaPayment();
+  const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a.name])), [accounts]);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [editing, setEditing] = useState<MohoranaPayment | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -133,7 +136,7 @@ export function MohoranaDetailModal({ open, onOpenChange, record }: Props) {
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
                           {fmtDate(p.paid_on)}
-                          {(p as any).account?.name && ` · ${(p as any).account.name}`}
+                          {p.account_id && accountMap[p.account_id] && ` · ${accountMap[p.account_id]}`}
                         </p>
                         {p.note && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{p.note}</p>}
                       </div>
