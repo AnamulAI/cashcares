@@ -280,6 +280,7 @@ export default function MohoranaLedger() {
         description={t("mohorana.deleteDesc")}
         onConfirm={() => { if (record) deleteRecordMut.mutate(record.id, { onSuccess: () => navigate("/mohorana") }); }}
       />
+      <PrintStatementFooter />
     </div>
   );
 }
