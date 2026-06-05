@@ -37,6 +37,8 @@ export default function Mohorana() {
   const navigate = useNavigate();
   const { data: records = [], isLoading } = useMohoranaRecords();
   const { data: allPayments = [] } = useMohoranaPayments();
+  const { data: allPayments = [] } = useMohoranaPayments();
+  const { data: allAdjustments = [] } = useMohoranaAdjustments();
   const deleteMut = useDeleteMohoranaRecord();
 
   const [addOpen, setAddOpen] = useState(false);
@@ -58,14 +60,22 @@ export default function Mohorana() {
     return map;
   }, [allPayments]);
 
+  const adjustmentsByRecord = useMemo(() => {
+    const map: Record<string, number> = {};
+    allAdjustments.forEach(a => {
+      map[a.record_id] = (map[a.record_id] || 0) + Number(a.amount);
+    });
+    return map;
+  }, [allAdjustments]);
+
   const totals = useMemo(() => {
     let total = 0, paid = 0;
     records.forEach(r => {
-      total += Number(r.total_amount);
+      total += Number(r.total_amount) + (adjustmentsByRecord[r.id] || 0);
       paid += paidByRecord[r.id]?.paid || 0;
     });
     return { total, paid, remaining: Math.max(0, total - paid), active: records.filter(r => r.status === "active").length };
-  }, [records, paidByRecord]);
+  }, [records, paidByRecord, adjustmentsByRecord]);
 
   const filtered = useMemo(() => records.filter(r => {
     if (statusFilter !== "all" && r.status !== statusFilter) return false;
