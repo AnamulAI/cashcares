@@ -159,6 +159,9 @@ export default function MohoranaLedger() {
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEditOpen(true)}>
               <Pencil className="h-4 w-4" /> {t("action.edit")}
             </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEditAdjustment()}>
+              <TrendingUp className="h-4 w-4" /> {t("mohorana.addAdjustment", "Add Debt")}
+            </Button>
             <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => openEditPayment()}>
               <Plus className="h-4 w-4" /> {t("mohorana.addPayment")}
             </Button>
