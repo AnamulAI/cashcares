@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckCircle2, AlertTriangle, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckCircle2, AlertTriangle, Calendar, Download, Printer } from "lucide-react";
+import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/PrintStatementHeader";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -75,14 +76,59 @@ export default function MohoranaLedger() {
 
   const openEditPayment = (p?: MohoranaPayment) => { setEditingPayment(p || null); setPayOpen(true); };
 
+  const handlePrint = () => window.print();
+  const handleCSV = () => {
+    const headers = ["Date", "Payment Type", "Account", "Note", "Amount"];
+    const rows = payments.map(p => [
+      p.paid_on,
+      p.payment_type,
+      (p.account_id && accountMap[p.account_id]) || "",
+      (p.note || "").replace(/[\r\n,]+/g, " "),
+      Number(p.amount),
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mohorana-${record.spouse_name || "ledger"}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
+      <PrintStatementHeader
+        documentTitle="Mohorana Ledger Statement"
+        subjectId={record.id}
+        subjectIdLabel="Record ID"
+        detailsTitle="Mohorana Details"
+        scheduleTitle="Payment History"
+        details={[
+          { label: "Spouse", value: record.spouse_name },
+          { label: "Status", value: record.status || "active" },
+          ...(record.marriage_date ? [{ label: "Marriage Date", value: fmtDate(record.marriage_date) }] : []),
+          { label: "Muajjal", value: fmt(Number(record.muajjal_amount)) },
+          { label: "Muakhkhar", value: fmt(Number(record.muakhkhar_amount)) },
+          { label: "Total Payments", value: String(payments.length) },
+          ...(record.note ? [{ label: "Note", value: record.note, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Total Mohorana", value: fmt(total) },
+          { label: "Total Paid", value: fmt(totals.paid) },
+          { label: "Remaining", value: fmt(remaining) },
+          { label: "Progress", value: `${Math.round(pct)}%` },
+        ]}
+      />
+
+      <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/mohorana")}>
           <ArrowLeft className="h-4 w-4" /> {t("action.back", "Back")}
         </Button>
       </div>
 
+
+      <div className="no-print">
       <PageHeader
         title={record.spouse_name}
         subtitle={record.marriage_date ? `${t("mohorana.marriedOn")} ${fmtDate(record.marriage_date)}` : t("mohorana.subtitle")}
@@ -98,6 +144,14 @@ export default function MohoranaLedger() {
               <Plus className="h-4 w-4" /> {t("mohorana.addPayment")}
             </Button>
             <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePrint}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="h-9 w-9"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem className="text-destructive" onClick={() => setDeleteRecordOpen(true)}>
@@ -108,6 +162,8 @@ export default function MohoranaLedger() {
           </div>
         }
       />
+      </div>
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <FinanceCard icon={<HeartHandshake className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.total")} value={fmt(total)} />
@@ -224,6 +280,7 @@ export default function MohoranaLedger() {
         description={t("mohorana.deleteDesc")}
         onConfirm={() => { if (record) deleteRecordMut.mutate(record.id, { onSuccess: () => navigate("/mohorana") }); }}
       />
+      <PrintStatementFooter />
     </div>
   );
 }
