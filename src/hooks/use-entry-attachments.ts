@@ -10,7 +10,9 @@ export type EntryType =
   | "investment"
   | "asset"
   | "savings_installment"
-  | "partnership_entry";
+  | "partnership_entry"
+  | "mohorana_record"
+  | "mohorana_payment";
 
 export interface EntryAttachment {
   id: string;

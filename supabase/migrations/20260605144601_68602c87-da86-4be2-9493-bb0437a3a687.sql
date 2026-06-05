@@ -1,0 +1,2 @@
+ALTER TABLE public.entry_attachments DROP CONSTRAINT entry_attachments_entry_type_check;
+ALTER TABLE public.entry_attachments ADD CONSTRAINT entry_attachments_entry_type_check CHECK (entry_type = ANY (ARRAY['payable'::text, 'receivable'::text, 'transaction'::text, 'loan'::text, 'investment'::text, 'asset'::text, 'savings_installment'::text, 'partnership_entry'::text, 'mohorana_record'::text, 'mohorana_payment'::text]));
