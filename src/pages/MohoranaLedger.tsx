@@ -286,8 +286,63 @@ export default function MohoranaLedger() {
         </Card>
       )}
 
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">{t("mohorana.adjustmentHistory", "Adjustment / Debt History")}</h3>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEditAdjustment()}>
+          <Plus className="h-4 w-4" /> {t("mohorana.addAdjustment", "Add Debt")}
+        </Button>
+      </div>
+
+      {adjustments.length === 0 ? (
+        <Card className="finance-card-static p-6 text-center">
+          <p className="text-muted-foreground text-xs">{t("mohorana.noAdjustments", "No adjustments yet. Use this to record extra debts you owe your spouse (e.g. sold their gold).")}</p>
+        </Card>
+      ) : (
+        <Card className="finance-card-static overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">{t("table.date")}</TableHead>
+                <TableHead className="text-xs">{t("mohorana.adjustmentReason", "Reason")}</TableHead>
+                <TableHead className="text-xs">{t("mohorana.note")}</TableHead>
+                <TableHead className="text-xs text-right">{t("table.amount")}</TableHead>
+                <TableHead className="text-xs text-right">{t("table.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {adjustments.map(a => (
+                <TableRow key={a.id} className="hover:bg-accent/40 transition-colors">
+                  <TableCell className="text-xs">{fmtDate(a.adjusted_on)}</TableCell>
+                  <TableCell className="text-xs">
+                    <Badge variant="secondary" className="text-[10px] bg-warning/10 text-warning">
+                      {a.reason && REASON_LABELS[a.reason] ? t(REASON_LABELS[a.reason].key, REASON_LABELS[a.reason].fallback) : (a.reason || "—")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[260px] truncate">{a.note || "—"}</TableCell>
+                  <TableCell className="text-xs text-right font-semibold text-warning">+{fmt(Number(a.amount))}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditAdjustment(a)}>
+                          <Pencil className="h-3.5 w-3.5 mr-2" /> {t("action.edit")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteAdjustmentId(a.id)}>
+                          <Trash2 className="h-3.5 w-3.5 mr-2" /> {t("action.delete")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
       <AddMohoranaModal open={editOpen} onOpenChange={setEditOpen} editing={record} />
       <AddPaymentModal open={payOpen} onOpenChange={(o) => { setPayOpen(o); if (!o) setEditingPayment(null); }} recordId={record.id} editing={editingPayment} />
+      <AddAdjustmentModal open={adjOpen} onOpenChange={(o) => { setAdjOpen(o); if (!o) setEditingAdjustment(null); }} recordId={record.id} editing={editingAdjustment} />
 
       <ConfirmDialog
         open={!!deletePaymentId}
@@ -295,6 +350,13 @@ export default function MohoranaLedger() {
         title={t("mohorana.deletePaymentTitle")}
         description={t("mohorana.deletePaymentDesc")}
         onConfirm={() => { if (deletePaymentId) deletePaymentMut.mutate(deletePaymentId); setDeletePaymentId(null); }}
+      />
+      <ConfirmDialog
+        open={!!deleteAdjustmentId}
+        onOpenChange={() => setDeleteAdjustmentId(null)}
+        title={t("mohorana.deleteAdjustmentTitle", "Delete this adjustment?")}
+        description={t("mohorana.deleteAdjustmentDesc", "This will reduce the remaining balance accordingly.")}
+        onConfirm={() => { if (deleteAdjustmentId) deleteAdjustmentMut.mutate(deleteAdjustmentId); setDeleteAdjustmentId(null); }}
       />
       <ConfirmDialog
         open={deleteRecordOpen}
