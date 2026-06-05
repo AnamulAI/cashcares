@@ -1,109 +1,88 @@
-# Why offline mode isn't working on the deployed app
+# মোহরানা (Mohorana) Module
 
-Root cause is in `index.html` (lines 51–67):
+স্ত্রীর মোহরানা/দেনমোহরের নির্ধারিত অঙ্ক ও ধাপে ধাপে পরিশোধের সম্পূর্ণ ইতিহাস রাখার জন্য একটি স্বাধীন প্রিমিয়াম মডিউল।
 
-```js
-const isLocalPreview =
-  ['localhost', '127.0.0.1'].includes(window.location.hostname)
-  || window.location.hostname.includes('lovableproject.com')
-  || window.location.hostname.includes('lovable.app');   // <-- this line
+## Scope
 
-if (isLocalPreview) {
-  // unregister all SWs + delete mahbook-* caches
-}
-```
+- Sidebar-এ "মোহরানা" নামে নতুন পেজ (`/mohorana`)
+- PremiumRoute দিয়ে গার্ড — শুধু premium ব্যবহারকারীর জন্য
+- সম্পূর্ণ স্বাধীন লেজার — কোনো account balance বা transaction-এ প্রভাব পড়বে না
+- বহুবিবাহ সমর্থন: একাধিক মোহরানা রেকর্ড করা যাবে (প্রতিটি স্ত্রীর জন্য আলাদা)
 
-The published site lives at `https://mahbooks.lovable.app`. Because the host
-contains `lovable.app`, the bootstrap code treats it as a preview and
-**actively unregisters the service worker and wipes the caches on every
-load**. So:
+## Data model (2 new tables)
 
-- `/sw.js` never stays registered on the deployed PWA.
-- `caches` named `mahbook-v5-*` are deleted immediately.
-- When the device goes offline, there's no SW to serve `/index.html` or
-  cached assets, and the browser falls back to its native "You're offline"
-  screen — exactly what the screenshot shows.
+### `mohorana_records`
+এক মোহরানার মূল তথ্য:
+- `spouse_name` (স্ত্রীর নাম)
+- `marriage_date` (বিবাহের তারিখ)
+- `currency` (BDT/USD/…)
+- `total_amount` (মোট মোহরানা)
+- `muajjal_amount` (নগদ/মুয়াজ্জাল ভাগ)
+- `muakhkhar_amount` (বাকি/মুআখখার ভাগ)
+- `note` (বিবরণ)
+- `attachment_path` (কাবিননামা ইত্যাদি — `ledger-attachments` bucket-এ)
+- `status` ('active' | 'completed' | 'archived')
 
-The SW + offline-first React Query work we shipped is fine; it just never
-gets a chance to run in production.
+### `mohorana_payments`
+প্রতিটি কিস্তির ইতিহাস:
+- `record_id` → mohorana_records
+- `paid_on` (তারিখ)
+- `amount` (অঙ্ক)
+- `account_id` (কোন অ্যাকাউন্ট থেকে — শুধু রেফারেন্স, balance touch হবে না, nullable)
+- `payment_type` ('muajjal' | 'muakhkhar' | 'general')
+- `note`
+- `attachment_path` (রসিদ — optional)
 
-A secondary issue: the `controllerchange` handler unconditionally calls
-`window.location.reload()`. If a new SW activates while the device is
-offline, the reload fails and the user is stuck on the browser's offline
-page. We should skip the reload when `navigator.onLine === false`.
+দুটি টেবিলেই `user_id`, `created_at`, `updated_at` থাকবে; RLS দিয়ে শুধু owner access; `updated_at` trigger।
 
-# Plan
+## UI
 
-### 1. `index.html` — only treat true preview hosts as "local preview"
+### Page (`src/pages/Mohorana.tsx`)
+- PageHeader: "মোহরানা" + "মোট মোহরানা ও পরিশোধ ট্র্যাকিং" + "নতুন মোহরানা যোগ করুন" button
+- Summary stat-row: মোট নির্ধারিত / মোট পরিশোধিত / অবশিষ্ট
+- প্রতিটি record-এর জন্য কার্ড:
+  - স্ত্রীর নাম, বিবাহের তারিখ, status badge
+  - Progress bar: paid / total
+  - মুয়াজ্জাল ও মুআখখার আলাদা breakdown
+  - "বিস্তারিত" → centered Dialog
+- Empty state ("এখনও কোনো মোহরানা যোগ করা হয়নি")
 
-Tighten the check so we keep unregistering the SW in the Lovable editor
-preview (which runs inside an iframe and on `id-preview--*.lovable.app` /
-`*.lovableproject.com`), but **register normally on the published custom
-subdomain** (e.g. `mahbooks.lovable.app`, custom domains).
+### Modals (centered Dialog, max-h-[90vh] overflow-y-auto)
+- **AddMohoranaModal** — record তৈরি/সম্পাদনা, attachment upload
+- **MohoranaDetailModal** — full info, payment history list, "পরিশোধ যোগ করুন" button, summary, attachment download
+- **AddPaymentModal** — কিস্তি যোগ/সম্পাদনা (amount, date, account select, type, note, attachment)
+- **ConfirmDialog** — delete confirmation (existing component reuse)
 
-```js
-const host = window.location.hostname;
-const isInIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
-const isLovableEditorPreview =
-  host === 'localhost' ||
-  host === '127.0.0.1' ||
-  host.includes('lovableproject.com') ||
-  host.startsWith('id-preview--') ||      // editor preview subdomains
-  isInIframe;                              // any iframe context (covers editor)
+### Hooks (`src/hooks/`)
+- `use-mohorana.ts` — list/create/update/delete records (React Query)
+- `use-mohorana-payments.ts` — per-record payments list/create/update/delete
 
-if (isLovableEditorPreview) {
-  // existing unregister + cache cleanup
-} else {
-  window.addEventListener('load', /* existing register('/sw.js') flow */);
-}
-```
+### Sidebar (`src/components/layout/AppSidebar.tsx`)
+নতুন nav-item "মোহরানা" (icon: HeartHandshake বা Gem, feature-color: indigo→pink gradient), Premium section-এ।
 
-This keeps the editor preview clean (per Lovable PWA guidance) while
-letting the published `mahbooks.lovable.app` domain install and keep the
-service worker.
+### Routing (`src/App.tsx`)
+`<Route path="/mohorana" element={<PremiumRoute><Mohorana /></PremiumRoute>} />`
 
-### 2. `index.html` — don't reload on `controllerchange` while offline
-
-```js
-navigator.serviceWorker.addEventListener('controllerchange', function () {
-  if (refreshing) return;
-  if (navigator.onLine === false) return;   // <-- new guard
-  refreshing = true;
-  window.location.reload();
-});
-```
-
-Prevents the white "You're offline" screen if the SW updates mid-session
-without connectivity.
-
-### 3. `public/sw.js` — bump cache version to `mahbook-v6`
-
-So returning users force-evict any stale `mahbook-v5` shell and pick up
-the corrected client logic on next visit.
-
-### 4. Verification steps to share with the user
-
-After deploy, on `https://mahbooks.lovable.app`:
-
-1. Load the app once online → DevTools › Application › Service Workers
-   should now show `sw.js` as **activated and running**, and
-   Cache Storage should contain `mahbook-v6-shell` / `mahbook-v6-assets`.
-2. DevTools › Network → set to **Offline**, hard-refresh: the app shell
-   should load, `OfflineBanner` should show the red "You're offline" bar,
-   and cached transactions/accounts should still render.
-3. Add a transaction while offline → it appears optimistically with the
-   "Saved locally — will sync when you're back online" toast.
-4. Toggle Network back to **Online** → amber "Syncing N changes…" banner,
-   then green "All changes synced."
-
-## Files touched
-
-- `index.html` — narrow the preview check; guard the reload.
-- `public/sw.js` — `CACHE_VERSION = 'mahbook-v6'`.
+### i18n (`src/i18n/translations.ts`)
+নতুন keys: `nav.mohorana`, `mohorana.title`, `mohorana.subtitle`, `mohorana.total`, `mohorana.paid`, `mohorana.remaining`, `mohorana.muajjal`, `mohorana.muakhkhar`, `mohorana.spouseName`, `mohorana.marriageDate`, `mohorana.addRecord`, `mohorana.addPayment`, `mohorana.paymentHistory`, `mohorana.status.active|completed|archived` ইত্যাদি (en + bn)।
 
 ## Out of scope
+- কোনো auto-expense বা account balance ইন্টিগ্রেশন নেই (user choice অনুযায়ী)
+- Recurring reminder/notification এই plan-এ নেই (পরে যোগ করা যাবে)
+- Dashboard widget এই plan-এ নেই
 
-- Editor preview offline support (intentionally disabled per Lovable PWA
-  guidance — service workers in iframes cause stale-content problems).
-- Any changes to `AuthContext`, React Query config, or `OfflineBanner` —
-  those already work, they just need the SW alive in production.
+## Files to create
+- `supabase/migrations/...` — দুটি table + RLS + GRANTs + updated_at triggers
+- `src/pages/Mohorana.tsx`
+- `src/components/mohorana/MohoranaCard.tsx`
+- `src/components/mohorana/AddMohoranaModal.tsx`
+- `src/components/mohorana/MohoranaDetailModal.tsx`
+- `src/components/mohorana/AddPaymentModal.tsx`
+- `src/hooks/use-mohorana.ts`
+- `src/hooks/use-mohorana-payments.ts`
+
+## Files to edit
+- `src/App.tsx` — route যোগ
+- `src/components/layout/AppSidebar.tsx` — nav-item
+- `src/i18n/translations.ts` — labels
+- `src/config/feature-colors.ts` — mohorana color token
