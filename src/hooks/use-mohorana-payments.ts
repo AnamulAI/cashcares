@@ -26,22 +26,13 @@ export function useMohoranaPayments(recordId?: string) {
       if (!user) throw new Error("Not authenticated");
       let q = (supabase as any)
         .from("mohorana_payments")
-        .select("*, account:accounts!mohorana_payments_account_id_fkey(name)")
+        .select("*")
         .eq("user_id", user.id)
         .order("paid_on", { ascending: false });
       if (recordId) q = q.eq("record_id", recordId);
       const { data, error } = await q;
-      if (error) {
-        // fallback without join if FK alias is unknown
-        const fallback = await (supabase as any)
-          .from("mohorana_payments")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("paid_on", { ascending: false });
-        if (fallback.error) throw fallback.error;
-        return (fallback.data || []) as (MohoranaPayment & { account?: { name: string } | null })[];
-      }
-      return (data || []) as (MohoranaPayment & { account?: { name: string } | null })[];
+      if (error) throw error;
+      return (data || []) as MohoranaPayment[];
     },
   });
 }
