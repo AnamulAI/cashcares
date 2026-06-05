@@ -390,6 +390,104 @@ export type Database = {
           },
         ]
       }
+      mohorana_payments: {
+        Row: {
+          account_id: string | null
+          amount: number
+          attachment_path: string | null
+          created_at: string
+          id: string
+          note: string | null
+          paid_on: string
+          payment_type: string
+          record_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          attachment_path?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          paid_on?: string
+          payment_type?: string
+          record_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          attachment_path?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          paid_on?: string
+          payment_type?: string
+          record_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mohorana_payments_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "mohorana_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mohorana_records: {
+        Row: {
+          attachment_path: string | null
+          created_at: string
+          currency: string
+          id: string
+          marriage_date: string | null
+          muajjal_amount: number
+          muakhkhar_amount: number
+          note: string | null
+          spouse_name: string
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachment_path?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          marriage_date?: string | null
+          muajjal_amount?: number
+          muakhkhar_amount?: number
+          note?: string | null
+          spouse_name: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachment_path?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          marriage_date?: string | null
+          muajjal_amount?: number
+          muakhkhar_amount?: number
+          note?: string | null
+          spouse_name?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partnership_entries: {
         Row: {
           amount: number
