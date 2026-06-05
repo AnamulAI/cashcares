@@ -131,7 +131,9 @@ export default function MohoranaLedger() {
           ...(record.note ? [{ label: "Note", value: record.note, fullWidth: true }] : []),
         ]}
         summary={[
-          { label: "Total Mohorana", value: fmt(total) },
+          { label: "Base Mohorana", value: fmt(baseTotal) },
+          { label: "Adjustments", value: fmt(totals.adjustmentsTotal) },
+          { label: "Total Liability", value: fmt(totalLiability) },
           { label: "Total Paid", value: fmt(totals.paid) },
           { label: "Remaining", value: fmt(remaining) },
           { label: "Progress", value: `${Math.round(pct)}%` },
