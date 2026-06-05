@@ -187,8 +187,9 @@ export default function MohoranaLedger() {
       </div>
 
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <FinanceCard icon={<HeartHandshake className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.total")} value={fmt(total)} />
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <FinanceCard icon={<HeartHandshake className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.totalLiability", "Total Liability")} value={fmt(totalLiability)} subValue={totals.adjustmentsTotal > 0 ? `${t("mohorana.base", "Base")} ${fmt(baseTotal)} + ${fmt(totals.adjustmentsTotal)}` : undefined} />
+        <FinanceCard icon={<TrendingUp className="h-5 w-5 text-warning" />} iconBg="bg-warning/10" label={t("mohorana.adjustments", "Adjustments")} value={fmt(totals.adjustmentsTotal)} />
         <FinanceCard icon={<CheckCircle2 className="h-5 w-5 text-positive" />} iconBg="bg-positive/10" label={t("mohorana.paid")} value={fmt(totals.paid)} />
         <FinanceCard icon={<AlertTriangle className="h-5 w-5 text-negative" />} iconBg="bg-negative/10" label={t("mohorana.remaining")} value={fmt(remaining)} />
         <FinanceCard icon={<Calendar className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.progress")} value={`${Math.round(pct)}%`} />
