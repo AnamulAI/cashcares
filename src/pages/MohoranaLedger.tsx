@@ -200,7 +200,7 @@ export default function MohoranaLedger() {
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-muted-foreground">{t("mohorana.progress")}</span>
-              <span className="font-medium">{fmt(totals.paid)} / {fmt(total)}</span>
+              <span className="font-medium">{fmt(totals.paid)} / {fmt(totalLiability)}</span>
             </div>
             <Progress value={pct} className="h-2" />
           </div>
