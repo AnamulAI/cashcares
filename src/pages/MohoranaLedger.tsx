@@ -76,13 +76,57 @@ export default function MohoranaLedger() {
 
   const openEditPayment = (p?: MohoranaPayment) => { setEditingPayment(p || null); setPayOpen(true); };
 
+  const handlePrint = () => window.print();
+  const handleCSV = () => {
+    const headers = ["Date", "Payment Type", "Account", "Note", "Amount"];
+    const rows = payments.map(p => [
+      p.paid_on,
+      p.payment_type,
+      (p.account_id && accountMap[p.account_id]) || "",
+      (p.note || "").replace(/[\r\n,]+/g, " "),
+      Number(p.amount),
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mohorana-${record.spouse_name || "ledger"}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
+      <PrintStatementHeader
+        documentTitle="Mohorana Ledger Statement"
+        subjectId={record.id}
+        subjectIdLabel="Record ID"
+        detailsTitle="Mohorana Details"
+        scheduleTitle="Payment History"
+        details={[
+          { label: "Spouse", value: record.spouse_name },
+          { label: "Status", value: record.status || "active" },
+          ...(record.marriage_date ? [{ label: "Marriage Date", value: fmtDate(record.marriage_date) }] : []),
+          { label: "Muajjal", value: fmt(Number(record.muajjal_amount)) },
+          { label: "Muakhkhar", value: fmt(Number(record.muakhkhar_amount)) },
+          { label: "Total Payments", value: String(payments.length) },
+          ...(record.note ? [{ label: "Note", value: record.note, fullWidth: true }] : []),
+        ]}
+        summary={[
+          { label: "Total Mohorana", value: fmt(total) },
+          { label: "Total Paid", value: fmt(totals.paid) },
+          { label: "Remaining", value: fmt(remaining) },
+          { label: "Progress", value: `${Math.round(pct)}%` },
+        ]}
+      />
+
+      <div className="flex items-center gap-2 no-print">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/mohorana")}>
           <ArrowLeft className="h-4 w-4" /> {t("action.back", "Back")}
         </Button>
       </div>
+
 
       <PageHeader
         title={record.spouse_name}
