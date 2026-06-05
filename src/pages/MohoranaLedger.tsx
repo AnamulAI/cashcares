@@ -128,6 +128,7 @@ export default function MohoranaLedger() {
       </div>
 
 
+      <div className="no-print">
       <PageHeader
         title={record.spouse_name}
         subtitle={record.marriage_date ? `${t("mohorana.marriedOn")} ${fmtDate(record.marriage_date)}` : t("mohorana.subtitle")}
@@ -143,6 +144,14 @@ export default function MohoranaLedger() {
               <Plus className="h-4 w-4" /> {t("mohorana.addPayment")}
             </Button>
             <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handlePrint}><Printer className="h-3.5 w-3.5 mr-2" /> Print</DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePrint}><Download className="h-3.5 w-3.5 mr-2" /> PDF (Print)</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCSV}><Download className="h-3.5 w-3.5 mr-2" /> CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="h-9 w-9"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem className="text-destructive" onClick={() => setDeleteRecordOpen(true)}>
@@ -153,6 +162,8 @@ export default function MohoranaLedger() {
           </div>
         }
       />
+      </div>
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <FinanceCard icon={<HeartHandshake className="h-5 w-5 text-feature-receivables" />} iconBg="bg-feature-receivables/10" label={t("mohorana.total")} value={fmt(total)} />
