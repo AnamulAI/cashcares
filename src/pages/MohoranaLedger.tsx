@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckC
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { EntryAttachments } from "@/components/ledger/EntryAttachments";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -143,6 +144,11 @@ export default function MohoranaLedger() {
             </div>
           )}
         </div>
+      </Card>
+
+      <Card className="finance-card-static p-4">
+        <h3 className="text-sm font-semibold mb-3">{t("ledger.attachments", "Attachments")}</h3>
+        <EntryAttachments entryId={record.id} entryType="mohorana_record" />
       </Card>
 
       <div className="flex items-center justify-between">
