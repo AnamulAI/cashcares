@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMohoranaRecords, useDeleteMohoranaRecord, MohoranaRecord } from "@/hooks/use-mohorana";
 import { useMohoranaPayments } from "@/hooks/use-mohorana-payments";
+import { useMohoranaAdjustments } from "@/hooks/use-mohorana-adjustments";
 import { AddMohoranaModal } from "@/components/mohorana/AddMohoranaModal";
 import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
