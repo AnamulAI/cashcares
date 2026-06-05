@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckCircle2, AlertTriangle, Calendar, Download, Printer } from "lucide-react";
+import { ArrowLeft, Plus, HeartHandshake, Pencil, Trash2, MoreHorizontal, CheckCircle2, AlertTriangle, Calendar, Download, Printer, TrendingUp } from "lucide-react";
 import { PrintStatementHeader, PrintStatementFooter } from "@/components/shared/PrintStatementHeader";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FinanceCard } from "@/components/shared/FinanceCard";
@@ -15,12 +15,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMohoranaRecord, useDeleteMohoranaRecord } from "@/hooks/use-mohorana";
 import { useMohoranaPayments, useDeleteMohoranaPayment, MohoranaPayment } from "@/hooks/use-mohorana-payments";
+import { useMohoranaAdjustments, useDeleteMohoranaAdjustment, MohoranaAdjustment } from "@/hooks/use-mohorana-adjustments";
 import { useAccounts } from "@/hooks/use-accounts";
 import { AddMohoranaModal } from "@/components/mohorana/AddMohoranaModal";
 import { AddPaymentModal } from "@/components/mohorana/AddPaymentModal";
+import { AddAdjustmentModal } from "@/components/mohorana/AddAdjustmentModal";
 import { useAppContext, CURRENCIES } from "@/contexts/AppContext";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatAmount, formatAppDate } from "@/lib/formatters";
+
+const REASON_LABELS: Record<string, { key: string; fallback: string }> = {
+  gold_sold: { key: "mohorana.reasonGoldSold", fallback: "Sold spouse's gold" },
+  emergency_loan: { key: "mohorana.reasonEmergency", fallback: "Emergency loan" },
+  debt_repayment: { key: "mohorana.reasonDebtRepay", fallback: "Used for debt repayment" },
+  other: { key: "mohorana.reasonOther", fallback: "Other" },
+};
 
 const statusBadge: Record<string, string> = {
   active: "bg-primary/10 text-primary",
