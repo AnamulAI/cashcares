@@ -146,6 +146,11 @@ export default function MohoranaLedger() {
         </div>
       </Card>
 
+      <Card className="finance-card-static p-4">
+        <h3 className="text-sm font-semibold mb-3">{t("ledger.attachments", "Attachments")}</h3>
+        <EntryAttachments entryId={record.id} entryType="mohorana_record" />
+      </Card>
+
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("mohorana.paymentHistory")}</h3>
       </div>
