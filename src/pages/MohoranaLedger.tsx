@@ -44,14 +44,19 @@ export default function MohoranaLedger() {
   const { t, lang } = useTranslation();
   const { data: record, isLoading } = useMohoranaRecord(id);
   const { data: payments = [] } = useMohoranaPayments(id);
+  const { data: adjustments = [] } = useMohoranaAdjustments(id);
   const { data: accounts = [] } = useAccounts();
   const deleteRecordMut = useDeleteMohoranaRecord();
   const deletePaymentMut = useDeleteMohoranaPayment();
+  const deleteAdjustmentMut = useDeleteMohoranaAdjustment();
 
   const [editOpen, setEditOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
+  const [adjOpen, setAdjOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<MohoranaPayment | null>(null);
+  const [editingAdjustment, setEditingAdjustment] = useState<MohoranaAdjustment | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [deleteAdjustmentId, setDeleteAdjustmentId] = useState<string | null>(null);
   const [deleteRecordOpen, setDeleteRecordOpen] = useState(false);
 
   const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a.name])), [accounts]);
@@ -65,8 +70,9 @@ export default function MohoranaLedger() {
     const paid = payments.reduce((s, p) => s + Number(p.amount), 0);
     const muajjalPaid = payments.filter(p => p.payment_type === "muajjal").reduce((s, p) => s + Number(p.amount), 0);
     const muakhkharPaid = payments.filter(p => p.payment_type === "muakhkhar").reduce((s, p) => s + Number(p.amount), 0);
-    return { paid, muajjalPaid, muakhkharPaid };
-  }, [payments]);
+    const adjustmentsTotal = adjustments.reduce((s, a) => s + Number(a.amount), 0);
+    return { paid, muajjalPaid, muakhkharPaid, adjustmentsTotal };
+  }, [payments, adjustments]);
 
   const fmt = (n: number) => formatAmount(n, recordCurrency, lang);
   const fmtDate = (d: string) => formatAppDate(d, settings.dateFormat, settings.timezone, lang);
@@ -79,11 +85,13 @@ export default function MohoranaLedger() {
     </div>
   );
 
-  const total = Number(record.total_amount);
-  const remaining = Math.max(0, total - totals.paid);
-  const pct = total > 0 ? Math.min(100, (totals.paid / total) * 100) : 0;
+  const baseTotal = Number(record.total_amount);
+  const totalLiability = baseTotal + totals.adjustmentsTotal;
+  const remaining = Math.max(0, totalLiability - totals.paid);
+  const pct = totalLiability > 0 ? Math.min(100, (totals.paid / totalLiability) * 100) : 0;
 
   const openEditPayment = (p?: MohoranaPayment) => { setEditingPayment(p || null); setPayOpen(true); };
+  const openEditAdjustment = (a?: MohoranaAdjustment) => { setEditingAdjustment(a || null); setAdjOpen(true); };
 
   const handlePrint = () => window.print();
   const handleCSV = () => {
