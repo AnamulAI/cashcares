@@ -177,7 +177,8 @@ export default function Mohorana() {
             const recordCurrency = CURRENCIES.find(c => c.code === r.currency) || currency;
             const recordFmt = (n: number) => formatAmount(n, recordCurrency, lang);
             const agg = paidByRecord[r.id] || { paid: 0, count: 0 };
-            const total = Number(r.total_amount);
+            const adj = adjustmentsByRecord[r.id] || 0;
+            const total = Number(r.total_amount) + adj;
             const remaining = Math.max(0, total - agg.paid);
             return (
               <Card key={r.id} className="finance-card-static p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/mohorana/${r.id}`)}>
